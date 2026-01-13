@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+  output = "./generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name  String?
+  imageUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+  categories   Category[]
+  goals        Goal[]
+  settings Json?
+}
+
+model Category {
+  id String @id @default(cuid())
+  name String
+  color String @default("bg-zinc-500")
+  type String  // "income" or "expense" (minusculo)
+  userId String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@unique([name, userId])
+}
+
+model Transaction {
+  id String @id @default(cuid())
+  description String
+  amount Decimal @db.Decimal(10, 2)
+  date DateTime
+  type String  // "income" or "expense" (minusculo)
+
+  isRecurring Boolean @default(false)
+  isPaid Boolean @default(true)
+
+  categoryId String?
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  aiGenerated Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Goal {
+  id String @id @default(cuid())
+  name String
+  targetAmount Decimal @db.Decimal(10, 2)
+  currentAmount Decimal @db.Decimal(10, 2) @default(0)
+  deadline DateTime?
+
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
