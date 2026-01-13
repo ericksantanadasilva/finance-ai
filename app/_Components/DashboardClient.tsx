@@ -28,10 +28,18 @@ interface Transaction {
   amount: number;
   type: string;
   date: string;
-  category?: {
+  // Ajustado para aceitar exatamente o que o Prisma envia (incluindo null)
+  category: {
+    id: string;
     name: string;
     color: string;
-  };
+    createdAt: Date;
+    type: string;
+    userId: string;
+  } | null; // O Prisma retorna null se não houver categoria
+  categoryId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export default function DashboardClient({
