@@ -2,75 +2,121 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { prisma } from '@/lib/prisma';
+import { revalidatePath } from 'next/cache';
 
-// 1. Garantir que a chave existe
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error('GEMINI_API_KEY não configurada no .env');
-}
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-export async function processTransactionWithAI(userInput: string) {
+export async function processFileWithAI(base64Data: string, mimeType: string) {
   try {
     const categories = await prisma.category.findMany({
       select: { name: true },
     });
     const categoryList = categories.map((c) => c.name).join(', ');
-
-    // 2. FORÇANDO A VERSÃO E O NOME TÉCNICO
-    // Testaremos o 'gemini-1.5-flash-latest' que costuma ser o alias mais estável
-    const model = genAI.getGenerativeModel(
-      {
-        model: 'gemini-2.5-flash',
-      },
-      { apiVersion: 'v1' }
-    );
-
-    // Pega a data atual no formato YYYY-MM-DD
     const today = new Date().toISOString().split('T')[0];
 
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
     const prompt = `
-  Você é um sistema de extração de dados financeiros de alta precisão.
-  Hoje é dia: ${today}.
+     Você é um especialista em contabilidade brasileira e leitura de extratos bancários (especialmente Itaú).
+  Analise o documento e extraia todas as transações.
   
-  Sua tarefa é transformar o texto do usuário em um array JSON de transações.
-  
-  REGRAS DE CATEGORIA:
-  1. Use EXATAMENTE um destes nomes: [${
+  Hoje é: ${today}.
+  Categorias permitidas: [${
     categoryList || 'Alimentação, Transporte, Lazer, Outros'
   }].
-  2. Nunca crie categorias novas. Se não souber onde colocar, use "Outros".
-  3. "Mercadinho" ou "iFood" devem ser "Alimentação".
-  4. "Bônus" ou "Salário" devem ser "Salário" (ou a categoria de entrada que estiver na lista).
 
-  REGRAS DE DATA:
-  - "Ontem" deve ser calculado com base em ${today}.
-  - Se o usuário não disser o ano, use o ano de ${today}.
-  - Formato: YYYY-MM-DD.
+  INSTRUÇÕES CRÍTICAS PARA IDENTIFICAÇÃO DE TIPO:
+  1. ANALISE O SINAL E O CONTEXTO: 
+     - "PAGTO", "PAG", "DEB.AUT", "PIX TRANSF", "PAG BOLETO", "SAQUE" ou valores com sinal (-) são EXPENSE (saídas).
+     - "REMUNERAÇÃO", "SALARIO", "PIX RECEBIDO", "TRANSF RECEBIDA" ou valores com sinal (+) são INCOME (entradas).
+  2. VALORES: Retorne sempre o valor absoluto (positivo) no campo 'amount'. O tipo será definido pelo campo 'type'.
+  3. CATEGORIZAÇÃO: Tente ser inteligente. "HUB LA" ou "MARKETPLACE" costumam ser compras (expense).
 
-  REGRAS DE FORMATO:
-  - Retorne APENAS o código JSON puro, sem textos explicativos, sem crases de markdown.
-  - Campos: description (string), amount (number positivo), type ("income" ou "expense"), category (string), date (string).
+  RETORNO:
+  - Responda APENAS com um array JSON.
+  - Campos: description, amount (number), type ("income" ou "expense"), category, date (YYYY-MM-DD).
+    `;
 
-  TEXTO DO USUÁRIO: "${userInput}"
-`;
+    // Enviamos a imagem junto com o prompt
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          data: base64Data,
+          mimeType: mimeType,
+        },
+      },
+    ]);
 
-    // 3. Chamada simples
-    const result = await model.generateContent(prompt);
     const text = result.response.text();
-
-    // Limpeza de Markdown
     const cleanJson = text.replace(/```json|```/g, '').trim();
     return JSON.parse(cleanJson);
-  } catch (error: any) {
-    // Se o erro 404 persistir, o problema é a região ou a conta do Google Cloud
-    console.error('ERRO REAL DA IA:', error.message);
-
-    // TENTATIVA DE FALLBACK (Se o Flash falhar, tenta o Pro)
-    if (error.message.includes('404')) {
-      console.log('Tentando fallback para gemini-pro...');
-      // Adicione aqui uma lógica similar usando "gemini-pro" se desejar
-    }
+  } catch (error) {
+    console.error('Erro na IA com arquivo:', error);
     return null;
   }
+}
+
+// app/_actions/ai-import.ts
+
+export async function saveTransactions(transactions: any[]) {
+  try {
+    const TEST_USER_ID = 'user-default-001';
+
+    await Promise.all(
+      transactions.map((tx) =>
+        prisma.transaction.create({
+          data: {
+            description: tx.description,
+            amount: tx.amount,
+            // Certifique-se que o Enum no seu Prisma bate com esses nomes
+            type: tx.type === 'income' ? 'DEPOSIT' : 'EXPENSE',
+            date: new Date(tx.date),
+            category: {
+              connect: {
+                // CORREÇÃO: Usando a chave composta name_userId
+                name_userId: {
+                  name: tx.category,
+                  userId: TEST_USER_ID,
+                },
+              },
+            },
+            user: {
+              connectOrCreate: {
+                where: { id: TEST_USER_ID },
+                create: {
+                  id: TEST_USER_ID,
+                  email: 'teste@finance.ai',
+                  name: 'Usuário de Teste',
+                },
+              },
+            },
+          },
+        })
+      )
+    );
+
+    revalidatePath('/Dashboard');
+    return { success: true };
+  } catch (error) {
+    console.error('Erro detalhado ao salvar:', error);
+    throw new Error('Falha ao salvar transações');
+  }
+}
+
+export async function getCategories2() {
+  const TEST_USER_ID = 'user-default-001'; // O ID que definimos como dono
+
+  return await prisma.category.findMany({
+    where: {
+      userId: TEST_USER_ID, // <--- FILTRO CRÍTICO AQUI
+    },
+    select: {
+      id: true,
+      name: true,
+    },
+    orderBy: {
+      name: 'asc',
+    },
+  });
 }
