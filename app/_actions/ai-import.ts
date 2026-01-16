@@ -3,6 +3,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { createClient } from '@/lib/supabase/server';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -57,47 +58,51 @@ export async function processFileWithAI(base64Data: string, mimeType: string) {
   }
 }
 
-// app/_actions/ai-import.ts
-
 export async function saveTransactions(transactions: any[]) {
-  try {
-    const TEST_USER_ID = 'user-default-001';
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    await Promise.all(
-      transactions.map((tx) =>
-        prisma.transaction.create({
-          data: {
-            description: tx.description,
-            amount: tx.amount,
-            // Certifique-se que o Enum no seu Prisma bate com esses nomes
-            type: tx.type === 'income' ? 'DEPOSIT' : 'EXPENSE',
-            date: new Date(tx.date),
-            category: {
-              connect: {
-                // CORREÇÃO: Usando a chave composta name_userId
+  if (!user) {
+    throw new Error('Usuário não autenticado');
+  }
+
+  try {
+    const userId = user.id;
+
+    for (const tx of transactions) {
+      await prisma.transaction.create({
+        data: {
+          description: tx.description,
+          amount: tx.amount,
+          type: tx.type === 'income' ? 'income' : 'expense',
+          date: new Date(tx.date),
+          category: {
+            connectOrCreate: {
+              where: {
                 name_userId: {
                   name: tx.category,
-                  userId: TEST_USER_ID,
+                  userId: userId,
                 },
               },
-            },
-            user: {
-              connectOrCreate: {
-                where: { id: TEST_USER_ID },
-                create: {
-                  id: TEST_USER_ID,
-                  email: 'teste@finance.ai',
-                  name: 'Usuário de Teste',
-                },
+              create: {
+                name: tx.category,
+                userId: userId,
+                color: '#71717a', // cor padrão cinza
+                type: 'expense', // tipo padrão
               },
             },
           },
-        })
-      )
-    );
+          user: {
+            connect: { id: userId },
+          },
+        },
+      });
+    }
 
     revalidatePath('/Dashboard');
-    return { success: true };
+    return { sucess: true };
   } catch (error) {
     console.error('Erro detalhado ao salvar:', error);
     throw new Error('Falha ao salvar transações');
@@ -105,11 +110,16 @@ export async function saveTransactions(transactions: any[]) {
 }
 
 export async function getCategories2() {
-  const TEST_USER_ID = 'user-default-001'; // O ID que definimos como dono
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return [];
 
   return await prisma.category.findMany({
     where: {
-      userId: TEST_USER_ID, // <--- FILTRO CRÍTICO AQUI
+      userId: user.id,
     },
     select: {
       id: true,

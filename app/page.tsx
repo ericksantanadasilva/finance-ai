@@ -1,14 +1,44 @@
-import React from 'react';
-import { Wallet, ArrowRight, Github, Mail } from 'lucide-react';
+'use client';
+
+import { useState } from 'react';
+import { Wallet, ArrowRight, Loader2 } from 'lucide-react';
+import { createBrowserClient } from '@supabase/ssr';
+import { loginWithEmail } from './auth/actions';
 
 export default function LoginPage() {
+  const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Cliente para o Login Social (Client Side)
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  const handleGoogleLogin = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+  };
+
+  async function handleSubmit(formData: FormData) {
+    setIsPending(true);
+    setError(null);
+    const result = await loginWithEmail(formData);
+    if (result?.error) {
+      setError(result.error);
+      setIsPending(false);
+    }
+  }
+
   return (
     <div className='min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4 relative overflow-hidden'>
-      {/* Background Glow Effect */}
       <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px]'></div>
 
       <div className='w-full max-w-md bg-zinc-900/50 border border-zinc-800 backdrop-blur-xl rounded-2xl p-8 relative z-10 shadow-2xl'>
-        {/* Logo & Header */}
         <div className='text-center mb-8'>
           <div className='inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-500 mb-4'>
             <Wallet className='w-6 h-6' />
@@ -23,7 +53,10 @@ export default function LoginPage() {
 
         {/* Social Login */}
         <div className='space-y-3 mb-6'>
-          <button className='w-full bg-white text-black hover:bg-zinc-200 font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all'>
+          <button
+            onClick={handleGoogleLogin}
+            className='w-full bg-white text-black hover:bg-zinc-200 font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all'
+          >
             <svg className='w-5 h-5' viewBox='0 0 24 24'>
               <path
                 fill='currentColor'
@@ -44,10 +77,6 @@ export default function LoginPage() {
             </svg>
             Entrar com Google
           </button>
-          <button className='w-full bg-zinc-800 text-white hover:bg-zinc-700 font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all border border-zinc-700'>
-            <Github className='w-5 h-5' />
-            Entrar com GitHub
-          </button>
         </div>
 
         <div className='relative mb-6'>
@@ -61,14 +90,22 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Form */}
-        <form className='space-y-4'>
+        {error && (
+          <div className='bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs p-3 rounded-lg mb-4'>
+            {error}
+          </div>
+        )}
+
+        {/* Form chamando a Server Action */}
+        <form action={handleSubmit} className='space-y-4'>
           <div>
             <label className='block text-xs font-medium text-zinc-400 mb-1.5'>
               Email
             </label>
             <input
+              name='email'
               type='email'
+              required
               className='w-full bg-zinc-950/50 border border-zinc-800 focus:border-emerald-500 rounded-lg px-4 py-2.5 text-sm text-white outline-none transition-all placeholder:text-zinc-700'
               placeholder='seu@email.com'
             />
@@ -78,19 +115,31 @@ export default function LoginPage() {
               Senha
             </label>
             <input
+              name='password'
               type='password'
+              required
               className='w-full bg-zinc-950/50 border border-zinc-800 focus:border-emerald-500 rounded-lg px-4 py-2.5 text-sm text-white outline-none transition-all placeholder:text-zinc-700'
               placeholder='••••••••'
             />
           </div>
-          <button className='w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-lg transition-all shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-2'>
-            Acessar Painel <ArrowRight className='w-4 h-4' />
+          <button
+            disabled={isPending}
+            type='submit'
+            className='w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg transition-all shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-2'
+          >
+            {isPending ? (
+              <Loader2 className='w-4 h-4 animate-spin' />
+            ) : (
+              <>
+                Acessar Painel <ArrowRight className='w-4 h-4' />
+              </>
+            )}
           </button>
         </form>
 
         <p className='mt-6 text-center text-xs text-zinc-500'>
           Não tem uma conta?{' '}
-          <a href='#' className='text-emerald-500 hover:underline'>
+          <a href='/register' className='text-emerald-500 hover:underline'>
             Crie agora
           </a>
         </p>
