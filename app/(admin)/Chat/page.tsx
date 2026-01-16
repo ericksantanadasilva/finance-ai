@@ -1,121 +1,211 @@
-import React from 'react';
-import { Send, Sparkles, Bot, User, Check, X, Target } from 'lucide-react';
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import {
+  Send,
+  Bot,
+  User,
+  Check,
+  X,
+  Target,
+  Loader2,
+  Sparkles,
+} from 'lucide-react';
+import { sendMessage } from '@/app/_actions/chat';
+import { createTransaction } from '@/app/_actions/transactions'; // Importe sua action de transação
 
 export default function AIAgentChat() {
+  const [messages, setMessages] = useState<any[]>([
+    {
+      role: 'bot',
+      content: 'Olá! Posso ajudar a registrar gastos ou analisar finanças.',
+      action: null,
+    },
+  ]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current)
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages]);
+
+  // FUNÇÃO: CONFIRMAR TRANSAÇÃO
+  const handleConfirm = async (index: number, data: any) => {
+    try {
+      const res = await createTransaction({
+        description: data.description,
+        amount: data.amount,
+        type: data.type,
+        category: data.category,
+        date: new Date().toISOString(),
+      });
+
+      if (res.success) {
+        // Remove o widget da mensagem após confirmar
+        setMessages((prev) =>
+          prev.map((msg, i) =>
+            i === index
+              ? {
+                  ...msg,
+                  action: null,
+                  content: `✅ Registrado: ${data.description}`,
+                }
+              : msg
+          )
+        );
+      }
+    } catch (error) {
+      alert('Erro ao salvar no banco');
+    }
+  };
+
+  // FUNÇÃO: CANCELAR/REMOVER WIDGET
+  const handleCancel = (index: number) => {
+    setMessages((prev) =>
+      prev.map((msg, i) => (i === index ? { ...msg, action: null } : msg))
+    );
+  };
+
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
+    const userMessage = input;
+    setInput('');
+    setMessages((prev) => [
+      ...prev,
+      { role: 'user', content: userMessage, action: null },
+    ]);
+    setIsLoading(true);
+
+    try {
+      const response = await sendMessage(userMessage, messages);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'bot',
+          content: response.reply,
+          action: response.action !== 'NONE' ? response : null,
+        },
+      ]);
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        { role: 'bot', content: 'Erro na conexão.', action: null },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className='h-screen bg-zinc-950 flex flex-col items-center pt-8 pb-4 px-4 font-sans'>
-      {/* Header do Chat */}
+    <div className='h-screen bg-zinc-950 flex flex-col items-center pt-8 pb-4 px-4'>
       <div className='text-center mb-6'>
-        <div className='inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-medium mb-2'>
-          <span className='relative flex h-2 w-2'>
-            <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75'></span>
-            <span className='relative inline-flex rounded-full h-2 w-2 bg-emerald-500'></span>
-          </span>
-          Online
-        </div>
         <h2 className='text-xl font-bold text-white'>Assistente Financeiro</h2>
-        <p className='text-xs text-zinc-500'>
-          Fale naturalmente para criar registros ou metas.
-        </p>
       </div>
 
-      {/* ÁREA DE MENSAGENS (Scroll) */}
-      <div className='flex-1 w-full max-w-2xl overflow-y-auto space-y-6 pr-2 mb-4 scrollbar-thin scrollbar-thumb-zinc-800'>
-        {/* Mensagem IA (Boas vindas) */}
-        <div className='flex gap-4'>
-          <div className='w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shrink-0'>
-            <Bot className='w-4 h-4 text-emerald-500' />
-          </div>
-          <div className='bg-zinc-900/50 border border-zinc-800 rounded-2xl rounded-tl-none p-4 max-w-[80%]'>
-            <p className='text-sm text-zinc-300'>
-              Olá! Posso ajudar a registrar gastos, criar metas ou analisar suas
-              finanças. Tente algo como:
-              <span className='block mt-2 text-emerald-400 italic'>
-                "Gastei R$ 120,00 no mercado hoje"
-              </span>
-            </p>
-          </div>
-        </div>
+      <div
+        ref={scrollRef}
+        className='flex-1 w-full max-w-2xl overflow-y-auto space-y-6 pr-2 mb-4 scrollbar-hide'
+      >
+        {messages.map((msg, index) => (
+          <div
+            key={index}
+            className={`flex gap-4 ${
+              msg.role === 'user' ? 'flex-row-reverse' : ''
+            }`}
+          >
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                msg.role === 'bot'
+                  ? 'bg-emerald-500/10 border border-emerald-500/20'
+                  : 'bg-zinc-800'
+              }`}
+            >
+              {msg.role === 'bot' ? (
+                <Bot className='w-4 h-4 text-emerald-500' />
+              ) : (
+                <User className='w-4 h-4 text-zinc-400' />
+              )}
+            </div>
 
-        {/* Mensagem Usuário */}
-        <div className='flex gap-4 flex-row-reverse'>
-          <div className='w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center shrink-0'>
-            <User className='w-4 h-4 text-zinc-400' />
-          </div>
-          <div className='bg-zinc-800 rounded-2xl rounded-tr-none p-4 max-w-[80%]'>
-            <p className='text-sm text-white'>
-              Quero guardar 2 mil reais pra comprar uma máquina de lavar
-            </p>
-          </div>
-        </div>
-
-        {/* Resposta IA (Action Widget) */}
-        <div className='flex gap-4'>
-          <div className='w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shrink-0'>
-            <Sparkles className='w-4 h-4 text-emerald-500' />
-          </div>
-          <div className='space-y-2 max-w-[80%]'>
-            <div className='bg-zinc-900/50 border border-zinc-800 rounded-2xl rounded-tl-none p-4'>
-              <p className='text-sm text-zinc-300 mb-3'>
-                Ótima iniciativa! Preparei essa meta para você. Posso confirmar?
-              </p>
-
-              {/* O WIDGET INTERATIVO DENTRO DO CHAT */}
-              <div className='bg-zinc-950 border border-zinc-800 rounded-xl p-4 group hover:border-zinc-700 transition-colors'>
-                <div className='flex items-center gap-3 mb-3'>
-                  <div className='bg-blue-500/20 p-2 rounded-lg text-blue-400'>
-                    <Target className='w-5 h-5' />
-                  </div>
-                  <div>
-                    <h4 className='font-bold text-white text-sm'>
-                      Máquina de Lavar
-                    </h4>
-                    <p className='text-xs text-zinc-500'>
-                      Nova Meta de Economia
-                    </p>
-                  </div>
-                </div>
-
-                <div className='flex justify-between items-end border-t border-zinc-800 pt-3'>
-                  <div>
-                    <span className='text-xs text-zinc-500 block'>Alvo</span>
-                    <span className='text-lg font-bold text-emerald-500'>
-                      R$ 2.000,00
-                    </span>
-                  </div>
-                  <div className='flex gap-2'>
-                    <button className='p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-red-400 transition-colors'>
-                      <X className='w-4 h-4' />
-                    </button>
-                    <button className='flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-all'>
-                      <Check className='w-3 h-3' /> Confirmar
-                    </button>
-                  </div>
-                </div>
+            <div className='space-y-3 max-w-[80%]'>
+              <div
+                className={`${
+                  msg.role === 'user'
+                    ? 'bg-zinc-800'
+                    : 'bg-zinc-900/50 border border-zinc-800'
+                } rounded-2xl p-4`}
+              >
+                <p className='text-sm text-zinc-300'>{msg.content}</p>
               </div>
+
+              {msg.action && (
+                <div className='bg-zinc-950 border border-zinc-800 rounded-xl p-4 border-l-4 border-l-emerald-500 animate-in slide-in-from-left-2 duration-300'>
+                  <div className='flex items-center gap-3 mb-3'>
+                    <div className='bg-emerald-500/20 p-2 rounded-lg text-emerald-400'>
+                      <Target className='w-5 h-5' />
+                    </div>
+                    <div>
+                      <h4 className='font-bold text-white text-sm'>
+                        {msg.action.data.description}
+                      </h4>
+                      {/* EXIBINDO A CATEGORIA AQUI */}
+                      <p className='text-[10px] text-zinc-500 uppercase font-bold tracking-widest'>
+                        📂 {msg.action.data.category || 'Geral'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className='flex justify-between items-center border-t border-zinc-800 pt-3'>
+                    <span className='text-lg font-bold text-emerald-500'>
+                      R${' '}
+                      {msg.action.data.amount.toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2,
+                      })}
+                    </span>
+                    <div className='flex gap-2'>
+                      {/* BOTÃO CANCELAR */}
+                      <button
+                        onClick={() => handleCancel(index)}
+                        className='p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-rose-500 transition-colors'
+                      >
+                        <X className='w-4 h-4' />
+                      </button>
+                      {/* BOTÃO CONFIRMAR */}
+                      <button
+                        onClick={() => handleConfirm(index, msg.action.data)}
+                        className='bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded-lg text-xs text-white font-medium flex items-center gap-1 transition-all'
+                      >
+                        <Check className='w-3 h-3' /> Confirmar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        ))}
+        {isLoading && (
+          <Loader2 className='w-5 h-5 animate-spin text-zinc-600 mx-auto' />
+        )}
       </div>
 
-      {/* INPUT AREA */}
       <div className='w-full max-w-2xl relative'>
-        <div className='absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-emerald-500/10'>
-          <Sparkles className='w-4 h-4 text-emerald-500' />
-        </div>
         <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
           type='text'
-          placeholder='Digite sua transação ou meta...'
-          className='w-full bg-zinc-900 border border-zinc-800 focus:border-emerald-500/50 rounded-xl pl-12 pr-12 py-4 text-sm text-white outline-none shadow-2xl placeholder:text-zinc-600'
+          placeholder='Ex: Gastei 50 reais com Uber'
+          className='w-full bg-zinc-900 border border-zinc-800 focus:border-emerald-500/50 rounded-xl pl-4 pr-12 py-4 text-sm text-white outline-none transition-all'
         />
-        <button className='absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors'>
+        <button
+          onClick={handleSend}
+          className='absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors'
+        >
           <Send className='w-4 h-4' />
         </button>
       </div>
-
-      <p className='text-[10px] text-zinc-600 mt-3'>
-        A IA pode cometer erros. Verifique os valores antes de confirmar.
-      </p>
     </div>
   );
 }
