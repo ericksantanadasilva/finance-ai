@@ -11,45 +11,56 @@ import {
   ArrowDownCircle,
   Loader2,
 } from 'lucide-react';
-import { createTransaction } from '../_actions/transactions';
-import { getCategories } from '../_actions/categories'; // Importando a busca de categorias
+import { createTransaction, updateTransaction } from '../_actions/transactions';
+import { getCategories } from '../_actions/categories';
 
 interface TransactionDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  editData?: any;
 }
 
 export default function TransactionDialog({
   isOpen,
   onClose,
+  editData,
 }: TransactionDialogProps) {
   const [isPending, startTransition] = useTransition();
-  const [type, setType] = useState<'income' | 'expense'>('expense');
 
   // Estados do Formulário
+  const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
-  // Estado para armazenar as categorias do banco
   const [dbCategories, setDbCategories] = useState<{ name: string }[]>([]);
-
-  // Categorias padrão sugeridas (Fallback)
   const defaultCategories = ['Alimentação', 'Lazer', 'Transporte', 'Saúde'];
 
-  // Carrega categorias do usuário ao abrir o modal
   useEffect(() => {
     if (isOpen) {
+      if (editData) {
+        setType(editData.type === 'income' ? 'income' : 'expense');
+        setAmount(editData.amount.toString());
+        setDescription(editData.description);
+        setCategory(editData.category?.name || '');
+        setDate(new Date(editData.date).toISOString().split('T')[0]);
+      } else {
+        setType('expense');
+        setAmount('');
+        setDescription('');
+        setCategory('');
+        setDate(new Date().toISOString().split('T')[0]);
+      }
+
       async function load() {
         const data = await getCategories();
         setDbCategories(data);
       }
       load();
     }
-  }, [isOpen]);
+  }, [isOpen, editData]);
 
-  // Merge das categorias (Set remove duplicatas)
   const allCategories = Array.from(
     new Set([...defaultCategories, ...dbCategories.map((c) => c.name)])
   ).sort();
@@ -63,19 +74,20 @@ export default function TransactionDialog({
     }
 
     startTransition(async () => {
-      const result = await createTransaction({
+      const payload = {
         amount: parseFloat(amount),
         description,
         category,
         date,
         type,
-      });
+      };
+
+      const result = editData
+        ? await updateTransaction(editData.id, payload)
+        : await createTransaction(payload);
 
       if (result.success) {
         onClose();
-        setAmount('');
-        setDescription('');
-        setCategory('');
       } else {
         alert('Erro ao salvar!');
       }
@@ -85,8 +97,11 @@ export default function TransactionDialog({
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4'>
       <div className='w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl relative animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]'>
+        {/* HEADER */}
         <div className='flex justify-between items-center p-6 border-b border-zinc-800'>
-          <h2 className='text-lg font-bold text-white'>Nova Transação</h2>
+          <h2 className='text-lg font-bold text-white'>
+            {editData ? 'Editar Transação' : 'Nova Transação'}
+          </h2>
           <button
             onClick={onClose}
             className='text-zinc-500 hover:text-white transition-colors'
@@ -95,15 +110,10 @@ export default function TransactionDialog({
           </button>
         </div>
 
+        {/* BODY / FORM */}
         <div className='p-6 overflow-y-auto custom-scrollbar'>
-          <form
-            className='space-y-6'
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSubmit();
-            }}
-          >
-            {/* TIPO */}
+          <form className='space-y-6' onSubmit={(e) => e.preventDefault()}>
+            {/* SELETOR DE TIPO */}
             <div className='grid grid-cols-2 gap-2 p-1 bg-zinc-900 rounded-lg border border-zinc-800'>
               <button
                 type='button'
@@ -129,7 +139,7 @@ export default function TransactionDialog({
               </button>
             </div>
 
-            {/* VALOR */}
+            {/* INPUT VALOR */}
             <div className='space-y-2'>
               <label className='text-xs font-medium text-zinc-400'>Valor</label>
               <div className='relative'>
@@ -151,7 +161,7 @@ export default function TransactionDialog({
               </div>
             </div>
 
-            {/* DESCRIÇÃO */}
+            {/* INPUT DESCRIÇÃO */}
             <div className='space-y-2'>
               <label className='text-xs font-medium text-zinc-400'>
                 Descrição
@@ -165,13 +175,13 @@ export default function TransactionDialog({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder='Ex: Almoço, Freelance...'
-                  className='w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white focus:border-zinc-700 outline-none transition-all placeholder:text-zinc-600'
+                  className='w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white focus:border-zinc-700 outline-none transition-all'
                 />
               </div>
             </div>
 
             <div className='grid grid-cols-2 gap-4'>
-              {/* CATEGORIA DINÂMICA */}
+              {/* SELECT CATEGORIA */}
               <div className='space-y-2'>
                 <label className='text-xs font-medium text-zinc-400'>
                   Categoria
@@ -197,7 +207,7 @@ export default function TransactionDialog({
                 </div>
               </div>
 
-              {/* DATA */}
+              {/* INPUT DATA */}
               <div className='space-y-2'>
                 <label className='text-xs font-medium text-zinc-400'>
                   Data
@@ -223,8 +233,7 @@ export default function TransactionDialog({
           <button
             type='button'
             onClick={onClose}
-            disabled={isPending}
-            className='flex-1 px-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-sm font-medium text-zinc-300 hover:text-white hover:bg-zinc-800 transition-all disabled:opacity-50'
+            className='flex-1 px-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-zinc-300 hover:text-white transition-all'
           >
             Cancelar
           </button>
@@ -234,18 +243,16 @@ export default function TransactionDialog({
             disabled={isPending}
             className={`flex-1 px-4 py-2.5 text-white rounded-lg text-sm font-medium transition-all shadow-lg flex items-center justify-center gap-2 ${
               type === 'income'
-                ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20'
-                : 'bg-rose-600 hover:bg-rose-500 shadow-rose-900/20'
-            } ${isPending ? 'opacity-70 cursor-wait' : ''}`}
+                ? 'bg-emerald-600 hover:bg-emerald-500'
+                : 'bg-rose-600 hover:bg-rose-500'
+            } ${isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
             {isPending ? (
-              <>
-                <Loader2 className='w-4 h-4 animate-spin' /> Salvando...
-              </>
-            ) : type === 'income' ? (
-              'Receber Valor'
+              <Loader2 className='w-4 h-4 animate-spin' />
+            ) : editData ? (
+              'Salvar Alterações'
             ) : (
-              'Pagar Valor'
+              'Adicionar'
             )}
           </button>
         </div>
