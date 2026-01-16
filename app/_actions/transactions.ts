@@ -2,37 +2,50 @@
 
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { createClient } from '@/lib/supabase/server';
+
+// Cores reais para salvar no banco em vez de classes CSS
+const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
+  Alimentação: '#ef4444',
+  Transporte: '#3b82f6',
+  Lazer: '#8b5cf6',
+  Casa: '#f59e0b',
+  Saúde: '#10b981',
+  Geral: '#71717a',
+};
 
 export async function createTransaction(data: any) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Não autorizado');
+
   try {
-    // 1. Garante o usuário demo
-    const user = await prisma.user.upsert({
-      where: { email: 'demo@finance.ai' },
-      update: {},
+    // 1. Garantir que o usuário exista na tabela User do Prisma (Sincronização)
+    await prisma.user.upsert({
+      where: { id: user.id },
+      update: { email: user.email! },
       create: {
-        email: 'demo@finance.ai',
-        name: 'Usuário Demo',
+        id: user.id,
+        email: user.email!,
+        name: user.user_metadata?.full_name || 'Usuário',
       },
     });
 
-    // 2. BUSCA ou CRIA a categoria PRIMEIRO (Garante que temos um ID)
+    // 2. Upsert da Categoria com a COR CORRETA (Hexadecimal)
     const category = await prisma.category.upsert({
-      where: {
-        name_userId: {
-          name: data.category,
-          userId: user.id,
-        },
-      },
-      update: {}, // Se já existir, não muda nada
+      where: { name_userId: { name: data.category, userId: user.id } },
+      update: {},
       create: {
         name: data.category,
         type: data.type,
         userId: user.id,
+        color: DEFAULT_CATEGORY_COLORS[data.category] || '#71717a', // Salva o HEX
       },
     });
 
-    // 3. CRIA a transação usando o categoryId (ID que acabamos de obter)
-    // Isso evita o erro de "Unknown argument category"
+    // 3. Criar a transação
     await prisma.transaction.create({
       data: {
         description: data.description,
@@ -40,36 +53,36 @@ export async function createTransaction(data: any) {
         date: new Date(data.date),
         type: data.type,
         userId: user.id,
-        categoryId: category.id, // Passamos o ID direto aqui
+        categoryId: category.id,
       },
     });
 
-    revalidatePath('/Dashboard'); // Atualiza a página do Dashboard após criar
+    revalidatePath('/Dashboard');
     return { success: true };
   } catch (error) {
-    console.error('ERRO NO BANCO:', error);
+    console.error('Erro ao criar transação:', error);
     return { success: false };
   }
 }
 
 export async function getTransactions() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
   try {
     const transactions = await prisma.transaction.findMany({
-      orderBy: {
-        date: 'desc',
-      },
-      take: 10, //pega só as 10 últimas pra não pesar
-      include: {
-        category: true, // traz os dados da categoria junto (cor, nome, etc)
-      },
+      where: { userId: user.id },
+      orderBy: { date: 'desc' },
+      include: { category: true },
     });
 
-    // Precisamos converter Decimal e Date para string/number simples
-    // para não dar erro de serialização no React
     return transactions.map((t) => ({
       ...t,
-      amount: t.amount.toNumber(), // converte Decimal para number
-      date: t.date.toISOString(), // converte Date para string ISO
+      amount: Number(t.amount),
+      date: t.date.toISOString(),
     }));
   } catch (error) {
     console.error('Erro ao buscar transações:', error);

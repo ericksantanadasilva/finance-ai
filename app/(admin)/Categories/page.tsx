@@ -6,7 +6,7 @@ export default async function CategoriesPage() {
   const categories = await getCategories();
 
   return (
-    <div className='min-h-screen bg-zinc-950 text-zinc-50 font-sans p-8 ml-64'>
+    <div className='min-h-screen bg-zinc-950 text-zinc-50 font-sans p-8'>
       <CategoriesClient initialCategories={categories} />
 
       <div className='mt-8 p-4 bg-purple-500/5 border border-purple-500/20 rounded-xl flex items-start gap-3'>

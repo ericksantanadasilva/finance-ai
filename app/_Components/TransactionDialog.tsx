@@ -1,6 +1,6 @@
-'use client'; // Obrigatório para interatividade
+'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useTransition, useEffect } from 'react';
 import {
   X,
   Calendar,
@@ -11,7 +11,8 @@ import {
   ArrowDownCircle,
   Loader2,
 } from 'lucide-react';
-import { createTransaction } from '../_actions/transactions'; // Importe a ação que criamos
+import { createTransaction } from '../_actions/transactions';
+import { getCategories } from '../_actions/categories'; // Importando a busca de categorias
 
 interface TransactionDialogProps {
   isOpen: boolean;
@@ -22,14 +23,36 @@ export default function TransactionDialog({
   isOpen,
   onClose,
 }: TransactionDialogProps) {
-  const [isPending, startTransition] = useTransition(); // Hook para Loading
+  const [isPending, startTransition] = useTransition();
   const [type, setType] = useState<'income' | 'expense'>('expense');
 
   // Estados do Formulário
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]); // Data de hoje
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // Estado para armazenar as categorias do banco
+  const [dbCategories, setDbCategories] = useState<{ name: string }[]>([]);
+
+  // Categorias padrão sugeridas (Fallback)
+  const defaultCategories = ['Alimentação', 'Lazer', 'Transporte', 'Saúde'];
+
+  // Carrega categorias do usuário ao abrir o modal
+  useEffect(() => {
+    if (isOpen) {
+      async function load() {
+        const data = await getCategories();
+        setDbCategories(data);
+      }
+      load();
+    }
+  }, [isOpen]);
+
+  // Merge das categorias (Set remove duplicatas)
+  const allCategories = Array.from(
+    new Set([...defaultCategories, ...dbCategories.map((c) => c.name)])
+  ).sort();
 
   if (!isOpen) return null;
 
@@ -39,7 +62,6 @@ export default function TransactionDialog({
       return;
     }
 
-    // Inicia a transação (envio para o servidor)
     startTransition(async () => {
       const result = await createTransaction({
         amount: parseFloat(amount),
@@ -50,10 +72,10 @@ export default function TransactionDialog({
       });
 
       if (result.success) {
-        onClose(); // Fecha o modal
-        // Limpa os campos
+        onClose();
         setAmount('');
         setDescription('');
+        setCategory('');
       } else {
         alert('Erro ao salvar!');
       }
@@ -63,7 +85,6 @@ export default function TransactionDialog({
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4'>
       <div className='w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl relative animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]'>
-        {/* HEADER */}
         <div className='flex justify-between items-center p-6 border-b border-zinc-800'>
           <h2 className='text-lg font-bold text-white'>Nova Transação</h2>
           <button
@@ -74,7 +95,6 @@ export default function TransactionDialog({
           </button>
         </div>
 
-        {/* BODY */}
         <div className='p-6 overflow-y-auto custom-scrollbar'>
           <form
             className='space-y-6'
@@ -151,7 +171,7 @@ export default function TransactionDialog({
             </div>
 
             <div className='grid grid-cols-2 gap-4'>
-              {/* CATEGORIA */}
+              {/* CATEGORIA DINÂMICA */}
               <div className='space-y-2'>
                 <label className='text-xs font-medium text-zinc-400'>
                   Categoria
@@ -168,10 +188,11 @@ export default function TransactionDialog({
                     <option value='' disabled>
                       Selecione...
                     </option>
-                    <option value='Casa'>🏠 Casa</option>
-                    <option value='Alimentação'>🍔 Alimentação</option>
-                    <option value='Transporte'>🚗 Transporte</option>
-                    <option value='Lazer'>🎉 Lazer</option>
+                    {allCategories.map((catName) => (
+                      <option key={catName} value={catName}>
+                        {catName}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
