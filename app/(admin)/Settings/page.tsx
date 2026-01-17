@@ -4,7 +4,7 @@ import { User, Moon, Sun, Smartphone, ShieldAlert, Save } from 'lucide-react';
 
 export default function SettingsPage() {
   return (
-    <div className='min-h-screen bg-zinc-950 text-zinc-50 font-sans p-8 ml-64'>
+    <div className='min-h-screen bg-zinc-950 text-zinc-50 font-sans p-8'>
       <div className='max-w-2xl'>
         <h1 className='text-2xl font-bold mb-2'>Configurações</h1>
         <p className='text-zinc-400 text-sm mb-8'>

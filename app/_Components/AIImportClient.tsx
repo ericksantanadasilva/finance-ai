@@ -13,12 +13,11 @@ export default function AIImportClient() {
   const [files, setFiles] = useState<File[]>([]);
   const [results, setResults] = useState<any[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>(
-    []
+    [],
   );
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Carrega as categorias do banco de dados ao iniciar
   useEffect(() => {
     async function loadCategories() {
       try {
@@ -93,162 +92,193 @@ export default function AIImportClient() {
   };
 
   return (
-    <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-      <div className='space-y-4'>
-        <div className='bg-zinc-900/30 border border-zinc-800 rounded-xl p-6 space-y-4'>
-          <div
-            {...getRootProps()}
-            className={`border-2 border-dashed rounded-xl p-8 cursor-pointer transition-all ${
-              isDragActive
-                ? 'border-purple-500 bg-purple-500/10'
-                : 'border-zinc-800 hover:border-zinc-700'
-            }`}
-          >
-            <input {...getInputProps()} />
-            <UploadCloud className='w-10 h-10 text-zinc-500 mx-auto mb-2' />
-            <p className='text-sm text-zinc-300 text-center'>
-              {files[0]?.name || 'Clique ou arraste o extrato'}
-            </p>
-          </div>
-          <button
-            onClick={handleProcess}
-            disabled={loading || files.length === 0}
-            className='w-full bg-purple-600 py-3 rounded-lg flex justify-center gap-2 transition-all hover:bg-purple-500'
-          >
-            {loading ? (
-              <Loader2 className='animate-spin' />
-            ) : (
-              <Sparkles className='w-4 h-4' />
-            )}
-            {loading ? 'Analisando documento...' : 'Processar com IA'}
-          </button>
-        </div>
-
-        {results.length > 0 && (
-          <button
-            onClick={handleSaveAll}
-            disabled={saving}
-            className='w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20 transition-all'
-          >
-            {saving ? (
-              <Loader2 className='animate-spin' />
-            ) : (
-              <Save className='w-5 h-5' />
-            )}
-            SALVAR {results.length} TRANSAÇÕES NO BANCO
-          </button>
-        )}
+    <div className='min-h-screen bg-zinc-950 text-zinc-50 p-4 sm:p-8 transition-all duration-300'>
+      {/* HEADER MOBILE-FRIENDLY */}
+      <div className='mb-8 pt-12 lg:pt-0'>
+        <h1 className='text-xl sm:text-2xl font-bold'>
+          Importação Inteligente
+        </h1>
+        <p className='text-zinc-400 text-xs sm:text-sm'>
+          Use a IA para extrair dados de extratos ou notas fiscais.
+        </p>
       </div>
 
-      <div className='bg-zinc-900 border border-zinc-800 rounded-xl flex flex-col h-[600px] overflow-hidden'>
-        <div className='p-4 border-b border-zinc-800 bg-zinc-950/50 flex justify-between items-center'>
-          <h3 className='text-sm font-bold text-zinc-200'>
-            Revisar Transações
-          </h3>
-          <span className='text-xs text-zinc-500'>Ajuste antes de salvar</span>
-        </div>
-
-        <div className='flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar'>
-          {results.map((item, idx) => (
+      {/* GRID RESPONSIVO: 1 coluna no mobile, 2 colunas no desktop */}
+      <div className='grid grid-cols-1 xl:grid-cols-2 gap-6'>
+        {/* ÁREA DE UPLOAD */}
+        <div className='space-y-4'>
+          <div className='bg-zinc-900/30 border border-zinc-800 rounded-2xl p-5 sm:p-6 space-y-4 shadow-xl'>
             <div
-              key={idx}
-              className={`bg-zinc-950 p-4 rounded-xl border-l-4 relative group ${
-                item.type === 'income'
-                  ? 'border-l-emerald-500'
-                  : 'border-l-rose-500'
+              {...getRootProps()}
+              className={`border-2 border-dashed rounded-xl p-6 sm:p-10 cursor-pointer transition-all flex flex-col items-center justify-center ${
+                isDragActive
+                  ? 'border-purple-500 bg-purple-500/10'
+                  : 'border-zinc-800 hover:border-zinc-700 bg-zinc-950/20'
               }`}
             >
-              <button
-                onClick={() => handleRemoveItem(idx)}
-                className='absolute top-2 right-2 text-zinc-600 hover:text-rose-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity'
-              >
-                <Trash2 className='w-4 h-4' />
-              </button>
-
-              <div className='grid grid-cols-2 gap-3'>
-                <div className='col-span-2'>
-                  <label className='text-[10px] text-zinc-500 uppercase'>
-                    Descrição
-                  </label>
-                  <input
-                    className='w-full bg-transparent text-sm text-white border-b border-zinc-800 focus:border-purple-500 outline-none pb-1'
-                    value={item.description}
-                    onChange={(e) =>
-                      handleUpdateItem(idx, 'description', e.target.value)
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className='text-[10px] text-zinc-500 uppercase'>
-                    Valor (R$)
-                  </label>
-                  <input
-                    type='number'
-                    className='w-full bg-transparent text-sm text-white border-b border-zinc-800 outline-none pb-1'
-                    value={item.amount}
-                    onChange={(e) =>
-                      handleUpdateItem(
-                        idx,
-                        'amount',
-                        parseFloat(e.target.value)
-                      )
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className='text-[10px] text-zinc-500 uppercase'>
-                    Categoria
-                  </label>
-                  <select
-                    className='w-full bg-zinc-900 text-sm text-zinc-200 border-b border-zinc-800 outline-none pb-1 h-7 cursor-pointer'
-                    value={item.category}
-                    onChange={(e) =>
-                      handleUpdateItem(idx, 'category', e.target.value)
-                    }
-                  >
-                    <option value=''>Selecione...</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.name}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className='text-[10px] text-zinc-500 uppercase'>
-                    Tipo
-                  </label>
-                  <select
-                    className='w-full bg-zinc-900 text-xs text-zinc-300 border-b border-zinc-800 outline-none'
-                    value={item.type}
-                    onChange={(e) =>
-                      handleUpdateItem(idx, 'type', e.target.value)
-                    }
-                  >
-                    <option value='expense'>Saída</option>
-                    <option value='income'>Entrada</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className='text-[10px] text-zinc-500 uppercase'>
-                    Data
-                  </label>
-                  <input
-                    type='date'
-                    className='w-full bg-transparent text-xs text-zinc-300 border-b border-zinc-800 outline-none'
-                    value={item.date}
-                    onChange={(e) =>
-                      handleUpdateItem(idx, 'date', e.target.value)
-                    }
-                  />
-                </div>
-              </div>
+              <input {...getInputProps()} />
+              <UploadCloud className='w-10 h-10 text-zinc-600 mb-3' />
+              <p className='text-sm text-zinc-300 text-center font-medium'>
+                {files[0]?.name || 'Toque para selecionar ou arraste o extrato'}
+              </p>
+              <p className='text-[10px] text-zinc-500 mt-2'>PDF, PNG ou JPG</p>
             </div>
-          ))}
+
+            <button
+              onClick={handleProcess}
+              disabled={loading || files.length === 0}
+              className='w-full bg-purple-600 py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-900/20 text-sm font-bold'
+            >
+              {loading ? (
+                <Loader2 className='animate-spin w-4 h-4' />
+              ) : (
+                <Sparkles className='w-4 h-4 text-purple-200' />
+              )}
+              {loading ? 'Analisando documento...' : 'Processar com IA'}
+            </button>
+          </div>
+
+          {results.length > 0 && (
+            <button
+              onClick={handleSaveAll}
+              disabled={saving}
+              className='w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20 transition-all animate-in slide-in-from-bottom-2'
+            >
+              {saving ? (
+                <Loader2 className='animate-spin w-5 h-5' />
+              ) : (
+                <Save className='w-5 h-5' />
+              )}
+              SALVAR NO BANCO
+            </button>
+          )}
+        </div>
+
+        {/* ÁREA DE REVISÃO */}
+        <div className='bg-zinc-900/40 border border-zinc-800 rounded-2xl flex flex-col h-[500px] sm:h-[600px] overflow-hidden shadow-2xl'>
+          <div className='p-4 border-b border-zinc-800 bg-zinc-950/50 flex justify-between items-center'>
+            <div className='flex items-center gap-2'>
+              <h3 className='text-sm font-bold text-zinc-200'>Revisão IA</h3>
+              <span className='bg-zinc-800 text-zinc-400 text-[10px] px-2 py-0.5 rounded-full'>
+                {results.length}
+              </span>
+            </div>
+            <span className='text-[10px] text-zinc-500 uppercase font-bold tracking-tight'>
+              Ajuste antes de salvar
+            </span>
+          </div>
+
+          <div className='flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 custom-scrollbar'>
+            {results.length === 0 ? (
+              <div className='h-full flex flex-col items-center justify-center text-zinc-600 space-y-2 opacity-50'>
+                <Sparkles className='w-8 h-8' />
+                <p className='text-xs italic'>
+                  Os resultados aparecerão aqui após o processamento.
+                </p>
+              </div>
+            ) : (
+              results.map((item, idx) => (
+                <div
+                  key={idx}
+                  className={`bg-zinc-950 p-4 rounded-xl border-l-4 relative group transition-all hover:bg-zinc-900/50 ${
+                    item.type === 'income'
+                      ? 'border-l-emerald-500'
+                      : 'border-l-rose-500'
+                  }`}
+                >
+                  <button
+                    onClick={() => handleRemoveItem(idx)}
+                    className='absolute top-2 right-2 text-zinc-700 hover:text-rose-500 p-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity'
+                  >
+                    <Trash2 className='w-4 h-4' />
+                  </button>
+
+                  <div className='grid grid-cols-2 gap-x-3 gap-y-4'>
+                    <div className='col-span-2'>
+                      <label className='text-[9px] font-bold text-zinc-500 uppercase mb-1 block'>
+                        Descrição
+                      </label>
+                      <input
+                        className='w-full bg-transparent text-sm text-white border-b border-zinc-800 focus:border-purple-500 outline-none pb-1 transition-colors'
+                        value={item.description}
+                        onChange={(e) =>
+                          handleUpdateItem(idx, 'description', e.target.value)
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className='text-[9px] font-bold text-zinc-500 uppercase mb-1 block'>
+                        Valor (R$)
+                      </label>
+                      <input
+                        type='number'
+                        className='w-full bg-transparent text-sm text-white border-b border-zinc-800 focus:border-purple-500 outline-none pb-1'
+                        value={item.amount}
+                        onChange={(e) =>
+                          handleUpdateItem(
+                            idx,
+                            'amount',
+                            parseFloat(e.target.value),
+                          )
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className='text-[9px] font-bold text-zinc-500 uppercase mb-1 block'>
+                        Categoria
+                      </label>
+                      <select
+                        className='w-full bg-zinc-900 text-xs text-zinc-200 border-b border-zinc-800 outline-none pb-1 h-7'
+                        value={item.category}
+                        onChange={(e) =>
+                          handleUpdateItem(idx, 'category', e.target.value)
+                        }
+                      >
+                        <option value=''>Selecione...</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.name}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className='text-[9px] font-bold text-zinc-500 uppercase mb-1 block'>
+                        Tipo
+                      </label>
+                      <select
+                        className='w-full bg-zinc-900 text-[10px] text-zinc-300 border-b border-zinc-800 outline-none'
+                        value={item.type}
+                        onChange={(e) =>
+                          handleUpdateItem(idx, 'type', e.target.value)
+                        }
+                      >
+                        <option value='expense'>Saída</option>
+                        <option value='income'>Entrada</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className='text-[9px] font-bold text-zinc-500 uppercase mb-1 block'>
+                        Data
+                      </label>
+                      <input
+                        type='date'
+                        className='w-full bg-transparent text-[10px] text-zinc-300 border-b border-zinc-800 outline-none [&::-webkit-calendar-picker-indicator]:invert'
+                        value={item.date}
+                        onChange={(e) =>
+                          handleUpdateItem(idx, 'date', e.target.value)
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>
