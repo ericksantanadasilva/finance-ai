@@ -26,14 +26,20 @@ export default function AIAgentChat() {
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll suave para a última mensagem
-  useEffect(() => {
+  // FUNÇÃO DE SCROLL: Agora com um pequeno timeout para esperar o teclado abrir
+  const scrollToBottom = () => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: 'smooth',
-      });
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({
+          top: scrollRef.current.scrollHeight,
+          behavior: 'smooth',
+        });
+      }, 100);
     }
+  };
+
+  useEffect(() => {
+    scrollToBottom();
   }, [messages, isLoading]);
 
   const handleConfirm = async (index: number, data: any) => {
@@ -45,7 +51,6 @@ export default function AIAgentChat() {
         category: data.category,
         date: new Date().toISOString(),
       });
-
       if (res.success) {
         setMessages((prev) =>
           prev.map((msg, i) =>
@@ -101,19 +106,23 @@ export default function AIAgentChat() {
   };
 
   return (
-    /* lg:ml-64 para alinhar com a sidebar. h-[100dvh] para evitar bugs de scroll no Safari mobile */
-    <div className='h-[100dvh] bg-zinc-950 flex flex-col items-center transition-all duration-300'>
-      {/* HEADER: pt-16 para não bater no botão hambúrguer mobile */}
-      <div className='w-full text-center py-6 pt-16 lg:pt-8 border-b border-zinc-900 bg-zinc-950/50 backdrop-blur-md sticky top-0 z-10'>
-        <h2 className='text-lg sm:text-xl font-bold text-white'>
+    /**
+     * MUDANÇA CHAVE:
+     * 1. h-[100svh] garante que o container sempre respeite a altura visível, mesmo com teclado.
+     * 2. overflow-hidden no pai evita que o body inteiro role, focando o scroll apenas na lista.
+     */
+    <div className='h-[100svh] bg-zinc-950 flex flex-col items-center lg:ml-64 transition-all duration-300 overflow-hidden'>
+      {/* HEADER FIXO */}
+      <div className='w-full text-center py-4 pt-14 lg:pt-6 border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-md shrink-0'>
+        <h2 className='text-base sm:text-lg font-bold text-white'>
           Assistente Financeiro
         </h2>
-        <p className='text-[10px] text-zinc-500 uppercase tracking-widest'>
+        <p className='text-[9px] text-zinc-500 uppercase tracking-widest'>
           Powered by Gemini IA
         </p>
       </div>
 
-      {/* ÁREA DE MENSAGENS */}
+      {/* ÁREA DE MENSAGENS: flex-1 permite que ela encolha quando o teclado sobe */}
       <div
         ref={scrollRef}
         className='flex-1 w-full max-w-3xl overflow-y-auto p-4 space-y-6 scrollbar-hide'
@@ -121,14 +130,10 @@ export default function AIAgentChat() {
         {messages.map((msg, index) => (
           <div
             key={index}
-            className={`flex gap-3 sm:gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+            className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
           >
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${
-                msg.role === 'bot'
-                  ? 'bg-emerald-500/10 border-emerald-500/20'
-                  : 'bg-zinc-800 border-zinc-700'
-              }`}
+              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${msg.role === 'bot' ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-zinc-800 border-zinc-700'}`}
             >
               {msg.role === 'bot' ? (
                 <Bot className='w-4 h-4 text-emerald-500' />
@@ -136,20 +141,14 @@ export default function AIAgentChat() {
                 <User className='w-4 h-4 text-zinc-400' />
               )}
             </div>
-
             <div className={`space-y-3 max-w-[85%] sm:max-w-[75%]`}>
               <div
-                className={`${
-                  msg.role === 'user'
-                    ? 'bg-emerald-600 text-white rounded-2xl rounded-tr-none'
-                    : 'bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-2xl rounded-tl-none'
-                } p-3 sm:p-4 shadow-sm`}
+                className={`${msg.role === 'user' ? 'bg-emerald-600 text-white rounded-2xl rounded-tr-none' : 'bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-2xl rounded-tl-none'} p-3 shadow-sm`}
               >
                 <p className='text-sm leading-relaxed'>{msg.content}</p>
               </div>
-
               {msg.action && (
-                <div className='bg-zinc-900 border border-zinc-800 rounded-2xl p-4 border-l-4 border-l-emerald-500 animate-in fade-in slide-in-from-bottom-2'>
+                <div className='bg-zinc-900 border border-zinc-800 rounded-2xl p-4 border-l-4 border-l-emerald-500'>
                   <div className='flex items-center gap-3 mb-4'>
                     <div className='bg-emerald-500/20 p-2 rounded-lg text-emerald-400'>
                       <Target className='w-5 h-5' />
@@ -164,7 +163,7 @@ export default function AIAgentChat() {
                     </div>
                   </div>
                   <div className='flex justify-between items-center border-t border-zinc-800 pt-3 gap-2'>
-                    <span className='text-base sm:text-lg font-bold text-emerald-500'>
+                    <span className='text-base font-bold text-emerald-500'>
                       R${' '}
                       {msg.action.data.amount.toLocaleString('pt-BR', {
                         minimumFractionDigits: 2,
@@ -173,15 +172,15 @@ export default function AIAgentChat() {
                     <div className='flex gap-2'>
                       <button
                         onClick={() => handleCancel(index)}
-                        className='p-2 hover:bg-zinc-800 rounded-lg text-zinc-500'
+                        className='p-2 text-zinc-500'
                       >
                         <X className='w-4 h-4' />
                       </button>
                       <button
                         onClick={() => handleConfirm(index, msg.action.data)}
-                        className='bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded-lg text-xs text-white font-medium flex items-center gap-1 transition-all'
+                        className='bg-emerald-600 px-3 py-1.5 rounded-lg text-xs text-white font-medium'
                       >
-                        <Check className='w-3 h-3' /> Confirmar
+                        Confirmar
                       </button>
                     </div>
                   </div>
@@ -191,27 +190,28 @@ export default function AIAgentChat() {
           </div>
         ))}
         {isLoading && (
-          <div className='flex gap-3 items-center text-zinc-500 text-xs italic ml-12 animate-pulse'>
-            <Sparkles className='w-3 h-3' /> Digitando...
+          <div className='flex gap-3 items-center text-zinc-500 text-xs italic ml-11 animate-pulse'>
+            <Sparkles className='w-3 h-3' /> Analisando...
           </div>
         )}
       </div>
 
-      {/* INPUT AREA: Sticky para mobile */}
-      <div className='w-full max-w-3xl p-4 bg-zinc-950/80 backdrop-blur-md'>
+      {/* INPUT AREA: Agora sem o 'sticky' mas com 'shrink-0' para ficar sempre na base do container flex */}
+      <div className='w-full max-w-3xl p-4 bg-zinc-950 border-t border-zinc-900 shrink-0'>
         <div className='relative flex items-center'>
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onFocus={scrollToBottom} // Garante o scroll quando o teclado sobe
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             type='text'
             placeholder='Fale com a IA...'
-            className='w-full bg-zinc-900 border border-zinc-800 focus:border-emerald-500/50 rounded-2xl pl-4 pr-12 py-3.5 text-sm text-white outline-none transition-all placeholder:text-zinc-600'
+            className='w-full bg-zinc-900 border border-zinc-800 focus:border-emerald-500/50 rounded-2xl pl-4 pr-12 py-3.5 text-sm text-white outline-none transition-all'
           />
           <button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
-            className='absolute right-2 p-2 bg-emerald-600 disabled:bg-zinc-800 disabled:text-zinc-600 text-white rounded-xl transition-all'
+            className='absolute right-2 p-2 bg-emerald-600 disabled:bg-zinc-800 disabled:text-zinc-600 text-white rounded-xl'
           >
             {isLoading ? (
               <Loader2 className='w-4 h-4 animate-spin' />
@@ -220,8 +220,8 @@ export default function AIAgentChat() {
             )}
           </button>
         </div>
-        <p className='text-[9px] text-center text-zinc-600 mt-2 uppercase tracking-tighter'>
-          A IA pode cometer erros. Revise os valores antes de confirmar.
+        <p className='text-[8px] text-center text-zinc-600 mt-2 uppercase'>
+          Revise os valores antes de confirmar.
         </p>
       </div>
     </div>
