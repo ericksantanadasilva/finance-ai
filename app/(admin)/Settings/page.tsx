@@ -1,111 +1,180 @@
-// app/settings/page.tsx
-import React from 'react';
-import { User, Moon, Sun, Smartphone, ShieldAlert, Save } from 'lucide-react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import {
+  User,
+  Moon,
+  Sun,
+  Smartphone,
+  ShieldAlert,
+  Save,
+  Loader2,
+} from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { updateProfile, getUserProfile } from '@/app/_actions/settings';
 
 export default function SettingsPage() {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+
+  // Estados do Perfil
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+
+  useEffect(() => {
+    setMounted(true);
+
+    async function loadData() {
+      // Usamos a Action para buscar os dados de forma segura
+      const profile = await getUserProfile();
+      if (profile) {
+        setName(profile.name);
+        setEmail(profile.email || '');
+      }
+    }
+
+    loadData();
+  }, []);
+
+  if (!mounted) return null;
+
+  async function handleSave() {
+    if (!name.trim()) return alert('O nome não pode estar vazio');
+
+    setIsPending(true);
+    try {
+      const res = await updateProfile({ name });
+      if (res.success) alert('Perfil atualizado com sucesso!');
+    } catch (error) {
+      alert('Erro ao atualizar perfil.');
+    } finally {
+      setIsPending(false);
+    }
+  }
+
   return (
-    <div className='min-h-screen bg-zinc-950 text-zinc-50 font-sans p-8'>
-      <div className='max-w-2xl'>
-        <h1 className='text-2xl font-bold mb-2'>Configurações</h1>
-        <p className='text-zinc-400 text-sm mb-8'>
+    <div className='min-h-screen bg-zinc-950 text-zinc-50 font-sans p-4 sm:p-8 lg:ml-64 transition-all duration-300'>
+      <div className='max-w-2xl mx-auto lg:mx-0 pt-10 lg:pt-0'>
+        <h1 className='text-xl sm:text-2xl font-bold mb-2 text-white'>
+          Configurações
+        </h1>
+        <p className='text-zinc-400 text-xs sm:text-sm mb-8'>
           Gerencie suas preferências e dados da conta.
         </p>
 
-        {/* SEÇÃO 1: PERFIL PÚBLICO */}
-        <section className='mb-10'>
-          <h2 className='text-sm font-semibold text-zinc-500 uppercase tracking-wider mb-4 flex items-center gap-2'>
-            <User className='w-4 h-4' /> Perfil
+        {/* SEÇÃO 1: PERFIL */}
+        <section className='mb-10 animate-in fade-in slide-in-from-bottom-3'>
+          <h2 className='text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2'>
+            <User className='w-3.5 h-3.5' /> Perfil
           </h2>
 
-          <div className='bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 space-y-6'>
-            {/* Foto de Perfil */}
-            <div className='flex items-center gap-6'>
-              <div className='w-20 h-20 rounded-full bg-zinc-800 flex items-center justify-center text-2xl font-bold border-2 border-zinc-700'>
-                VC
+          <div className='bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 space-y-6'>
+            <div className='flex flex-col sm:flex-row items-center gap-6'>
+              <div className='w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center text-2xl font-bold border-2 border-emerald-500/20 text-emerald-500 shadow-inner'>
+                {name ? name.substring(0, 2).toUpperCase() : '??'}
               </div>
-              <div>
-                <button className='bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 rounded-lg text-xs font-medium transition-all border border-zinc-700'>
+              <div className='text-center sm:text-left'>
+                <button className='bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all border border-zinc-700 shadow-sm'>
                   Alterar Foto
                 </button>
-                <p className='text-xs text-zinc-500 mt-2'>
+                <p className='text-[10px] text-zinc-500 mt-2 uppercase tracking-tighter'>
                   JPG, GIF ou PNG. Max 2MB.
                 </p>
               </div>
             </div>
 
-            {/* Inputs */}
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               <div className='space-y-1.5'>
-                <label className='text-xs text-zinc-400'>Nome Completo</label>
+                <label className='text-[10px] font-bold text-zinc-500 uppercase'>
+                  Nome Completo
+                </label>
                 <input
                   type='text'
-                  defaultValue='Você'
-                  className='w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm focus:border-emerald-500 outline-none'
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder='Carregando...'
+                  className='w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:border-emerald-500 outline-none transition-all text-white'
                 />
               </div>
               <div className='space-y-1.5'>
-                <label className='text-xs text-zinc-400'>Email</label>
+                <label className='text-[10px] font-bold text-zinc-500 uppercase'>
+                  Email da Conta
+                </label>
                 <input
                   type='email'
-                  defaultValue='voce@email.com'
-                  className='w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm focus:border-emerald-500 outline-none'
+                  value={email}
                   disabled
+                  className='w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm opacity-50 cursor-not-allowed italic text-zinc-400'
                 />
               </div>
             </div>
           </div>
         </section>
 
-        {/* SEÇÃO 2: APARÊNCIA (THEME TOGGLE) */}
+        {/* SEÇÃO 2: APARÊNCIA */}
         <section className='mb-10'>
-          <h2 className='text-sm font-semibold text-zinc-500 uppercase tracking-wider mb-4 flex items-center gap-2'>
-            <Smartphone className='w-4 h-4' /> Aparência
+          <h2 className='text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2'>
+            <Smartphone className='w-3.5 h-3.5' /> Aparência
           </h2>
 
-          <div className='bg-zinc-900/50 border border-zinc-800 rounded-xl p-1 grid grid-cols-3 gap-1'>
-            {/* Light Mode Option */}
-            <button className='flex flex-col items-center gap-2 p-4 rounded-lg hover:bg-zinc-800 transition-all opacity-50 hover:opacity-100'>
-              <Sun className='w-6 h-6' />
-              <span className='text-xs font-medium'>Claro</span>
+          <div className='bg-zinc-900/40 border border-zinc-800 rounded-2xl p-1.5 grid grid-cols-3 gap-1.5'>
+            <button
+              onClick={() => setTheme('light')}
+              className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all ${theme === 'light' ? 'bg-white text-zinc-950 shadow-xl' : 'text-zinc-500 hover:text-zinc-300'}`}
+            >
+              <Sun className='w-5 h-5' />
+              <span className='text-[10px] font-bold uppercase'>Claro</span>
             </button>
 
-            {/* Dark Mode Option (Active) */}
-            <button className='flex flex-col items-center gap-2 p-4 rounded-lg bg-zinc-800 border border-zinc-700 shadow-sm'>
-              <Moon className='w-6 h-6 text-emerald-500' />
-              <span className='text-xs font-medium text-white'>Escuro</span>
+            <button
+              onClick={() => setTheme('dark')}
+              className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all ${theme === 'dark' ? 'bg-zinc-800 text-emerald-500 shadow-xl border border-zinc-700' : 'text-zinc-500 hover:text-zinc-300'}`}
+            >
+              <Moon className='w-5 h-5' />
+              <span className='text-[10px] font-bold uppercase'>Escuro</span>
             </button>
 
-            {/* System Option */}
-            <button className='flex flex-col items-center gap-2 p-4 rounded-lg hover:bg-zinc-800 transition-all opacity-50 hover:opacity-100'>
-              <Smartphone className='w-6 h-6' />
-              <span className='text-xs font-medium'>Sistema</span>
+            <button
+              onClick={() => setTheme('system')}
+              className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all ${theme === 'system' ? 'bg-zinc-800 text-white shadow-xl' : 'text-zinc-500 hover:text-zinc-300'}`}
+            >
+              <Smartphone className='w-5 h-5' />
+              <span className='text-[10px] font-bold uppercase'>Sistema</span>
             </button>
           </div>
         </section>
 
         {/* SEÇÃO 3: ZONA DE PERIGO */}
-        <section>
-          <h2 className='text-sm font-semibold text-rose-500 uppercase tracking-wider mb-4 flex items-center gap-2'>
-            <ShieldAlert className='w-4 h-4' /> Zona de Perigo
-          </h2>
-
-          <div className='border border-rose-900/30 bg-rose-950/10 rounded-xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4'>
+        <section className='mb-24'>
+          <div className='border border-rose-900/30 bg-rose-500/5 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4'>
             <div>
-              <h4 className='text-white font-medium text-sm'>Deletar Conta</h4>
+              <h4 className='text-rose-500 font-bold text-sm flex items-center gap-2'>
+                <ShieldAlert className='w-4 h-4' /> Deletar Conta
+              </h4>
               <p className='text-zinc-500 text-xs mt-1'>
-                Todas as suas transações e metas serão apagadas permanentemente.
+                Esta ação é irreversível. Todas as transações serão apagadas.
               </p>
             </div>
-            <button className='bg-rose-600/10 hover:bg-rose-600 hover:text-white text-rose-500 border border-rose-600/20 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap'>
-              Excluir minha conta
+            <button className='w-full sm:w-auto bg-rose-600/10 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-600/20 px-6 py-2.5 rounded-xl text-xs font-bold transition-all'>
+              Excluir Conta
             </button>
           </div>
         </section>
 
-        {/* Botão Salvar Flutuante ou Fixo */}
-        <div className='mt-8 flex justify-end'>
-          <button className='bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 shadow-lg shadow-emerald-900/20'>
-            <Save className='w-4 h-4' /> Salvar Alterações
+        {/* BOTÃO SALVAR */}
+        <div className='fixed bottom-6 right-6 left-6 sm:relative sm:bottom-0 sm:right-0 sm:left-0 mt-8 flex justify-end'>
+          <button
+            onClick={handleSave}
+            disabled={isPending}
+            className='w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-2xl shadow-emerald-500/20 active:scale-95'
+          >
+            {isPending ? (
+              <Loader2 className='w-4 h-4 animate-spin' />
+            ) : (
+              <Save className='w-4 h-4' />
+            )}
+            Salvar Alterações
           </button>
         </div>
       </div>
