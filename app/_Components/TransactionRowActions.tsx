@@ -52,7 +52,7 @@ export function TransactionRowActions({
             onClick={() => setIsOpen(false)}
           ></div>
 
-          <div className='absolute right-0 mt-2 w-36 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl z-20 overflow-hidden animate-in fade-in zoom-in duration-200'>
+          <div className='absolute right-0 bottom-full mb-2 md:top-full md:bottom-auto md:mt-2 w-36 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl z-20 overflow-hidden animate-in fade-in zoom-in duration-200'>
             <button
               onClick={() => {
                 onEdit();

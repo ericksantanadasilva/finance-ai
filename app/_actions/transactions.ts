@@ -4,7 +4,6 @@ import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 
-// Cores reais para salvar no banco em vez de classes CSS
 const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
   Alimentação: '#ef4444',
   Transporte: '#3b82f6',
@@ -22,7 +21,6 @@ export async function createTransaction(data: any) {
   if (!user) throw new Error('Não autorizado');
 
   try {
-    // 1. Garantir que o usuário exista na tabela User do Prisma (Sincronização)
     await prisma.user.upsert({
       where: { id: user.id },
       update: { email: user.email! },
@@ -33,7 +31,6 @@ export async function createTransaction(data: any) {
       },
     });
 
-    // 2. Upsert da Categoria com a COR CORRETA (Hexadecimal)
     const category = await prisma.category.upsert({
       where: { name_userId: { name: data.category, userId: user.id } },
       update: {},
@@ -41,16 +38,27 @@ export async function createTransaction(data: any) {
         name: data.category,
         type: data.type,
         userId: user.id,
-        color: DEFAULT_CATEGORY_COLORS[data.category] || '#71717a', // Salva o HEX
+        color: DEFAULT_CATEGORY_COLORS[data.category] || '#71717a',
       },
     });
 
-    // 3. Criar a transação
+    // Lógica de Referência: Para transações manuais, usamos o 1º dia do mês da transação
+    const tDate = new Date(data.date);
+    const referenceDate = new Date(
+      tDate.getFullYear(),
+      tDate.getMonth(),
+      1,
+      12,
+      0,
+      0,
+    );
+
     await prisma.transaction.create({
       data: {
         description: data.description,
         amount: data.amount,
-        date: new Date(data.date),
+        date: tDate,
+        referenceDate: referenceDate, // Campo de competência
         type: data.type,
         userId: user.id,
         categoryId: category.id,
@@ -58,6 +66,7 @@ export async function createTransaction(data: any) {
     });
 
     revalidatePath('/Dashboard');
+    revalidatePath('/Transactions');
     return { success: true };
   } catch (error) {
     console.error('Erro ao criar transação:', error);
@@ -83,6 +92,7 @@ export async function getTransactions() {
       ...t,
       amount: Number(t.amount),
       date: t.date.toISOString(),
+      referenceDate: t.referenceDate.toISOString(), // Retornando referência
     }));
   } catch (error) {
     console.error('Erro ao buscar transações:', error);
@@ -90,7 +100,6 @@ export async function getTransactions() {
   }
 }
 
-// Adicione esta função ao seu arquivo de actions existente
 export async function getAllTransactions(query?: string) {
   const supabase = await createClient();
   const {
@@ -103,9 +112,7 @@ export async function getAllTransactions(query?: string) {
       where: {
         userId: user.id,
         ...(query
-          ? {
-              description: { contains: query, mode: 'insensitive' },
-            }
+          ? { description: { contains: query, mode: 'insensitive' } }
           : {}),
       },
       orderBy: { date: 'desc' },
@@ -116,6 +123,7 @@ export async function getAllTransactions(query?: string) {
       ...t,
       amount: Number(t.amount),
       date: t.date.toISOString(),
+      referenceDate: t.referenceDate.toISOString(),
     }));
   } catch (error) {
     return [];
@@ -128,11 +136,10 @@ export async function deleteTransaction(id: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Não autorizado');
-
   try {
-    await prisma.transaction.delete({
-      where: { id, userId: user.id },
-    });
+    await prisma.transaction.delete({ where: { id, userId: user.id } });
+    revalidatePath('/Dashboard');
+    revalidatePath('/Transactions');
     return { success: true };
   } catch (error) {
     return { success: false };
@@ -147,7 +154,6 @@ export async function updateTransaction(id: string, data: any) {
   if (!user) throw new Error('Não autorizado');
 
   try {
-    // 1. Garantir categoria (mesma lógica do create)
     const category = await prisma.category.upsert({
       where: { name_userId: { name: data.category, userId: user.id } },
       update: {},
@@ -159,13 +165,23 @@ export async function updateTransaction(id: string, data: any) {
       },
     });
 
-    // 2. Atualizar a transação
+    const tDate = new Date(data.date);
+    const referenceDate = new Date(
+      tDate.getFullYear(),
+      tDate.getMonth(),
+      1,
+      12,
+      0,
+      0,
+    );
+
     await prisma.transaction.update({
       where: { id, userId: user.id },
       data: {
         description: data.description,
         amount: data.amount,
-        date: new Date(data.date),
+        date: tDate,
+        referenceDate: referenceDate,
         type: data.type,
         categoryId: category.id,
       },

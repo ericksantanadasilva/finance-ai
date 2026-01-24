@@ -146,6 +146,7 @@ exports.Prisma.TransactionScalarFieldEnum = {
   description: 'description',
   amount: 'amount',
   date: 'date',
+  referenceDate: 'referenceDate',
   type: 'type',
   isRecurring: 'isRecurring',
   isPaid: 'isPaid',

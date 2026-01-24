@@ -2,7 +2,15 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Sparkles, UploadCloud, Loader2, Trash2, Save } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import {
+  Sparkles,
+  UploadCloud,
+  Loader2,
+  Trash2,
+  Save,
+  CalendarDays,
+} from 'lucide-react';
 import {
   processFileWithAI,
   saveTransactions,
@@ -10,6 +18,7 @@ import {
 } from '@/app/_actions/ai-import';
 
 export default function AIImportClient() {
+  const router = useRouter();
   const [files, setFiles] = useState<File[]>([]);
   const [results, setResults] = useState<any[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>(
@@ -17,6 +26,11 @@ export default function AIImportClient() {
   );
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // NOVO: Estado para o mês de competência (Padrão: Mês Atual)
+  const [selectedMonth, setSelectedMonth] = useState(
+    new Date().toISOString().slice(0, 7),
+  );
 
   useEffect(() => {
     async function loadCategories() {
@@ -80,10 +94,12 @@ export default function AIImportClient() {
     if (results.length === 0) return;
     setSaving(true);
     try {
-      await saveTransactions(results);
-      alert('Transações salvas com sucesso!');
+      // MUDANÇA: Agora passamos o selectedMonth para a action
+      await saveTransactions(results, selectedMonth);
+      alert('Transações importadas para o mês de referência com sucesso!');
       setResults([]);
       setFiles([]);
+      router.push('/Dashboard');
     } catch (error) {
       alert('Erro ao salvar transações.');
     } finally {
@@ -93,19 +109,16 @@ export default function AIImportClient() {
 
   return (
     <div className='min-h-screen bg-zinc-950 text-zinc-50 p-4 sm:p-8 transition-all duration-300'>
-      {/* HEADER MOBILE-FRIENDLY */}
       <div className='mb-8 pt-12 lg:pt-0'>
         <h1 className='text-xl sm:text-2xl font-bold'>
           Importação Inteligente
         </h1>
         <p className='text-zinc-400 text-xs sm:text-sm'>
-          Use a IA para extrair dados de extratos ou notas fiscais.
+          As transações serão agrupadas no mês de referência escolhido.
         </p>
       </div>
 
-      {/* GRID RESPONSIVO: 1 coluna no mobile, 2 colunas no desktop */}
       <div className='grid grid-cols-1 xl:grid-cols-2 gap-6'>
-        {/* ÁREA DE UPLOAD */}
         <div className='space-y-4'>
           <div className='bg-zinc-900/30 border border-zinc-800 rounded-2xl p-5 sm:p-6 space-y-4 shadow-xl'>
             <div
@@ -119,94 +132,101 @@ export default function AIImportClient() {
               <input {...getInputProps()} />
               <UploadCloud className='w-10 h-10 text-zinc-600 mb-3' />
               <p className='text-sm text-zinc-300 text-center font-medium'>
-                {files[0]?.name || 'Toque para selecionar ou arraste o extrato'}
+                {files[0]?.name || 'Selecione o PDF ou Foto da Fatura'}
               </p>
-              <p className='text-[10px] text-zinc-500 mt-2'>PDF, PNG ou JPG</p>
             </div>
 
             <button
               onClick={handleProcess}
               disabled={loading || files.length === 0}
-              className='w-full bg-purple-600 py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-900/20 text-sm font-bold'
+              className='w-full bg-purple-600 py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-purple-500 disabled:opacity-50 text-sm font-bold shadow-lg'
             >
               {loading ? (
                 <Loader2 className='animate-spin w-4 h-4' />
               ) : (
-                <Sparkles className='w-4 h-4 text-purple-200' />
+                <Sparkles className='w-4 h-4' />
               )}
               {loading ? 'Analisando documento...' : 'Processar com IA'}
             </button>
           </div>
 
+          {/* SEÇÃO DO MÊS DE REFERÊNCIA (Aparece após processar) */}
           {results.length > 0 && (
-            <button
-              onClick={handleSaveAll}
-              disabled={saving}
-              className='w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20 transition-all animate-in slide-in-from-bottom-2'
-            >
-              {saving ? (
-                <Loader2 className='animate-spin w-5 h-5' />
-              ) : (
-                <Save className='w-5 h-5' />
-              )}
-              SALVAR NO BANCO
-            </button>
+            <div className='bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 space-y-4 animate-in fade-in zoom-in'>
+              <div className='flex items-center gap-3 mb-2'>
+                <CalendarDays className='w-5 h-5 text-purple-400' />
+                <h3 className='text-sm font-bold text-white'>
+                  Mês de Referência
+                </h3>
+              </div>
+              <p className='text-[10px] text-zinc-500 uppercase font-bold tracking-widest'>
+                Para qual fatura/mês são esses gastos?
+              </p>
+              <input
+                type='month'
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className='w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-purple-500 outline-none transition-all [&::-webkit-calendar-picker-indicator]:invert'
+              />
+
+              <button
+                onClick={handleSaveAll}
+                disabled={saving}
+                className='w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition-all mt-4'
+              >
+                {saving ? (
+                  <Loader2 className='animate-spin w-5 h-5' />
+                ) : (
+                  <Save className='w-5 h-5' />
+                )}
+                CONFIRMAR E SALVAR
+              </button>
+            </div>
           )}
         </div>
 
         {/* ÁREA DE REVISÃO */}
         <div className='bg-zinc-900/40 border border-zinc-800 rounded-2xl flex flex-col h-[500px] sm:h-[600px] overflow-hidden shadow-2xl'>
-          <div className='p-4 border-b border-zinc-800 bg-zinc-950/50 flex justify-between items-center'>
-            <div className='flex items-center gap-2'>
-              <h3 className='text-sm font-bold text-zinc-200'>Revisão IA</h3>
-              <span className='bg-zinc-800 text-zinc-400 text-[10px] px-2 py-0.5 rounded-full'>
-                {results.length}
-              </span>
-            </div>
-            <span className='text-[10px] text-zinc-500 uppercase font-bold tracking-tight'>
-              Ajuste antes de salvar
+          <div className='p-4 border-b border-zinc-800 bg-zinc-950/50 flex justify-between items-center text-xs'>
+            <span className='font-bold text-zinc-200'>
+              CONFERÊNCIA DOS DADOS
+            </span>
+            <span className='bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full'>
+              {results.length} Itens
             </span>
           </div>
 
           <div className='flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 custom-scrollbar'>
             {results.length === 0 ? (
-              <div className='h-full flex flex-col items-center justify-center text-zinc-600 space-y-2 opacity-50'>
-                <Sparkles className='w-8 h-8' />
-                <p className='text-xs italic'>
-                  Os resultados aparecerão aqui após o processamento.
-                </p>
+              <div className='h-full flex flex-col items-center justify-center text-zinc-600 opacity-50'>
+                <Sparkles className='w-8 h-8 mb-2' />
+                <p className='text-xs italic'>Aguardando processamento...</p>
               </div>
             ) : (
               results.map((item, idx) => (
                 <div
                   key={idx}
-                  className={`bg-zinc-950 p-4 rounded-xl border-l-4 relative group transition-all hover:bg-zinc-900/50 ${
-                    item.type === 'income'
-                      ? 'border-l-emerald-500'
-                      : 'border-l-rose-500'
-                  }`}
+                  className={`bg-zinc-950 p-4 rounded-xl border-l-4 relative group transition-all ${item.type === 'income' ? 'border-l-emerald-500' : 'border-l-rose-500'}`}
                 >
                   <button
                     onClick={() => handleRemoveItem(idx)}
-                    className='absolute top-2 right-2 text-zinc-700 hover:text-rose-500 p-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity'
+                    className='absolute top-2 right-2 text-zinc-700 hover:text-rose-500 p-1'
                   >
                     <Trash2 className='w-4 h-4' />
                   </button>
-
                   <div className='grid grid-cols-2 gap-x-3 gap-y-4'>
                     <div className='col-span-2'>
                       <label className='text-[9px] font-bold text-zinc-500 uppercase mb-1 block'>
                         Descrição
                       </label>
                       <input
-                        className='w-full bg-transparent text-sm text-white border-b border-zinc-800 focus:border-purple-500 outline-none pb-1 transition-colors'
+                        className='w-full bg-transparent text-sm text-white border-b border-zinc-800 focus:border-purple-500 outline-none pb-1'
                         value={item.description}
                         onChange={(e) =>
                           handleUpdateItem(idx, 'description', e.target.value)
                         }
                       />
                     </div>
-
                     <div>
                       <label className='text-[9px] font-bold text-zinc-500 uppercase mb-1 block'>
                         Valor (R$)
@@ -224,13 +244,12 @@ export default function AIImportClient() {
                         }
                       />
                     </div>
-
                     <div>
                       <label className='text-[9px] font-bold text-zinc-500 uppercase mb-1 block'>
                         Categoria
                       </label>
                       <select
-                        className='w-full bg-zinc-900 text-xs text-zinc-200 border-b border-zinc-800 outline-none pb-1 h-7'
+                        className='w-full bg-zinc-900 text-xs text-zinc-200 border-b border-zinc-800 outline-none h-7'
                         value={item.category}
                         onChange={(e) =>
                           handleUpdateItem(idx, 'category', e.target.value)
@@ -244,7 +263,19 @@ export default function AIImportClient() {
                         ))}
                       </select>
                     </div>
-
+                    <div>
+                      <label className='text-[9px] font-bold text-zinc-500 uppercase mb-1 block'>
+                        Data Real
+                      </label>
+                      <input
+                        type='date'
+                        className='w-full bg-transparent text-[10px] text-zinc-300 border-b border-zinc-800 outline-none [&::-webkit-calendar-picker-indicator]:invert'
+                        value={item.date}
+                        onChange={(e) =>
+                          handleUpdateItem(idx, 'date', e.target.value)
+                        }
+                      />
+                    </div>
                     <div>
                       <label className='text-[9px] font-bold text-zinc-500 uppercase mb-1 block'>
                         Tipo
@@ -259,20 +290,6 @@ export default function AIImportClient() {
                         <option value='expense'>Saída</option>
                         <option value='income'>Entrada</option>
                       </select>
-                    </div>
-
-                    <div>
-                      <label className='text-[9px] font-bold text-zinc-500 uppercase mb-1 block'>
-                        Data
-                      </label>
-                      <input
-                        type='date'
-                        className='w-full bg-transparent text-[10px] text-zinc-300 border-b border-zinc-800 outline-none [&::-webkit-calendar-picker-indicator]:invert'
-                        value={item.date}
-                        onChange={(e) =>
-                          handleUpdateItem(idx, 'date', e.target.value)
-                        }
-                      />
                     </div>
                   </div>
                 </div>

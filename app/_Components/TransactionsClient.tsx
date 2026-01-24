@@ -37,7 +37,7 @@ export default function TransactionsClient({
     }).format(v);
 
   return (
-    <div className='min-h-screen bg-zinc-950 text-zinc-50 p-4 sm:p-8 lg:ml-64 transition-all duration-300'>
+    <div className='min-h-screen bg-zinc-950 text-zinc-50 p-4 sm:p-8 transition-all duration-300'>
       <TransactionDialog
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -61,7 +61,7 @@ export default function TransactionsClient({
       </div>
 
       {/* FILTROS: Input ocupa 100% no mobile */}
-      <div className='bg-zinc-900/30 border border-zinc-800 rounded-xl p-4 mb-6'>
+      <div className='bg-zinc-900/30 border border-zinc-800 rounded-xl'>
         <div className='relative w-full sm:w-96'>
           <Search className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500' />
           <input
@@ -75,9 +75,9 @@ export default function TransactionsClient({
       </div>
 
       {/* CONTEÚDO PRINCIPAL */}
-      <div className='bg-zinc-900/30 border border-zinc-800 rounded-xl overflow-hidden'>
+      <div className='bg-zinc-900/30 border border-zinc-800 rounded-xl overflow-hidden mt-4'>
         {/* VERSÃO DESKTOP: TABELA (Oculta abaixo de 'md') */}
-        <div className='hidden md:block overflow-x-auto'>
+        <div className='hidden md:block overflow-x-auto pb-24'>
           <table className='w-full text-sm text-left'>
             <thead className='bg-zinc-900/50 text-zinc-400 font-medium uppercase text-xs'>
               <tr>

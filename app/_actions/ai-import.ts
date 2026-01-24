@@ -58,7 +58,16 @@ export async function processFileWithAI(base64Data: string, mimeType: string) {
   }
 }
 
-export async function saveTransactions(transactions: any[]) {
+/**
+ * Salva as transações utilizando uma data de referência para competência.
+ * @param transactions - Array de transações extraídas pela IA.
+ * @param referenceMonth - String no formato "YYYY-MM" vinda do seletor do usuário.
+ */
+
+export async function saveTransactions(
+  transactions: any[],
+  referenceMonth: string,
+) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -71,13 +80,18 @@ export async function saveTransactions(transactions: any[]) {
   try {
     const userId = user.id;
 
+    const [year, month] = referenceMonth.split('-').map(Number);
+    const referenceDate = new Date(year, month - 1, 1, 12, 0, 0);
+
     for (const tx of transactions) {
       await prisma.transaction.create({
         data: {
           description: tx.description,
           amount: tx.amount,
           type: tx.type === 'income' ? 'income' : 'expense',
-          date: new Date(tx.date),
+          date: new Date(tx.date), // Data real da compra (Extrato)
+          referenceDate: referenceDate, // Data de competência (Dashboard)
+          aiGenerated: true,
           category: {
             connectOrCreate: {
               where: {
@@ -89,8 +103,8 @@ export async function saveTransactions(transactions: any[]) {
               create: {
                 name: tx.category,
                 userId: userId,
-                color: '#71717a', // cor padrão cinza
-                type: 'expense', // tipo padrão
+                color: '#71717a',
+                type: 'expense',
               },
             },
           },
@@ -102,6 +116,7 @@ export async function saveTransactions(transactions: any[]) {
     }
 
     revalidatePath('/Dashboard');
+    revalidatePath('/Transactions');
     return { sucess: true };
   } catch (error) {
     console.error('Erro detalhado ao salvar:', error);

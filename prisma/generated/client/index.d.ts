@@ -3192,6 +3192,7 @@ export namespace Prisma {
     description: string | null
     amount: Decimal | null
     date: Date | null
+    referenceDate: Date | null
     type: string | null
     isRecurring: boolean | null
     isPaid: boolean | null
@@ -3207,6 +3208,7 @@ export namespace Prisma {
     description: string | null
     amount: Decimal | null
     date: Date | null
+    referenceDate: Date | null
     type: string | null
     isRecurring: boolean | null
     isPaid: boolean | null
@@ -3222,6 +3224,7 @@ export namespace Prisma {
     description: number
     amount: number
     date: number
+    referenceDate: number
     type: number
     isRecurring: number
     isPaid: number
@@ -3247,6 +3250,7 @@ export namespace Prisma {
     description?: true
     amount?: true
     date?: true
+    referenceDate?: true
     type?: true
     isRecurring?: true
     isPaid?: true
@@ -3262,6 +3266,7 @@ export namespace Prisma {
     description?: true
     amount?: true
     date?: true
+    referenceDate?: true
     type?: true
     isRecurring?: true
     isPaid?: true
@@ -3277,6 +3282,7 @@ export namespace Prisma {
     description?: true
     amount?: true
     date?: true
+    referenceDate?: true
     type?: true
     isRecurring?: true
     isPaid?: true
@@ -3379,6 +3385,7 @@ export namespace Prisma {
     description: string
     amount: Decimal
     date: Date
+    referenceDate: Date
     type: string
     isRecurring: boolean
     isPaid: boolean
@@ -3413,6 +3420,7 @@ export namespace Prisma {
     description?: boolean
     amount?: boolean
     date?: boolean
+    referenceDate?: boolean
     type?: boolean
     isRecurring?: boolean
     isPaid?: boolean
@@ -3430,6 +3438,7 @@ export namespace Prisma {
     description?: boolean
     amount?: boolean
     date?: boolean
+    referenceDate?: boolean
     type?: boolean
     isRecurring?: boolean
     isPaid?: boolean
@@ -3447,6 +3456,7 @@ export namespace Prisma {
     description?: boolean
     amount?: boolean
     date?: boolean
+    referenceDate?: boolean
     type?: boolean
     isRecurring?: boolean
     isPaid?: boolean
@@ -3477,6 +3487,7 @@ export namespace Prisma {
       description: string
       amount: Prisma.Decimal
       date: Date
+      referenceDate: Date
       type: string
       isRecurring: boolean
       isPaid: boolean
@@ -3884,6 +3895,7 @@ export namespace Prisma {
     readonly description: FieldRef<"Transaction", 'String'>
     readonly amount: FieldRef<"Transaction", 'Decimal'>
     readonly date: FieldRef<"Transaction", 'DateTime'>
+    readonly referenceDate: FieldRef<"Transaction", 'DateTime'>
     readonly type: FieldRef<"Transaction", 'String'>
     readonly isRecurring: FieldRef<"Transaction", 'Boolean'>
     readonly isPaid: FieldRef<"Transaction", 'Boolean'>
@@ -5266,6 +5278,7 @@ export namespace Prisma {
     description: 'description',
     amount: 'amount',
     date: 'date',
+    referenceDate: 'referenceDate',
     type: 'type',
     isRecurring: 'isRecurring',
     isPaid: 'isPaid',
@@ -5553,6 +5566,7 @@ export namespace Prisma {
     description?: StringFilter<"Transaction"> | string
     amount?: DecimalFilter<"Transaction"> | Decimal | DecimalJsLike | number | string
     date?: DateTimeFilter<"Transaction"> | Date | string
+    referenceDate?: DateTimeFilter<"Transaction"> | Date | string
     type?: StringFilter<"Transaction"> | string
     isRecurring?: BoolFilter<"Transaction"> | boolean
     isPaid?: BoolFilter<"Transaction"> | boolean
@@ -5570,6 +5584,7 @@ export namespace Prisma {
     description?: SortOrder
     amount?: SortOrder
     date?: SortOrder
+    referenceDate?: SortOrder
     type?: SortOrder
     isRecurring?: SortOrder
     isPaid?: SortOrder
@@ -5590,6 +5605,7 @@ export namespace Prisma {
     description?: StringFilter<"Transaction"> | string
     amount?: DecimalFilter<"Transaction"> | Decimal | DecimalJsLike | number | string
     date?: DateTimeFilter<"Transaction"> | Date | string
+    referenceDate?: DateTimeFilter<"Transaction"> | Date | string
     type?: StringFilter<"Transaction"> | string
     isRecurring?: BoolFilter<"Transaction"> | boolean
     isPaid?: BoolFilter<"Transaction"> | boolean
@@ -5607,6 +5623,7 @@ export namespace Prisma {
     description?: SortOrder
     amount?: SortOrder
     date?: SortOrder
+    referenceDate?: SortOrder
     type?: SortOrder
     isRecurring?: SortOrder
     isPaid?: SortOrder
@@ -5630,6 +5647,7 @@ export namespace Prisma {
     description?: StringWithAggregatesFilter<"Transaction"> | string
     amount?: DecimalWithAggregatesFilter<"Transaction"> | Decimal | DecimalJsLike | number | string
     date?: DateTimeWithAggregatesFilter<"Transaction"> | Date | string
+    referenceDate?: DateTimeWithAggregatesFilter<"Transaction"> | Date | string
     type?: StringWithAggregatesFilter<"Transaction"> | string
     isRecurring?: BoolWithAggregatesFilter<"Transaction"> | boolean
     isPaid?: BoolWithAggregatesFilter<"Transaction"> | boolean
@@ -5855,6 +5873,7 @@ export namespace Prisma {
     description: string
     amount: Decimal | DecimalJsLike | number | string
     date: Date | string
+    referenceDate?: Date | string
     type: string
     isRecurring?: boolean
     isPaid?: boolean
@@ -5870,6 +5889,7 @@ export namespace Prisma {
     description: string
     amount: Decimal | DecimalJsLike | number | string
     date: Date | string
+    referenceDate?: Date | string
     type: string
     isRecurring?: boolean
     isPaid?: boolean
@@ -5885,6 +5905,7 @@ export namespace Prisma {
     description?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     date?: DateTimeFieldUpdateOperationsInput | Date | string
+    referenceDate?: DateTimeFieldUpdateOperationsInput | Date | string
     type?: StringFieldUpdateOperationsInput | string
     isRecurring?: BoolFieldUpdateOperationsInput | boolean
     isPaid?: BoolFieldUpdateOperationsInput | boolean
@@ -5900,6 +5921,7 @@ export namespace Prisma {
     description?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     date?: DateTimeFieldUpdateOperationsInput | Date | string
+    referenceDate?: DateTimeFieldUpdateOperationsInput | Date | string
     type?: StringFieldUpdateOperationsInput | string
     isRecurring?: BoolFieldUpdateOperationsInput | boolean
     isPaid?: BoolFieldUpdateOperationsInput | boolean
@@ -5915,6 +5937,7 @@ export namespace Prisma {
     description: string
     amount: Decimal | DecimalJsLike | number | string
     date: Date | string
+    referenceDate?: Date | string
     type: string
     isRecurring?: boolean
     isPaid?: boolean
@@ -5930,6 +5953,7 @@ export namespace Prisma {
     description?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     date?: DateTimeFieldUpdateOperationsInput | Date | string
+    referenceDate?: DateTimeFieldUpdateOperationsInput | Date | string
     type?: StringFieldUpdateOperationsInput | string
     isRecurring?: BoolFieldUpdateOperationsInput | boolean
     isPaid?: BoolFieldUpdateOperationsInput | boolean
@@ -5943,6 +5967,7 @@ export namespace Prisma {
     description?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     date?: DateTimeFieldUpdateOperationsInput | Date | string
+    referenceDate?: DateTimeFieldUpdateOperationsInput | Date | string
     type?: StringFieldUpdateOperationsInput | string
     isRecurring?: BoolFieldUpdateOperationsInput | boolean
     isPaid?: BoolFieldUpdateOperationsInput | boolean
@@ -6279,6 +6304,7 @@ export namespace Prisma {
     description?: SortOrder
     amount?: SortOrder
     date?: SortOrder
+    referenceDate?: SortOrder
     type?: SortOrder
     isRecurring?: SortOrder
     isPaid?: SortOrder
@@ -6298,6 +6324,7 @@ export namespace Prisma {
     description?: SortOrder
     amount?: SortOrder
     date?: SortOrder
+    referenceDate?: SortOrder
     type?: SortOrder
     isRecurring?: SortOrder
     isPaid?: SortOrder
@@ -6313,6 +6340,7 @@ export namespace Prisma {
     description?: SortOrder
     amount?: SortOrder
     date?: SortOrder
+    referenceDate?: SortOrder
     type?: SortOrder
     isRecurring?: SortOrder
     isPaid?: SortOrder
@@ -6868,6 +6896,7 @@ export namespace Prisma {
     description: string
     amount: Decimal | DecimalJsLike | number | string
     date: Date | string
+    referenceDate?: Date | string
     type: string
     isRecurring?: boolean
     isPaid?: boolean
@@ -6882,6 +6911,7 @@ export namespace Prisma {
     description: string
     amount: Decimal | DecimalJsLike | number | string
     date: Date | string
+    referenceDate?: Date | string
     type: string
     isRecurring?: boolean
     isPaid?: boolean
@@ -6979,6 +7009,7 @@ export namespace Prisma {
     description?: StringFilter<"Transaction"> | string
     amount?: DecimalFilter<"Transaction"> | Decimal | DecimalJsLike | number | string
     date?: DateTimeFilter<"Transaction"> | Date | string
+    referenceDate?: DateTimeFilter<"Transaction"> | Date | string
     type?: StringFilter<"Transaction"> | string
     isRecurring?: BoolFilter<"Transaction"> | boolean
     isPaid?: BoolFilter<"Transaction"> | boolean
@@ -7079,6 +7110,7 @@ export namespace Prisma {
     description: string
     amount: Decimal | DecimalJsLike | number | string
     date: Date | string
+    referenceDate?: Date | string
     type: string
     isRecurring?: boolean
     isPaid?: boolean
@@ -7093,6 +7125,7 @@ export namespace Prisma {
     description: string
     amount: Decimal | DecimalJsLike | number | string
     date: Date | string
+    referenceDate?: Date | string
     type: string
     isRecurring?: boolean
     isPaid?: boolean
@@ -7348,6 +7381,7 @@ export namespace Prisma {
     description: string
     amount: Decimal | DecimalJsLike | number | string
     date: Date | string
+    referenceDate?: Date | string
     type: string
     isRecurring?: boolean
     isPaid?: boolean
@@ -7378,6 +7412,7 @@ export namespace Prisma {
     description?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     date?: DateTimeFieldUpdateOperationsInput | Date | string
+    referenceDate?: DateTimeFieldUpdateOperationsInput | Date | string
     type?: StringFieldUpdateOperationsInput | string
     isRecurring?: BoolFieldUpdateOperationsInput | boolean
     isPaid?: BoolFieldUpdateOperationsInput | boolean
@@ -7392,6 +7427,7 @@ export namespace Prisma {
     description?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     date?: DateTimeFieldUpdateOperationsInput | Date | string
+    referenceDate?: DateTimeFieldUpdateOperationsInput | Date | string
     type?: StringFieldUpdateOperationsInput | string
     isRecurring?: BoolFieldUpdateOperationsInput | boolean
     isPaid?: BoolFieldUpdateOperationsInput | boolean
@@ -7406,6 +7442,7 @@ export namespace Prisma {
     description?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     date?: DateTimeFieldUpdateOperationsInput | Date | string
+    referenceDate?: DateTimeFieldUpdateOperationsInput | Date | string
     type?: StringFieldUpdateOperationsInput | string
     isRecurring?: BoolFieldUpdateOperationsInput | boolean
     isPaid?: BoolFieldUpdateOperationsInput | boolean
@@ -7470,6 +7507,7 @@ export namespace Prisma {
     description: string
     amount: Decimal | DecimalJsLike | number | string
     date: Date | string
+    referenceDate?: Date | string
     type: string
     isRecurring?: boolean
     isPaid?: boolean
@@ -7484,6 +7522,7 @@ export namespace Prisma {
     description?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     date?: DateTimeFieldUpdateOperationsInput | Date | string
+    referenceDate?: DateTimeFieldUpdateOperationsInput | Date | string
     type?: StringFieldUpdateOperationsInput | string
     isRecurring?: BoolFieldUpdateOperationsInput | boolean
     isPaid?: BoolFieldUpdateOperationsInput | boolean
@@ -7498,6 +7537,7 @@ export namespace Prisma {
     description?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     date?: DateTimeFieldUpdateOperationsInput | Date | string
+    referenceDate?: DateTimeFieldUpdateOperationsInput | Date | string
     type?: StringFieldUpdateOperationsInput | string
     isRecurring?: BoolFieldUpdateOperationsInput | boolean
     isPaid?: BoolFieldUpdateOperationsInput | boolean
@@ -7512,6 +7552,7 @@ export namespace Prisma {
     description?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     date?: DateTimeFieldUpdateOperationsInput | Date | string
+    referenceDate?: DateTimeFieldUpdateOperationsInput | Date | string
     type?: StringFieldUpdateOperationsInput | string
     isRecurring?: BoolFieldUpdateOperationsInput | boolean
     isPaid?: BoolFieldUpdateOperationsInput | boolean

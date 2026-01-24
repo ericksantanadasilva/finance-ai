@@ -43,7 +43,7 @@ export default function DashboardClient({
       currency: 'BRL',
     }).format(v);
 
-  // --- LÓGICA: FLUXO DE CAIXA MENSAL ---
+  // --- LÓGICA: FLUXO DE CAIXA MENSAL (BASEADO NA REFERÊNCIA) ---
   const getChartData = () => {
     const data = [];
     const now = new Date();
@@ -56,10 +56,11 @@ export default function DashboardClient({
         .replace('.', '');
 
       const monthTransactions = transactions.filter((t) => {
-        const tDate = new Date(t.date);
+        // MUDANÇA CRÍTICA: Filtra por referenceDate
+        const tRefDate = new Date(t.referenceDate);
         return (
-          tDate.getMonth() === d.getMonth() &&
-          tDate.getFullYear() === d.getFullYear()
+          tRefDate.getMonth() === d.getMonth() &&
+          tRefDate.getFullYear() === d.getFullYear()
         );
       });
 
@@ -77,7 +78,7 @@ export default function DashboardClient({
 
   const chartData = getChartData();
 
-  // --- LÓGICA: GASTOS POR CATEGORIA ---
+  // --- LÓGICA: GASTOS POR CATEGORIA (MÊS ATUAL DE REFERÊNCIA) ---
   const getCategoryData = () => {
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
@@ -87,8 +88,8 @@ export default function DashboardClient({
       .filter(
         (t) =>
           t.type === 'expense' &&
-          new Date(t.date).getMonth() === currentMonth &&
-          new Date(t.date).getFullYear() === currentYear,
+          new Date(t.referenceDate).getMonth() === currentMonth &&
+          new Date(t.referenceDate).getFullYear() === currentYear,
       )
       .forEach((t) => {
         const catName = t.category?.name || 'Outros';
@@ -107,28 +108,34 @@ export default function DashboardClient({
 
   const categoryData = getCategoryData();
 
-  const totalIncome = transactions
+  // --- RESUMO DO MÊS ATUAL (BASEADO NA REFERÊNCIA) ---
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  const currentMonthTransactions = transactions.filter((t) => {
+    const ref = new Date(t.referenceDate);
+    return ref.getMonth() === currentMonth && ref.getFullYear() === currentYear;
+  });
+
+  const totalIncome = currentMonthTransactions
     .filter((t) => t.type === 'income')
     .reduce((acc, t) => acc + t.amount, 0);
-  const totalExpense = transactions
+  const totalExpense = currentMonthTransactions
     .filter((t) => t.type === 'expense')
     .reduce((acc, t) => acc + t.amount, 0);
   const balance = totalIncome - totalExpense;
 
   return (
-    /* lg:ml-64: Abre espaço para a sidebar no desktop. pt-20: Espaço para o botão de menu no mobile. */
     <div className='min-h-screen bg-zinc-950 text-zinc-50 p-4 sm:p-8 space-y-6 sm:space-y-8 transition-all duration-300'>
       <TransactionDialog
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />
 
-      {/* HEADER: Stack no mobile, Row no desktop */}
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-10 lg:pt-0'>
         <div>
           <h1 className='text-xl sm:text-2xl font-bold'>Visão Geral</h1>
           <p className='text-zinc-400 text-xs sm:text-sm'>
-            Acompanhe sua saúde financeira em tempo real.
+            Dashboard baseado no mês de competência.
           </p>
         </div>
         <div className='flex gap-2 w-full sm:w-auto'>
@@ -136,9 +143,7 @@ export default function DashboardClient({
             onClick={() => router.push('/import')}
             className='flex-1 sm:flex-none flex items-center justify-center gap-2 bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-lg text-sm hover:bg-zinc-800 transition-all'
           >
-            <Sparkles className='w-4 h-4 text-purple-400' />
-            <span className='hidden xs:inline'>Importar</span>
-            <span className='xs:hidden'>IA</span>
+            <Sparkles className='w-4 h-4 text-purple-400' /> Importar IA
           </button>
           <button
             onClick={() => setIsModalOpen(true)}
@@ -149,45 +154,37 @@ export default function DashboardClient({
         </div>
       </div>
 
-      {/* CARDS: 1 col mobile, 2 col tablet, 3 col desktop */}
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
         <div className='bg-zinc-900/50 border border-zinc-800 p-6 rounded-2xl relative overflow-hidden'>
           <p className='text-zinc-400 text-xs uppercase font-bold mb-1'>
-            Saldo Total
+            Saldo (Competência)
           </p>
           <h3 className='text-2xl sm:text-3xl font-bold'>
             {formatMoney(balance)}
           </h3>
           <Wallet className='absolute -right-2 -bottom-2 w-16 h-16 text-white/5' />
         </div>
-
-        <div className='bg-zinc-900/50 border border-zinc-800 p-6 rounded-2xl flex justify-between items-center'>
+        <div className='bg-zinc-900/50 border border-zinc-800 p-6 rounded-2xl flex justify-between items-center text-emerald-500'>
           <div>
-            <p className='text-emerald-500 text-xs uppercase font-bold mb-1'>
-              Receitas
-            </p>
+            <p className='text-xs uppercase font-bold mb-1'>Receitas</p>
             <h3 className='text-2xl font-bold'>{formatMoney(totalIncome)}</h3>
           </div>
-          <ArrowUpCircle className='w-8 h-8 text-emerald-500/20' />
+          <ArrowUpCircle className='w-8 h-8 opacity-20' />
         </div>
-
-        <div className='bg-zinc-900/50 border border-zinc-800 p-6 rounded-2xl flex justify-between items-center sm:col-span-2 lg:col-span-1'>
+        <div className='bg-zinc-900/50 border border-zinc-800 p-6 rounded-2xl flex justify-between items-center text-rose-500'>
           <div>
-            <p className='text-rose-500 text-xs uppercase font-bold mb-1'>
-              Despesas
-            </p>
+            <p className='text-xs uppercase font-bold mb-1'>Despesas</p>
             <h3 className='text-2xl font-bold'>{formatMoney(totalExpense)}</h3>
           </div>
-          <ArrowDownCircle className='w-8 h-8 text-rose-500/20' />
+          <ArrowDownCircle className='w-8 h-8 opacity-20' />
         </div>
       </div>
 
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8'>
-        {/* GRÁFICO PRINCIPAL */}
         <div className='lg:col-span-2 bg-zinc-900/50 border border-zinc-800 p-4 sm:p-6 rounded-2xl min-h-[350px] sm:h-[450px]'>
           <div className='flex items-center justify-between mb-8'>
             <h3 className='font-bold text-zinc-200 text-sm sm:text-base'>
-              Fluxo de Caixa
+              Fluxo de Caixa (Faturas)
             </h3>
             <select
               value={range}
@@ -243,13 +240,12 @@ export default function DashboardClient({
           </ResponsiveContainer>
         </div>
 
-        {/* GRÁFICO DE CATEGORIAS */}
         <div className='bg-zinc-900/50 border border-zinc-800 p-4 sm:p-6 rounded-2xl flex flex-col min-h-[400px]'>
           <h3 className='font-bold mb-1 text-zinc-200 text-sm sm:text-base'>
             Categorias
           </h3>
           <p className='text-[10px] text-zinc-500 mb-6 uppercase tracking-wider'>
-            Mês Atual
+            Fatura Atual
           </p>
           <div className='h-48 sm:h-64 relative'>
             <ResponsiveContainer width='100%' height='100%'>
@@ -268,27 +264,27 @@ export default function DashboardClient({
               </PieChart>
             </ResponsiveContainer>
             <div className='absolute inset-0 flex flex-col items-center justify-center pointer-events-none'>
-              <span className='text-zinc-500 text-[8px] sm:text-[10px] uppercase font-bold'>
-                Gasto
+              <span className='text-zinc-500 text-[8px] uppercase font-bold'>
+                Total Gasto
               </span>
               <span className='text-white font-bold text-xs sm:text-sm'>
                 {formatMoney(totalExpense)}
               </span>
             </div>
           </div>
-          <div className='mt-6 space-y-3 flex-1 overflow-y-auto pr-2 custom-scrollbar max-h-[150px] lg:max-h-none'>
+          <div className='mt-6 space-y-3 flex-1 overflow-y-auto pr-2 custom-scrollbar'>
             {categoryData.map((cat, i) => (
               <div key={i} className='flex justify-between items-center'>
                 <div className='flex items-center gap-2'>
                   <div
-                    className='w-2 h-2 sm:w-3 sm:h-3 rounded-full'
+                    className='w-2 h-2 rounded-full'
                     style={{ backgroundColor: cat.color }}
                   />
-                  <span className='text-xs sm:text-sm text-zinc-400 truncate max-w-[80px] sm:max-w-none'>
+                  <span className='text-xs text-zinc-400 truncate max-w-[100px]'>
                     {cat.name}
                   </span>
                 </div>
-                <span className='text-xs sm:text-sm font-semibold text-zinc-100'>
+                <span className='text-xs font-semibold text-zinc-100'>
                   {formatMoney(cat.value)}
                 </span>
               </div>
