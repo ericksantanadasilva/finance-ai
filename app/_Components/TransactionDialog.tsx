@@ -27,7 +27,6 @@ export default function TransactionDialog({
 }: TransactionDialogProps) {
   const [isPending, startTransition] = useTransition();
 
-  // Estados do Formulário
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -44,7 +43,13 @@ export default function TransactionDialog({
         setAmount(editData.amount.toString());
         setDescription(editData.description);
         setCategory(editData.category?.name || '');
-        setDate(new Date(editData.date).toISOString().split('T')[0]);
+
+        // TRATAMENTO DE DATA NA EDIÇÃO (Evita retroceder 1 dia)
+        const d = new Date(editData.date);
+        const year = d.getUTCFullYear();
+        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(d.getUTCDate()).padStart(2, '0');
+        setDate(`${year}-${month}-${day}`);
       } else {
         setType('expense');
         setAmount('');
@@ -62,7 +67,7 @@ export default function TransactionDialog({
   }, [isOpen, editData]);
 
   const allCategories = Array.from(
-    new Set([...defaultCategories, ...dbCategories.map((c) => c.name)])
+    new Set([...defaultCategories, ...dbCategories.map((c) => c.name)]),
   ).sort();
 
   if (!isOpen) return null;
@@ -78,7 +83,8 @@ export default function TransactionDialog({
         amount: parseFloat(amount),
         description,
         category,
-        date,
+        // BLINDAGEM DE FUSO: Forçamos o meio-dia para o banco não subtrair o dia
+        date: `${date}T12:00:00`,
         type,
       };
 
@@ -97,7 +103,6 @@ export default function TransactionDialog({
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4'>
       <div className='w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl relative animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]'>
-        {/* HEADER */}
         <div className='flex justify-between items-center p-6 border-b border-zinc-800'>
           <h2 className='text-lg font-bold text-white'>
             {editData ? 'Editar Transação' : 'Nova Transação'}
@@ -110,36 +115,25 @@ export default function TransactionDialog({
           </button>
         </div>
 
-        {/* BODY / FORM */}
         <div className='p-6 overflow-y-auto custom-scrollbar'>
           <form className='space-y-6' onSubmit={(e) => e.preventDefault()}>
-            {/* SELETOR DE TIPO */}
             <div className='grid grid-cols-2 gap-2 p-1 bg-zinc-900 rounded-lg border border-zinc-800'>
               <button
                 type='button'
                 onClick={() => setType('income')}
-                className={`flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${
-                  type === 'income'
-                    ? 'bg-zinc-800 text-emerald-500 shadow-sm'
-                    : 'text-zinc-500 hover:text-zinc-300'
-                }`}
+                className={`flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${type === 'income' ? 'bg-zinc-800 text-emerald-500 shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
               >
                 <ArrowUpCircle className='w-4 h-4' /> Receita
               </button>
               <button
                 type='button'
                 onClick={() => setType('expense')}
-                className={`flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${
-                  type === 'expense'
-                    ? 'bg-zinc-800 text-rose-500 shadow-sm'
-                    : 'text-zinc-500 hover:text-zinc-300'
-                }`}
+                className={`flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${type === 'expense' ? 'bg-zinc-800 text-rose-500 shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
               >
                 <ArrowDownCircle className='w-4 h-4' /> Despesa
               </button>
             </div>
 
-            {/* INPUT VALOR */}
             <div className='space-y-2'>
               <label className='text-xs font-medium text-zinc-400'>Valor</label>
               <div className='relative'>
@@ -151,17 +145,11 @@ export default function TransactionDialog({
                   step='0.01'
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  placeholder='0,00'
-                  className={`w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-lg font-bold outline-none transition-all placeholder:text-zinc-600 ${
-                    type === 'income'
-                      ? 'text-emerald-500 focus:border-emerald-500/50'
-                      : 'text-rose-500 focus:border-rose-500/50'
-                  }`}
+                  className={`w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-lg font-bold outline-none transition-all ${type === 'income' ? 'text-emerald-500 focus:border-emerald-500/50' : 'text-rose-500 focus:border-rose-500/50'}`}
                 />
               </div>
             </div>
 
-            {/* INPUT DESCRIÇÃO */}
             <div className='space-y-2'>
               <label className='text-xs font-medium text-zinc-400'>
                 Descrição
@@ -174,14 +162,12 @@ export default function TransactionDialog({
                   type='text'
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder='Ex: Almoço, Freelance...'
-                  className='w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white focus:border-zinc-700 outline-none transition-all'
+                  className='w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white focus:border-zinc-700 outline-none'
                 />
               </div>
             </div>
 
             <div className='grid grid-cols-2 gap-4'>
-              {/* SELECT CATEGORIA */}
               <div className='space-y-2'>
                 <label className='text-xs font-medium text-zinc-400'>
                   Categoria
@@ -207,7 +193,6 @@ export default function TransactionDialog({
                 </div>
               </div>
 
-              {/* INPUT DATA */}
               <div className='space-y-2'>
                 <label className='text-xs font-medium text-zinc-400'>
                   Data
@@ -220,41 +205,34 @@ export default function TransactionDialog({
                     type='date'
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className='w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-10 pr-4 py-2.5 text-sm text-zinc-300 focus:border-zinc-700 outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert'
+                    className='w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-10 pr-4 py-2.5 text-sm text-zinc-300 focus:border-emerald-500/50 outline-none transition-all [&::-webkit-calendar-picker-indicator]:invert'
                   />
                 </div>
               </div>
             </div>
-          </form>
-        </div>
 
-        {/* FOOTER */}
-        <div className='p-6 border-t border-zinc-800 flex gap-3 bg-zinc-950 rounded-b-xl'>
-          <button
-            type='button'
-            onClick={onClose}
-            className='flex-1 px-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-zinc-300 hover:text-white transition-all'
-          >
-            Cancelar
-          </button>
-          <button
-            type='button'
-            onClick={handleSubmit}
-            disabled={isPending}
-            className={`flex-1 px-4 py-2.5 text-white rounded-lg text-sm font-medium transition-all shadow-lg flex items-center justify-center gap-2 ${
-              type === 'income'
-                ? 'bg-emerald-600 hover:bg-emerald-500'
-                : 'bg-rose-600 hover:bg-rose-500'
-            } ${isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
-          >
-            {isPending ? (
-              <Loader2 className='w-4 h-4 animate-spin' />
-            ) : editData ? (
-              'Salvar Alterações'
-            ) : (
-              'Adicionar'
-            )}
-          </button>
+            <div className='pt-4 flex gap-3'>
+              <button
+                type='button'
+                onClick={onClose}
+                className='flex-1 py-3 px-4 bg-zinc-900 border border-zinc-800 rounded-xl text-sm font-medium text-zinc-400 hover:text-white transition-all'
+              >
+                Cancelar
+              </button>
+              <button
+                type='button'
+                onClick={handleSubmit}
+                disabled={isPending}
+                className='flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all shadow-lg flex items-center justify-center gap-2'
+              >
+                {isPending ? (
+                  <Loader2 className='w-4 h-4 animate-spin' />
+                ) : (
+                  'Salvar'
+                )}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
