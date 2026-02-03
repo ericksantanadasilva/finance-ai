@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { createTransaction, updateTransaction } from '../_actions/transactions';
 import { getCategories } from '../_actions/categories';
+import { toast } from 'sonner';
 
 interface TransactionDialogProps {
   isOpen: boolean;
@@ -73,7 +74,7 @@ export default function TransactionDialog({
 
   async function handleSubmit() {
     if (!amount || !description || !category) {
-      alert('Preencha todos os campos!');
+      toast.warning('Preencha todos os campos!');
       return;
     }
 
@@ -93,7 +94,7 @@ export default function TransactionDialog({
       if (result.success) {
         onClose();
       } else {
-        alert('Erro ao salvar!');
+        toast.error('Erro ao salvar!');
       }
     });
   }

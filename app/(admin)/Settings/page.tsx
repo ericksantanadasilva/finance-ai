@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { updateProfile, getUserProfile } from '@/app/_actions/settings';
+import { toast } from 'sonner';
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
@@ -37,14 +38,14 @@ export default function SettingsPage() {
   if (!mounted) return null;
 
   async function handleSave() {
-    if (!name.trim()) return alert('O nome não pode estar vazio');
+    if (!name.trim()) return toast.warning('O nome não pode estar vazio');
 
     setIsPending(true);
     try {
       const res = await updateProfile({ name });
-      if (res.success) alert('Perfil atualizado com sucesso!');
+      if (res.success) toast.success('Perfil atualizado com sucesso!');
     } catch (error) {
-      alert('Erro ao atualizar perfil.');
+      toast.error('Erro ao atualizar perfil.');
     } finally {
       setIsPending(false);
     }
@@ -114,7 +115,7 @@ export default function SettingsPage() {
           </h2>
 
           {/* Container agora usa bg-surface ou uma cor neutra que mude */}
-          <div className='bg-zinc-200/50 dark:bg-zinc-900 border border-border-custom rounded-2xl p-1.5 grid grid-cols-3 gap-1.5'>
+          <div className='bg-zinc-200/50 dark:bg-zinc-900 border border-border-custom rounded-2xl p-1.5 grid grid-cols-2 gap-1.5'>
             {/* BOTAO LIGHT */}
             <button
               onClick={() => setTheme('light')}
@@ -139,19 +140,6 @@ export default function SettingsPage() {
             >
               <Moon className='w-5 h-5' />
               <span className='text-[10px] font-bold uppercase'>Escuro</span>
-            </button>
-
-            {/* BOTAO SYSTEM */}
-            <button
-              onClick={() => setTheme('system')}
-              className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all ${
-                theme === 'system'
-                  ? 'bg-white dark:bg-zinc-800 text-foreground shadow-md'
-                  : 'text-zinc-500 hover:bg-white/50 dark:hover:bg-zinc-800'
-              }`}
-            >
-              <Smartphone className='w-5 h-5' />
-              <span className='text-[10px] font-bold uppercase'>Sistema</span>
             </button>
           </div>
         </section>

@@ -15,6 +15,7 @@ import {
 import { sendMessage } from '@/app/_actions/chat';
 import { createTransaction } from '@/app/_actions/transactions';
 import { updateGoalAmount, createGoal } from '@/app/_actions/goals';
+import { toast } from 'sonner';
 
 export default function AIAgentChat() {
   const [messages, setMessages] = useState<any[]>([
@@ -72,14 +73,14 @@ export default function AIAgentChat() {
         );
       }
     } catch (error) {
-      alert('Erro ao salvar transação');
+      toast.error('Erro ao salvar transação');
     }
   };
 
   const handleConfirmGoalUpdate = async (index: number, data: any) => {
     try {
       const deposit = Number(data.amount);
-      if (isNaN(deposit) || deposit <= 0) return alert('Valor inválido');
+      if (isNaN(deposit) || deposit <= 0) return toast.error('Valor inválido');
       const res = await updateGoalAmount(data.goalId, deposit);
       if (res.success) {
         updateMessageAfterAction(
@@ -88,7 +89,7 @@ export default function AIAgentChat() {
         );
       }
     } catch (error) {
-      alert('Erro ao atualizar meta');
+      toast.error('Erro ao atualizar meta');
     }
   };
 
@@ -130,7 +131,7 @@ export default function AIAgentChat() {
         );
       }
     } catch (error) {
-      alert('Erro ao criar meta');
+      toast.error('Erro ao criar meta');
     }
   };
 

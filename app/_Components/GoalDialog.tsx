@@ -3,6 +3,7 @@
 import React, { useState, useTransition, useEffect } from 'react';
 import { X, Target, DollarSign, Calendar, Loader2 } from 'lucide-react';
 import { createGoal, updateGoalAmount } from '../_actions/goals';
+import { toast } from 'sonner';
 
 interface GoalDialogProps {
   isOpen: boolean;
@@ -45,7 +46,7 @@ export default function GoalDialog({
 
   async function handleSubmit() {
     if (!name || !targetAmount) {
-      alert('Nome e Valor Alvo são obrigatórios!');
+      toast.warning('Nome e Valor Alvo são obrigatórios!');
       return;
     }
 
@@ -65,7 +66,7 @@ export default function GoalDialog({
       if (result.success) {
         onClose();
       } else {
-        alert('Erro ao salvar meta!');
+        toast.error('Erro ao salvar meta!');
       }
     });
   }

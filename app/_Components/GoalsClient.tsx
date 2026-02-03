@@ -9,10 +9,11 @@ import {
   PlusCircle,
   Loader2,
   Calendar,
-  Menu,
 } from 'lucide-react';
 import GoalDialog from '@/app/_Components/GoalDialog';
+import UpdateGoalDialog from '@/app/_Components/UpdateGoalDialog'; // Importe o novo Dialog
 import { deleteGoal, updateGoalAmount } from '@/app/_actions/goals';
+import { toast } from 'sonner';
 
 interface Goal {
   id: string;
@@ -29,7 +30,9 @@ export default function GoalsClient({
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
-  const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  // NOVO: Estado para controlar o Dialog de depósito rápido
+  const [quickDepositGoal, setQuickDepositGoal] = useState<Goal | null>(null);
 
   const formatMoney = (v: number) =>
     new Intl.NumberFormat('pt-BR', {
@@ -43,24 +46,37 @@ export default function GoalsClient({
 
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir esta meta?')) return;
-    await deleteGoal(id);
+    try {
+      await deleteGoal(id);
+      toast.success('Meta excluída com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao excluir meta.');
+    }
   };
 
-  const handleQuickDeposit = async (goal: Goal) => {
-    const amount = prompt(`Quanto deseja adicionar à meta "${goal.name}"?`);
-    if (!amount || isNaN(parseFloat(amount))) return;
+  // NOVA FUNÇÃO: Substitui o prompt nativo
+  const handleConfirmQuickDeposit = async (amountToAdd: number) => {
+    if (!quickDepositGoal) return;
 
-    setLoadingId(goal.id);
     try {
-      const newAmount = Number(goal.currentAmount) + parseFloat(amount);
-      await updateGoalAmount(goal.id, newAmount);
-    } finally {
-      setLoadingId(null);
+      const newAmount = Number(quickDepositGoal.currentAmount) + amountToAdd;
+      const res = await updateGoalAmount(quickDepositGoal.id, newAmount);
+
+      if (res.success) {
+        toast.success(
+          `R$ ${amountToAdd.toLocaleString('pt-BR')} adicionados à meta ${quickDepositGoal.name}!`,
+        );
+      } else {
+        toast.error('Erro ao atualizar o saldo da meta.');
+      }
+    } catch (error) {
+      toast.error('Ocorreu um erro inesperado.');
     }
   };
 
   return (
     <div className='min-h-screen bg-background text-foreground p-4 sm:p-8 transition-all duration-300'>
+      {/* DIALOG DE CRIAÇÃO/EDIÇÃO COMPLETA */}
       <GoalDialog
         isOpen={isModalOpen}
         onClose={() => {
@@ -70,17 +86,23 @@ export default function GoalsClient({
         editData={selectedGoal}
       />
 
+      {/* NOVO DIALOG DE DEPÓSITO RÁPIDO */}
+      <UpdateGoalDialog
+        goal={quickDepositGoal}
+        isOpen={!!quickDepositGoal}
+        onClose={() => setQuickDepositGoal(null)}
+        onConfirm={handleConfirmQuickDeposit}
+      />
+
       {/* HEADER */}
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 pt-12 lg:pt-0'>
-        <div className='flex items-center gap-4'>
-          <div>
-            <h1 className='text-xl sm:text-2xl font-bold text-foreground'>
-              Metas Financeiras
-            </h1>
-            <p className='text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm'>
-              Visualize e acompanhe seus sonhos.
-            </p>
-          </div>
+        <div>
+          <h1 className='text-xl sm:text-2xl font-bold text-foreground'>
+            Metas Financeiras
+          </h1>
+          <p className='text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm'>
+            Visualize e acompanhe seus sonhos.
+          </p>
         </div>
 
         <button
@@ -94,6 +116,7 @@ export default function GoalsClient({
         </button>
       </div>
 
+      {/* GRID DE CARDS */}
       <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'>
         {initialGoals.map((goal) => {
           const progress = calculateProgress(
@@ -131,7 +154,7 @@ export default function GoalsClient({
                 </div>
               </div>
 
-              <h3 className='text-lg font-bold text-foreground mb-4 truncate pr-16'>
+              <h3 className='text-lg font-bold text-foreground mb-4 pr-16'>
                 {goal.name}
               </h3>
 
@@ -177,16 +200,12 @@ export default function GoalsClient({
                   </div>
                 </div>
 
+                {/* BOTÃO QUE ABRE O NOVO DIALOG */}
                 <button
-                  onClick={() => handleQuickDeposit(goal)}
-                  disabled={loadingId === goal.id}
-                  className='w-full mt-2 flex items-center justify-center gap-2 py-3 bg-zinc-50 dark:bg-zinc-800/40 hover:bg-emerald-600 hover:text-white rounded-xl text-[10px] font-black tracking-widest text-zinc-500 dark:text-zinc-400 transition-all border border-border-custom hover:border-emerald-600'
+                  onClick={() => setQuickDepositGoal(goal)}
+                  className='w-full mt-2 flex items-center justify-center gap-2 py-3 bg-zinc-50 dark:bg-zinc-800/40 hover:bg-emerald-600 hover:text-white rounded-xl text-[10px] font-black tracking-widest text-zinc-500 dark:text-zinc-400 transition-all border border-border-custom hover:border-emerald-600 active:scale-95'
                 >
-                  {loadingId === goal.id ? (
-                    <Loader2 className='w-4 h-4 animate-spin' />
-                  ) : (
-                    <PlusCircle className='w-4 h-4' />
-                  )}
+                  <PlusCircle className='w-4 h-4' />
                   ADICIONAR VALOR
                 </button>
               </div>

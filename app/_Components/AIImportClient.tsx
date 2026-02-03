@@ -16,6 +16,7 @@ import {
   saveTransactions,
   getCategories2,
 } from '@/app/_actions/ai-import';
+import { toast } from 'sonner';
 
 export default function AIImportClient() {
   const router = useRouter();
@@ -73,7 +74,7 @@ export default function AIImportClient() {
       const data = await processFileWithAI(base64, files[0].type);
       if (data) setResults(data);
     } catch (error) {
-      alert('Erro ao ler o arquivo.');
+      toast.error('Erro ao ler o arquivo.');
     } finally {
       setLoading(false);
     }
@@ -94,12 +95,12 @@ export default function AIImportClient() {
     setSaving(true);
     try {
       await saveTransactions(results, selectedMonth);
-      alert('Transações importadas com sucesso!');
+      toast.success('Transações importadas com sucesso!');
       setResults([]);
       setFiles([]);
       router.push('/Dashboard');
     } catch (error) {
-      alert('Erro ao salvar transações.');
+      toast.error('Erro ao salvar transações.');
     } finally {
       setSaving(false);
     }

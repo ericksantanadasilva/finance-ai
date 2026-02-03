@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { MoreHorizontal, Trash2, Edit2, Loader2 } from 'lucide-react';
 import { deleteTransaction } from '@/app/_actions/transactions';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface RowActionsProps {
   transactionId: string;
@@ -27,10 +28,10 @@ export function TransactionRowActions({
       if (res.success) {
         router.refresh();
       } else {
-        alert('Erro ao excluir');
+        toast.error('Erro ao excluir');
       }
     } catch (error) {
-      alert('Erro na requisição');
+      toast.error('Erro na requisição');
     } finally {
       setIsDeleting(false);
       setIsOpen(false);
