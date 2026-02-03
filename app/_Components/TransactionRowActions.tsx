@@ -5,6 +5,7 @@ import { MoreHorizontal, Trash2, Edit2, Loader2 } from 'lucide-react';
 import { deleteTransaction } from '@/app/_actions/transactions';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import ConfirmDialog from '@/app/_Components/ConfirmDialog'; // Importamos o novo Dialog
 
 interface RowActionsProps {
   transactionId: string;
@@ -17,15 +18,15 @@ export function TransactionRowActions({
 }: RowActionsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false); // Estado para o modal de confirmação
   const router = useRouter();
 
   const handleDelete = async () => {
-    if (!confirm('Tem certeza que deseja excluir esta transação?')) return;
-
     setIsDeleting(true);
     try {
       const res = await deleteTransaction(transactionId);
       if (res.success) {
+        toast.success('Transação excluída com sucesso!');
         router.refresh();
       } else {
         toast.error('Erro ao excluir');
@@ -35,6 +36,7 @@ export function TransactionRowActions({
     } finally {
       setIsDeleting(false);
       setIsOpen(false);
+      setIsConfirmOpen(false); // Fecha o modal de confirmação
     }
   };
 
@@ -83,8 +85,9 @@ export function TransactionRowActions({
 
               <div className='h-px bg-border-custom mx-2' />
 
+              {/* Botão que agora abre o ConfirmDialog em vez de deletar direto */}
               <button
-                onClick={handleDelete}
+                onClick={() => setIsConfirmOpen(true)}
                 className='w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors group'
               >
                 <Trash2 className='w-3.5 h-3.5 text-rose-400 group-hover:text-rose-500 transition-colors' />
@@ -94,6 +97,16 @@ export function TransactionRowActions({
           </div>
         </>
       )}
+
+      {/* COMPONENTE DE CONFIRMAÇÃO CUSTOMIZADO */}
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={handleDelete}
+        isLoading={isDeleting}
+        title='Excluir Transação'
+        description='Tem certeza que deseja remover esta transação? Essa ação não poderá ser desfeita.'
+      />
     </div>
   );
 }

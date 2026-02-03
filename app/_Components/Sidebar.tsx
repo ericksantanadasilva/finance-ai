@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -15,22 +15,14 @@ import {
   X,
 } from 'lucide-react';
 import { logout } from '@/app/auth/actions';
-import { getUserProfile } from '@/app/_actions/settings'; // Importamos a action que busca no Prisma
+import { useUser } from '../_Context/UserContext';
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [user, setUser] = useState<any>(null);
+  const { user } = useUser(); // Consumimos os dados globais
   const [isOpen, setIsOpen] = useState(false);
 
-  // BUSCA DADOS DO PRISMA (TABELA PÚBLICA)
-  useEffect(() => {
-    const loadProfile = async () => {
-      const profile = await getUserProfile();
-      if (profile) setUser(profile);
-    };
-    loadProfile();
-  }, [pathname]); // Recarrega ao mudar de página para garantir sincronia
-
+  // Fecha a sidebar mobile automaticamente ao trocar de rota
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
@@ -41,6 +33,10 @@ export default function Sidebar() {
 
   const getInitials = () => {
     if (!user?.name) return '??';
+    const names = user.name.split(' ');
+    if (names.length > 1) {
+      return (names[0][0] + names[1][0]).toUpperCase();
+    }
     return user.name.substring(0, 2).toUpperCase();
   };
 
@@ -70,7 +66,7 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* BOTÃO HAMBÚRGUER (MOBILE) */}
+      {/* MOBILE TRIGGER */}
       <button
         onClick={() => setIsOpen(true)}
         className='lg:hidden fixed top-4 left-4 z-50 p-2.5 bg-surface border border-border-custom rounded-xl text-foreground shadow-lg'
@@ -111,7 +107,7 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* NAVEGAÇÃO */}
+        {/* LINKS DE NAVEGAÇÃO */}
         <nav className='flex-1 px-4 py-6 space-y-1.5 overflow-y-auto custom-scrollbar'>
           {menuItems.map((item) => {
             const isActive = pathname === item.href;
@@ -134,7 +130,7 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* FOOTER & PERFIL */}
+        {/* FOOTER DA SIDEBAR */}
         <div className='p-4 border-t border-border-custom space-y-1 bg-surface'>
           <Link
             href='/Settings'
@@ -152,18 +148,16 @@ export default function Sidebar() {
             Sair
           </button>
 
-          {/* ÁREA DE PERFIL DINÂMICA */}
+          {/* PERFIL DO USUÁRIO CONECTADO AO CONTEXTO */}
           <div className='mt-4 flex items-center gap-3 px-3 py-3 bg-background rounded-xl border border-border-custom shadow-sm'>
             {user?.image ? (
-              /* IMAGEM DE PERFIL REAL */
               <img
                 src={user.image}
                 alt={user.name}
                 className='w-8 h-8 rounded-full object-cover border border-border-custom'
               />
             ) : (
-              /* PLACEHOLDER COM INICIAIS */
-              <div className='w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-[10px] font-black text-emerald-600 dark:text-emerald-500 shrink-0'>
+              <div className='w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-[10px] font-black text-emerald-600 dark:text-emerald-500 shrink-0 border border-emerald-500/20'>
                 {getInitials()}
               </div>
             )}
