@@ -42,8 +42,10 @@ model Transaction {
   description String
   amount      Decimal  @db.Decimal(10, 2)
   date        DateTime
-  type        String // "income" or "expense" (minusculo)
 
+  referenceDate DateTime @default(now())
+
+  type        String // "income" or "expense" (minusculo)
   isRecurring Boolean @default(false)
   isPaid      Boolean @default(true)
 
@@ -57,6 +59,8 @@ model Transaction {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([referenceDate]) //Index para buscaas rápidas no dashboard
 }
 
 model Goal {

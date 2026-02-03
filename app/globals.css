@@ -1,43 +1,67 @@
 @import 'tailwindcss';
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --primary: #3713ec;
-  --primary-light: #6d52f5;
-  --primary-dark: #2a0eb5;
-  --background-light: #f6f6f8;
-  --background-dark: #131022;
-  --surface-light: #ffffff;
-  --surface-dark: #1e1b2e;
+@variant dark (&:where(.dark, .dark *));
+
+/* 1. VARIÁVEIS DE TEMA COM ESPECIFICIDADE REFORÇADA */
+@layer base {
+  :root {
+    --background: #f9fafb; /* gray-50 */
+    --foreground: #111827; /* gray-900 */
+    --surface: #ffffff;
+    --border-custom: #e5e7eb; /* gray-200 */
+
+    --primary: #3713ec;
+    --primary-light: #6d52f5;
+    --primary-dark: #2a0eb5;
+  }
+
+  /* A classe .dark agora é o único gatilho para o modo escuro manual */
+  .dark {
+    --background: #09090b; /* zinc-950 */
+    --foreground: #f9fafb; /* zinc-50 */
+    --surface: #121214; /* zinc-900 */
+    --border-custom: #27272a; /* zinc-800 */
+  }
+
+  /* RESET DE FUNDO: O !important aqui mata o "fundo preto teimoso" */
+  html,
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    min-height: 100vh;
+    transition:
+      background-color 0.3s ease,
+      border-color 0.3s ease;
+  }
+
+  /* Padronização de bordas para evitar que fiquem pretas no modo claro */
+  * {
+    border-color: var(--border-custom);
+  }
 }
 
+/* 2. MAPEAMENTO PARA O SISTEMA DE CORES DO TAILWIND */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-border-custom: var(--border-custom);
 
   --color-primary: var(--primary);
   --color-primary-light: var(--primary-light);
   --color-primary-dark: var(--primary-dark);
-
-  --color-background-light: var(--background-light);
-  --color-background-dark: var(--background-dark);
-
-  --color-surface-light: var(--surface-light);
-  --color-surface-dark: var(--surface-dark);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* 3. UTILITÁRIOS ADICIONAIS */
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--border-custom);
+    border-radius: 10px;
+  }
 }

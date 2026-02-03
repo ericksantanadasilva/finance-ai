@@ -1,7 +1,18 @@
 import { getGoals } from '@/app/_actions/goals';
 import GoalsClient from '@/app/_Components/GoalsClient';
+import GoalsSkeleton from '@/app/_Components/GoalsSkeleton';
+import { Goal } from 'lucide-react';
+import { Suspense } from 'react';
 
 export default async function GoalsPage() {
+  return (
+    <Suspense fallback={<GoalsSkeleton />}>
+      <GoalsDataFetch />
+    </Suspense>
+  );
+}
+
+export async function GoalsDataFetch() {
   const goals = await getGoals();
 
   // Convertemos os tipos do Prisma (Decimal/Date) para tipos que o Client entende (Number/String)

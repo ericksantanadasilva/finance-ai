@@ -22,24 +22,31 @@ export function TransactionRowActions({
     if (!confirm('Tem certeza que deseja excluir esta transação?')) return;
 
     setIsDeleting(true);
-    const res = await deleteTransaction(transactionId);
-    if (res.success) {
-      router.refresh();
-    } else {
-      alert('Erro ao excluir');
+    try {
+      const res = await deleteTransaction(transactionId);
+      if (res.success) {
+        router.refresh();
+      } else {
+        alert('Erro ao excluir');
+      }
+    } catch (error) {
+      alert('Erro na requisição');
+    } finally {
+      setIsDeleting(false);
+      setIsOpen(false);
     }
-    setIsDeleting(false);
-    setIsOpen(false);
   };
 
   return (
     <div className='relative'>
+      {/* BOTÃO DISPARADOR */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className='text-zinc-500 hover:text-white p-2 rounded-lg hover:bg-zinc-800 transition-all'
+        disabled={isDeleting}
+        className='text-zinc-500 hover:text-foreground p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all active:scale-90 disabled:opacity-50'
       >
         {isDeleting ? (
-          <Loader2 className='w-4 h-4 animate-spin' />
+          <Loader2 className='w-4 h-4 animate-spin text-primary' />
         ) : (
           <MoreHorizontal className='w-4 h-4' />
         )}
@@ -47,27 +54,42 @@ export function TransactionRowActions({
 
       {isOpen && (
         <>
+          {/* OVERLAY PARA FECHAR AO CLICAR FORA */}
           <div
-            className='fixed inset-0 z-10'
+            className='fixed inset-0 z-[80]'
             onClick={() => setIsOpen(false)}
-          ></div>
+          />
 
-          <div className='absolute right-0 bottom-full mb-2 md:top-full md:bottom-auto md:mt-2 w-36 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl z-20 overflow-hidden animate-in fade-in zoom-in duration-200'>
-            <button
-              onClick={() => {
-                onEdit();
-                setIsOpen(false);
-              }}
-              className='w-full flex items-center gap-2 px-4 py-2.5 text-xs text-zinc-300 hover:bg-zinc-800 transition-colors'
-            >
-              <Edit2 className='w-3.5 h-3.5' /> Editar
-            </button>
-            <button
-              onClick={handleDelete}
-              className='w-full flex items-center gap-2 px-4 py-2.5 text-xs text-rose-500 hover:bg-rose-500/10 transition-colors'
-            >
-              <Trash2 className='w-3.5 h-3.5' /> Excluir
-            </button>
+          {/* MENU DROPDOWN */}
+          <div
+            className={`
+            absolute right-0 bottom-full mb-2 md:top-full md:bottom-auto md:mt-2 w-40 
+            bg-surface border border-border-custom rounded-2xl shadow-xl z-[90] 
+            overflow-hidden animate-in fade-in zoom-in duration-200
+          `}
+          >
+            <div className='p-1.5 flex flex-col gap-1'>
+              <button
+                onClick={() => {
+                  onEdit();
+                  setIsOpen(false);
+                }}
+                className='w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors group'
+              >
+                <Edit2 className='w-3.5 h-3.5 text-zinc-400 group-hover:text-primary transition-colors' />
+                Editar
+              </button>
+
+              <div className='h-px bg-border-custom mx-2' />
+
+              <button
+                onClick={handleDelete}
+                className='w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors group'
+              >
+                <Trash2 className='w-3.5 h-3.5 text-rose-400 group-hover:text-rose-500 transition-colors' />
+                Excluir
+              </button>
+            </div>
           </div>
         </>
       )}

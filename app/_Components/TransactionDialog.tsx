@@ -44,7 +44,6 @@ export default function TransactionDialog({
         setDescription(editData.description);
         setCategory(editData.category?.name || '');
 
-        // TRATAMENTO DE DATA NA EDIÇÃO (Evita retroceder 1 dia)
         const d = new Date(editData.date);
         const year = d.getUTCFullYear();
         const month = String(d.getUTCMonth() + 1).padStart(2, '0');
@@ -83,7 +82,6 @@ export default function TransactionDialog({
         amount: parseFloat(amount),
         description,
         category,
-        // BLINDAGEM DE FUSO: Forçamos o meio-dia para o banco não subtrair o dia
         date: `${date}T12:00:00`,
         type,
       };
@@ -101,15 +99,16 @@ export default function TransactionDialog({
   }
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4'>
-      <div className='w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl relative animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]'>
-        <div className='flex justify-between items-center p-6 border-b border-zinc-800'>
-          <h2 className='text-lg font-bold text-white'>
+    <div className='fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300'>
+      <div className='w-full max-w-md bg-surface border border-border-custom rounded-2xl shadow-2xl relative animate-in zoom-in duration-200 flex flex-col max-h-[90vh]'>
+        {/* HEADER */}
+        <div className='flex justify-between items-center p-6 border-b border-border-custom'>
+          <h2 className='text-lg font-black text-foreground'>
             {editData ? 'Editar Transação' : 'Nova Transação'}
           </h2>
           <button
             onClick={onClose}
-            className='text-zinc-500 hover:text-white transition-colors'
+            className='text-zinc-400 hover:text-foreground transition-colors p-1'
           >
             <X className='w-5 h-5' />
           </button>
@@ -117,72 +116,110 @@ export default function TransactionDialog({
 
         <div className='p-6 overflow-y-auto custom-scrollbar'>
           <form className='space-y-6' onSubmit={(e) => e.preventDefault()}>
-            <div className='grid grid-cols-2 gap-2 p-1 bg-zinc-900 rounded-lg border border-zinc-800'>
+            {/* SELETOR DE TIPO (TROCA DE COR DINÂMICA) */}
+            <div className='grid grid-cols-2 gap-2 p-1.5 bg-background border border-border-custom rounded-xl'>
               <button
                 type='button'
                 onClick={() => setType('income')}
-                className={`flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${type === 'income' ? 'bg-zinc-800 text-emerald-500 shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
+                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all ${
+                  type === 'income'
+                    ? 'bg-surface text-emerald-600 dark:text-emerald-500 shadow-sm border border-border-custom scale-[1.02]'
+                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                }`}
               >
-                <ArrowUpCircle className='w-4 h-4' /> Receita
+                <ArrowUpCircle
+                  className={`w-4 h-4 ${type === 'income' ? 'text-emerald-600' : ''}`}
+                />
+                RECEITA
               </button>
               <button
                 type='button'
                 onClick={() => setType('expense')}
-                className={`flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${type === 'expense' ? 'bg-zinc-800 text-rose-500 shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
+                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all ${
+                  type === 'expense'
+                    ? 'bg-surface text-rose-600 dark:text-rose-500 shadow-sm border border-border-custom scale-[1.02]'
+                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                }`}
               >
-                <ArrowDownCircle className='w-4 h-4' /> Despesa
+                <ArrowDownCircle
+                  className={`w-4 h-4 ${type === 'expense' ? 'text-rose-600' : ''}`}
+                />
+                DESPESA
               </button>
             </div>
 
+            {/* INPUT VALOR (TROCA DE COR DINÂMICA) */}
             <div className='space-y-2'>
-              <label className='text-xs font-medium text-zinc-400'>Valor</label>
+              <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
+                Valor
+              </label>
               <div className='relative'>
-                <div className='absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500'>
-                  <DollarSign className='w-4 h-4' />
+                {/* Símbolo R$ - Cor via Style para garantir prioridade */}
+                <div
+                  className='absolute left-4 top-1/2 -translate-y-1/2 font-bold transition-colors duration-200 z-10'
+                  style={{
+                    color:
+                      type === 'income'
+                        ? 'var(--color-emerald-600, #10b981)'
+                        : 'var(--color-rose-600, #e11d48)',
+                  }}
+                >
+                  R$
                 </div>
+
                 <input
                   type='number'
                   step='0.01'
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className={`w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-lg font-bold outline-none transition-all ${type === 'income' ? 'text-emerald-500 focus:border-emerald-500/50' : 'text-rose-500 focus:border-rose-500/50'}`}
+                  placeholder='0,00'
+                  /* Mantemos o style para o número digitado */
+                  style={{ color: type === 'income' ? '#059669' : '#e11d48' }}
+                  className={`w-full bg-background border border-border-custom rounded-xl pl-12 pr-4 py-4 text-2xl font-black outline-none transition-all duration-200 focus:ring-2 ${
+                    type === 'income'
+                      ? 'focus:border-emerald-500/50 focus:ring-emerald-500/10 placeholder:text-emerald-600/50'
+                      : 'focus:border-rose-500/50 focus:ring-rose-500/10 placeholder:text-rose-600/50'
+                  }`}
                 />
               </div>
             </div>
 
+            {/* DESCRIÇÃO */}
             <div className='space-y-2'>
-              <label className='text-xs font-medium text-zinc-400'>
+              <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
                 Descrição
               </label>
               <div className='relative'>
-                <div className='absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500'>
+                <div className='absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400'>
                   <FileText className='w-4 h-4' />
                 </div>
                 <input
                   type='text'
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className='w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white focus:border-zinc-700 outline-none'
+                  placeholder='Ex: Supermercado...'
+                  className='w-full bg-background border border-border-custom rounded-xl pl-12 pr-4 py-3.5 text-sm font-bold text-foreground outline-none focus:border-primary/30 transition-all'
                 />
               </div>
             </div>
 
             <div className='grid grid-cols-2 gap-4'>
+              {/* CATEGORIA */}
               <div className='space-y-2'>
-                <label className='text-xs font-medium text-zinc-400'>
+                <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
                   Categoria
                 </label>
                 <div className='relative'>
-                  <div className='absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500'>
+                  <div className='absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400'>
                     <Tag className='w-4 h-4' />
                   </div>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className='w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-10 pr-4 py-2.5 text-sm text-zinc-300 focus:border-zinc-700 outline-none appearance-none cursor-pointer'
+                    className='w-full bg-background border border-border-custom rounded-xl pl-12 pr-4 py-3.5 text-xs font-bold text-foreground outline-none appearance-none cursor-pointer focus:border-primary/30'
                   >
                     <option value='' disabled>
-                      Selecione...
+                      Filtrar...
                     </option>
                     {allCategories.map((catName) => (
                       <option key={catName} value={catName}>
@@ -193,42 +230,48 @@ export default function TransactionDialog({
                 </div>
               </div>
 
+              {/* DATA */}
               <div className='space-y-2'>
-                <label className='text-xs font-medium text-zinc-400'>
+                <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
                   Data
                 </label>
                 <div className='relative'>
-                  <div className='absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500'>
+                  <div className='absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400'>
                     <Calendar className='w-4 h-4' />
                   </div>
                   <input
                     type='date'
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className='w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-10 pr-4 py-2.5 text-sm text-zinc-300 focus:border-emerald-500/50 outline-none transition-all [&::-webkit-calendar-picker-indicator]:invert'
+                    className='w-full bg-background border border-border-custom rounded-xl pl-12 pr-4 py-3.5 text-xs font-bold text-foreground outline-none focus:border-primary/30 transition-all dark:[&::-webkit-calendar-picker-indicator]:invert'
                   />
                 </div>
               </div>
             </div>
 
-            <div className='pt-4 flex gap-3'>
+            {/* ACTIONS */}
+            <div className='pt-6 flex gap-3'>
               <button
                 type='button'
                 onClick={onClose}
-                className='flex-1 py-3 px-4 bg-zinc-900 border border-zinc-800 rounded-xl text-sm font-medium text-zinc-400 hover:text-white transition-all'
+                className='flex-1 py-4 px-4 bg-background border border-border-custom rounded-xl text-xs font-bold text-zinc-500 hover:text-foreground transition-all active:scale-95'
               >
-                Cancelar
+                CANCELAR
               </button>
               <button
                 type='button'
                 onClick={handleSubmit}
                 disabled={isPending}
-                className='flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all shadow-lg flex items-center justify-center gap-2'
+                className={`flex-1 py-4 px-4 text-white rounded-xl text-xs font-black tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 active:scale-95 ${
+                  type === 'income'
+                    ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20'
+                    : 'bg-rose-600 hover:bg-rose-500 shadow-rose-500/20'
+                }`}
               >
                 {isPending ? (
                   <Loader2 className='w-4 h-4 animate-spin' />
                 ) : (
-                  'Salvar'
+                  'SALVAR'
                 )}
               </button>
             </div>

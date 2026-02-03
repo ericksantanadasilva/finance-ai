@@ -55,7 +55,7 @@ export default function AIAgentChat() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, isLoading]);
 
-  // AÇÃO 1: CONFIRMAR TRANSAÇÃO
+  // AÇÕES (Mantidas conforme lógica original)
   const handleConfirmTransaction = async (index: number, data: any) => {
     try {
       const res = await createTransaction({
@@ -76,7 +76,6 @@ export default function AIAgentChat() {
     }
   };
 
-  // AÇÃO 2: CONFIRMAR DEPÓSITO EM META
   const handleConfirmGoalUpdate = async (index: number, data: any) => {
     try {
       const deposit = Number(data.amount);
@@ -93,29 +92,21 @@ export default function AIAgentChat() {
     }
   };
 
-  // AÇÃO 3: CONFIRMAR CRIAÇÃO DE NOVA META
   const handleConfirmCreateGoal = async (index: number, data: any) => {
     try {
-      // 1. Tenta pegar a data de onde a IA possa ter colocado
       let rawDate = data.deadline || data.description || '';
       let finalDate: string | undefined = undefined;
+      const dateMatch = rawDate.match(
+        /(\d{2}\/\d{2}\/\d{4})|(\d{4}-\d{2}-\d{2})/,
+      );
 
-      // 2. Limpeza e Formatação Manual
-      if (typeof rawDate === 'string' && rawDate.length > 0) {
-        // Remove textos extras (ex: "Prazo: 17/02" vira "17/02")
-        const dateMatch = rawDate.match(
-          /(\d{2}\/\d{2}\/\d{4})|(\d{4}-\d{2}-\d{2})/,
-        );
-
-        if (dateMatch) {
-          const foundDate = dateMatch[0];
-          if (foundDate.includes('/')) {
-            // Converte DD/MM/YYYY para YYYY-MM-DD
-            const [day, month, year] = foundDate.split('/');
-            finalDate = `${year}-${month}-${day}T12:00:00`;
-          } else {
-            finalDate = `${foundDate}T12:00:00`;
-          }
+      if (dateMatch) {
+        const foundDate = dateMatch[0];
+        if (foundDate.includes('/')) {
+          const [day, month, year] = foundDate.split('/');
+          finalDate = `${year}-${month}-${day}T12:00:00`;
+        } else {
+          finalDate = `${foundDate}T12:00:00`;
         }
       }
 
@@ -123,26 +114,22 @@ export default function AIAgentChat() {
         name: data.name,
         targetAmount: Number(data.targetAmount),
         currentAmount: 0,
-        deadline: finalDate, // Agora vai formatado ou undefined
+        deadline: finalDate,
       });
 
       if (res.success) {
-        // Formata a data de YYYY-MM-DD para DD/MM/YYYY apenas para exibição
         let displayDate = 'não definido';
-
         if (finalDate) {
-          const [datePart] = finalDate.split('T'); // Remove o T12:00:00
+          const [datePart] = finalDate.split('T');
           const [year, month, day] = datePart.split('-');
           displayDate = `${day}/${month}/${year}`;
         }
-
         updateMessageAfterAction(
           index,
           `🎯 Meta "${data.name}" criada com prazo para ${displayDate}!`,
         );
       }
     } catch (error) {
-      console.error(error);
       alert('Erro ao criar meta');
     }
   };
@@ -192,74 +179,72 @@ export default function AIAgentChat() {
 
   return (
     <div
-      className='bg-zinc-950 flex flex-col items-center lg:ml-64 overflow-hidden fixed inset-0 z-[40]'
+      className='bg-background flex flex-col items-center lg:ml-64 overflow-hidden fixed inset-0 z-[40] transition-colors duration-300'
       style={{ height: viewportHeight }}
     >
-      <div className='w-full flex items-center justify-center py-4 pt-14 lg:pt-8 border-b border-zinc-900 bg-zinc-950 shrink-0 relative'>
-        <h2 className='text-base font-bold text-white'>
-          Assistente Financeiro
-        </h2>
+      {/* HEADER DO CHAT */}
+      <div className='w-full flex items-center justify-center py-4 pt-14 lg:pt-8 border-b border-border-custom bg-surface shrink-0 relative shadow-sm'>
+        <div className='flex items-center gap-2'>
+          <div className='w-2 h-2 rounded-full bg-emerald-500 animate-pulse' />
+          <h2 className='text-sm font-black text-foreground uppercase tracking-widest'>
+            Assistente Financeiro
+          </h2>
+        </div>
       </div>
 
+      {/* ÁREA DE MENSAGENS */}
       <div
         ref={scrollRef}
-        className='flex-1 w-full max-w-3xl overflow-y-auto p-4 space-y-6 scrollbar-hide'
+        className='flex-1 w-full max-w-3xl overflow-y-auto p-4 space-y-6 scrollbar-hide custom-scrollbar'
       >
         {messages.map((msg, index) => (
           <div
             key={index}
-            className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+            className={`flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
           >
+            {/* AVATAR */}
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${msg.role === 'bot' ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-zinc-800 border-zinc-700'}`}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border shadow-sm ${msg.role === 'bot' ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20' : 'bg-surface border-border-custom'}`}
             >
               {msg.role === 'bot' ? (
-                <Bot className='w-4 h-4 text-emerald-500' />
+                <Bot className='w-5 h-5 text-emerald-600 dark:text-emerald-500' />
               ) : (
-                <User className='w-4 h-4 text-zinc-400' />
+                <User className='w-5 h-5 text-zinc-500 dark:text-zinc-400' />
               )}
             </div>
 
-            <div className='space-y-3 max-w-[85%] sm:max-w-[75%]'>
+            {/* CONTEÚDO */}
+            <div
+              className={`space-y-3 w-full ${msg.role === 'user' ? 'max-w-[80%] flex flex-col items-end' : 'max-w-[85%]'}`}
+            >
               <div
-                className={`${msg.role === 'user' ? 'bg-emerald-600 text-white rounded-2xl rounded-tr-none' : 'bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-2xl rounded-tl-none'} p-3 text-sm shadow-sm`}
+                className={`${msg.role === 'user' ? 'bg-emerald-600 text-white rounded-2xl rounded-tr-none font-medium' : 'bg-surface border border-border-custom text-foreground rounded-2xl rounded-tl-none font-medium'} p-4 text-sm shadow-sm leading-relaxed`}
               >
                 {msg.content}
               </div>
 
+              {/* CARD DE AÇÃO (WIDGET) */}
               {msg.action && (
                 <div
-                  className={`bg-zinc-900 border border-zinc-800 rounded-2xl p-4 border-l-4 animate-in fade-in slide-in-from-bottom-2 
-                  ${
-                    msg.action.action === 'UPDATE_GOAL'
-                      ? 'border-l-blue-500'
-                      : msg.action.action === 'CREATE_GOAL'
-                        ? 'border-l-purple-500'
-                        : 'border-l-emerald-500'
-                  }`}
+                  className={`bg-surface border border-border-custom rounded-2xl p-5 border-l-4 shadow-md transition-all
+                  ${msg.action.action === 'UPDATE_GOAL' ? 'border-l-blue-500' : msg.action.action === 'CREATE_GOAL' ? 'border-l-purple-500' : 'border-l-emerald-500'}`}
                 >
-                  <div className='flex items-center gap-3 mb-4'>
+                  <div className='flex items-center gap-4 mb-5'>
                     <div
-                      className={`p-2 rounded-lg 
-                      ${
-                        msg.action.action === 'UPDATE_GOAL'
-                          ? 'bg-blue-500/20 text-blue-400'
-                          : msg.action.action === 'CREATE_GOAL'
-                            ? 'bg-purple-500/20 text-purple-400'
-                            : 'bg-emerald-500/20 text-emerald-400'
-                      }`}
+                      className={`p-3 rounded-xl 
+                      ${msg.action.action === 'UPDATE_GOAL' ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400' : msg.action.action === 'CREATE_GOAL' ? 'bg-purple-50 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400' : 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'}`}
                     >
                       {msg.action.action === 'CREATE_TRANSACTION' ? (
-                        <Receipt className='w-5 h-5' />
+                        <Receipt className='w-6 h-6' />
                       ) : (
-                        <Target className='w-5 h-5' />
+                        <Target className='w-6 h-6' />
                       )}
                     </div>
-                    <div className='overflow-hidden text-sm'>
-                      <h4 className='font-bold text-white truncate'>
+                    <div className='overflow-hidden'>
+                      <h4 className='font-black text-foreground text-sm truncate uppercase tracking-tight'>
                         {msg.action.data.description || msg.action.data.name}
                       </h4>
-                      <p className='text-[10px] text-zinc-500 uppercase font-bold tracking-widest'>
+                      <p className='text-[10px] text-zinc-500 font-bold uppercase tracking-widest'>
                         {msg.action.action === 'CREATE_GOAL'
                           ? '✨ Nova Meta'
                           : msg.action.action === 'UPDATE_GOAL'
@@ -269,16 +254,10 @@ export default function AIAgentChat() {
                     </div>
                   </div>
 
-                  <div className='flex justify-between items-center border-t border-zinc-800 pt-3 gap-2'>
+                  <div className='flex justify-between items-center border-t border-border-custom pt-4 gap-4'>
                     <span
-                      className={`text-base font-bold 
-                      ${
-                        msg.action.action === 'UPDATE_GOAL'
-                          ? 'text-blue-500'
-                          : msg.action.action === 'CREATE_GOAL'
-                            ? 'text-purple-500'
-                            : 'text-emerald-500'
-                      }`}
+                      className={`text-xl font-black tracking-tight 
+                      ${msg.action.action === 'UPDATE_GOAL' ? 'text-blue-600 dark:text-blue-400' : msg.action.action === 'CREATE_GOAL' ? 'text-purple-600 dark:text-purple-400' : 'text-emerald-600 dark:text-emerald-500'}`}
                     >
                       R${' '}
                       {(
@@ -288,9 +267,9 @@ export default function AIAgentChat() {
                     <div className='flex gap-2'>
                       <button
                         onClick={() => handleCancel(index)}
-                        className='p-2 text-zinc-500 hover:text-rose-500'
+                        className='p-2.5 text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all'
                       >
-                        <X className='w-4 h-4' />
+                        <X className='w-5 h-5' />
                       </button>
                       <button
                         onClick={() => {
@@ -300,16 +279,10 @@ export default function AIAgentChat() {
                             handleConfirmGoalUpdate(index, msg.action.data);
                           else handleConfirmTransaction(index, msg.action.data);
                         }}
-                        className={`px-3 py-1.5 rounded-lg text-xs text-white font-medium flex items-center gap-1 transition-all shadow-lg
-                          ${
-                            msg.action.action === 'CREATE_GOAL'
-                              ? 'bg-purple-600 hover:bg-purple-500'
-                              : msg.action.action === 'UPDATE_GOAL'
-                                ? 'bg-blue-600 hover:bg-blue-500'
-                                : 'bg-emerald-600 hover:bg-emerald-500'
-                          }`}
+                        className={`px-4 py-2.5 rounded-xl text-xs text-white font-black uppercase tracking-widest flex items-center gap-2 transition-all shadow-lg active:scale-95
+                          ${msg.action.action === 'CREATE_GOAL' ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-500/20' : msg.action.action === 'UPDATE_GOAL' ? 'bg-blue-600 hover:bg-blue-500 shadow-blue-500/20' : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20'}`}
                       >
-                        <Check className='w-3 h-3' /> Confirmar
+                        <Check className='w-4 h-4' /> CONFIRMAR
                       </button>
                     </div>
                   </div>
@@ -319,30 +292,33 @@ export default function AIAgentChat() {
           </div>
         ))}
         {isLoading && (
-          <div className='flex gap-3 items-center text-zinc-500 text-xs italic ml-11'>
-            <Sparkles className='w-3 h-3' /> Analisando...
+          <div className='flex gap-3 items-center text-emerald-600 dark:text-emerald-500 text-[10px] font-black uppercase tracking-widest ml-12 animate-pulse'>
+            <Sparkles className='w-3 h-3' /> Analisando suas finanças...
           </div>
         )}
       </div>
 
-      <div className='w-full max-w-3xl p-4 bg-zinc-950 border-t border-zinc-900 pb-safe'>
-        <div className='relative flex items-center mb-2'>
+      {/* INPUT DE MENSAGEM */}
+      <div className='w-full max-w-3xl p-4 bg-transparent pb-safe shrink-0'>
+        <div className='relative flex items-center group'>
+          {/* O input agora carrega a borda e o fundo, eliminando a "caixa" externa */}
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder='Gastei 50 no almoço ou Quero economizar 2000 para...'
-            className='w-full bg-zinc-900 border border-zinc-800 rounded-2xl pl-4 pr-12 py-3.5 text-sm text-white outline-none focus:border-emerald-500/50 transition-all'
+            placeholder='Gastei 50 no almoço...'
+            autoComplete='off'
+            className='w-full bg-surface border border-border-custom rounded-2xl pl-5 pr-14 py-4 text-sm text-foreground outline-none focus:border-emerald-500/50 transition-all shadow-lg dark:shadow-none placeholder:text-zinc-400'
           />
           <button
             onClick={handleSend}
             disabled={isLoading || !input.trim()}
-            className='absolute right-2 p-2 bg-emerald-600 text-white rounded-xl'
+            className='absolute right-2 p-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl shadow-lg shadow-emerald-500/20 transition-all active:scale-90 flex items-center justify-center'
           >
             {isLoading ? (
-              <Loader2 className='w-4 h-4 animate-spin' />
+              <Loader2 className='w-5 h-5 animate-spin' />
             ) : (
-              <Send className='w-4 h-4' />
+              <Send className='w-5 h-5' />
             )}
           </button>
         </div>

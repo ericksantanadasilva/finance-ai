@@ -1,6 +1,6 @@
 // app/(admin)/layout.tsx
 import React from 'react';
-import Sidebar from '../_Components/Sidebar'; // Supondo que você salvou o componente lá
+import Sidebar from '../_Components/Sidebar';
 
 export default function AdminLayout({
   children,
@@ -8,13 +8,20 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className='min-h-screen bg-zinc-950 flex flex-col lg:flex-row'>
-      {/* 1. A Sidebar fixa (Não muda nunca) */}
+    /* ADICIONAMOS: 
+      1. text-foreground para garantir que o texto siga o tema.
+      2. overscroll-none para evitar aquele "fundo preto" que aparece ao scrollar no mobile.
+    */
+    <div className='min-h-screen bg-background text-foreground flex flex-col lg:flex-row transition-colors duration-300 overflow-x-hidden'>
+      {/* 1. Sidebar */}
       <Sidebar />
 
-      {/* 2. O Conteúdo das Páginas (Children) */}
-      {/* O 'ml-64' AQUI empurra todas as páginas para a direita automaticamente */}
-      <main className='flex-1 min-h-screen transition-all duration-300 lg:ml-64'>
+      {/* 2. O Main
+        ADICIONAMOS:
+        - bg-background aqui também para garantir que não haja transparência revelando o fundo do body.
+        - w-full para evitar que o layout quebre em telas menores.
+      */}
+      <main className='flex-1 w-full min-h-screen bg-background lg:ml-64 transition-all duration-300'>
         {children}
       </main>
     </div>

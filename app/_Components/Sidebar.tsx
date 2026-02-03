@@ -20,7 +20,7 @@ import { logout } from '@/app/auth/actions';
 export default function Sidebar() {
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
-  const [isOpen, setIsOpen] = useState(false); // Estado para abrir/fechar no mobile
+  const [isOpen, setIsOpen] = useState(false);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -35,7 +35,6 @@ export default function Sidebar() {
     getUser();
   }, [supabase.auth]);
 
-  // Fecha a sidebar automaticamente ao mudar de rota no mobile
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
@@ -76,18 +75,18 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* BOTÃO HAMBÚRGUER (Apenas Mobile) */}
+      {/* BOTÃO HAMBÚRGUER */}
       <button
         onClick={() => setIsOpen(true)}
-        className='lg:hidden fixed top-4 left-4 z-50 p-2 bg-zinc-900 border border-zinc-800 rounded-lg text-white'
+        className='lg:hidden fixed top-4 left-4 z-50 p-2.5 bg-surface border border-border-custom rounded-xl text-foreground shadow-lg'
       >
         <Menu className='w-5 h-5' />
       </button>
 
-      {/* OVERLAY (Apenas Mobile) */}
+      {/* OVERLAY */}
       {isOpen && (
         <div
-          className='fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden'
+          className='fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-300'
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -95,46 +94,45 @@ export default function Sidebar() {
       {/* ASIDE PRINCIPAL */}
       <aside
         className={`
-        fixed left-0 top-0 h-screen bg-zinc-950 border-r border-zinc-800 flex flex-col z-50 transition-transform duration-300
-        w-64 
-        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}
+          fixed left-0 top-0 h-screen flex flex-col z-50 transition-all duration-300 w-64
+          bg-surface border-r border-border-custom
+          ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'}
+        `}
       >
-        {/* HEADER DA SIDEBAR */}
-        <div className='h-16 flex items-center justify-between px-6 border-b border-zinc-800'>
-          <div className='flex items-center'>
-            <div className='w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center mr-3'>
-              <span className='font-bold text-zinc-950 text-xl'>F</span>
+        {/* LOGO AREA */}
+        <div className='h-16 flex items-center justify-between px-6 border-b border-border-custom'>
+          <div className='flex items-center gap-3'>
+            <div className='w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-600/20'>
+              <span className='font-black text-white text-lg'>F</span>
             </div>
-            <span className='font-bold text-white text-lg tracking-tight'>
+            <span className='font-bold text-foreground text-lg tracking-tight'>
               Finance.ai
             </span>
           </div>
-          {/* Botão de fechar (Apenas Mobile) */}
           <button
             onClick={() => setIsOpen(false)}
-            className='lg:hidden text-zinc-500'
+            className='lg:hidden text-zinc-400 p-1'
           >
             <X className='w-5 h-5' />
           </button>
         </div>
 
         {/* NAVEGAÇÃO */}
-        <nav className='flex-1 px-4 py-6 space-y-1 overflow-y-auto custom-scrollbar'>
+        <nav className='flex-1 px-4 py-6 space-y-1.5 overflow-y-auto custom-scrollbar'>
           {menuItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
                 key={item.id}
                 href={item.href}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-bold transition-all border ${
                   isActive
-                    ? 'bg-zinc-800 text-white border border-zinc-700'
-                    : 'text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent'
-                } ${item.isSpecial && !isActive ? 'text-purple-400 hover:bg-purple-500/10' : ''}`}
+                    ? 'bg-background text-emerald-600 dark:text-emerald-500 border-border-custom shadow-sm'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-foreground hover:bg-background border-transparent'
+                } ${item.isSpecial && !isActive ? 'text-purple-600 dark:text-purple-400 hover:bg-purple-500/10' : ''}`}
               >
                 <item.icon
-                  className={`w-4 h-4 ${isActive && !item.isSpecial ? 'text-white' : item.isSpecial ? 'text-purple-400' : ''}`}
+                  className={`w-4 h-4 ${isActive && !item.isSpecial ? 'text-emerald-600 dark:text-emerald-500' : item.isSpecial ? 'text-purple-600 dark:text-purple-400' : ''}`}
                 />
                 {item.label}
               </Link>
@@ -142,11 +140,11 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* FOOTER DA SIDEBAR */}
-        <div className='p-4 border-t border-zinc-800 space-y-1 bg-zinc-950'>
+        {/* FOOTER DA SIDEBAR (Refatorado sem cores fixas) */}
+        <div className='p-4 border-t border-border-custom space-y-1 bg-surface'>
           <Link
             href='/Settings'
-            className='w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all'
+            className='w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold text-zinc-500 dark:text-zinc-400 hover:text-foreground hover:bg-background transition-all'
           >
             <Settings className='w-4 h-4' />
             Configurações
@@ -154,22 +152,22 @@ export default function Sidebar() {
 
           <button
             onClick={handleLogout}
-            className='w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-rose-400 hover:bg-rose-500/10 transition-all'
+            className='w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold text-rose-500 hover:bg-rose-500/10 transition-all'
           >
             <LogOut className='w-4 h-4' />
             Sair
           </button>
 
-          {/* PERFIL DO USUÁRIO */}
-          <div className='mt-4 flex items-center gap-3 px-3 py-3 bg-zinc-900/50 rounded-xl border border-zinc-800'>
-            <div className='w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] font-bold text-emerald-500 shrink-0'>
+          {/* PERFIL DO USUÁRIO (Refatorado sem bg-white fixo) */}
+          <div className='mt-4 flex items-center gap-3 px-3 py-3 bg-background rounded-xl border border-border-custom shadow-sm'>
+            <div className='w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-[10px] font-black text-emerald-600 dark:text-emerald-500 shrink-0'>
               {getInitials()}
             </div>
             <div className='flex-1 min-w-0'>
-              <p className='text-sm font-medium text-white truncate'>
+              <p className='text-xs font-bold text-foreground truncate'>
                 {user?.user_metadata?.full_name || 'Usuário'}
               </p>
-              <p className='text-[10px] text-zinc-500 truncate'>
+              <p className='text-[9px] font-medium text-zinc-500 truncate'>
                 {user?.email}
               </p>
             </div>

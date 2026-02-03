@@ -60,7 +60,7 @@ export default function GoalsClient({
   };
 
   return (
-    <div className='min-h-screen bg-zinc-950 text-zinc-50 p-4 sm:p-8 transition-all duration-300'>
+    <div className='min-h-screen bg-background text-foreground p-4 sm:p-8 transition-all duration-300'>
       <GoalDialog
         isOpen={isModalOpen}
         onClose={() => {
@@ -73,16 +73,11 @@ export default function GoalsClient({
       {/* HEADER */}
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 pt-12 lg:pt-0'>
         <div className='flex items-center gap-4'>
-          {/* Botão de Sidebar Reintroduzido */}
-          <button
-            className='lg:hidden p-2 text-zinc-400 hover:text-white'
-            onClick={() => window.dispatchEvent(new Event('open-sidebar'))}
-          >
-            <Menu className='w-6 h-6' />
-          </button>
           <div>
-            <h1 className='text-xl sm:text-2xl font-bold'>Metas Financeiras</h1>
-            <p className='text-zinc-400 text-xs sm:text-sm'>
+            <h1 className='text-xl sm:text-2xl font-bold text-foreground'>
+              Metas Financeiras
+            </h1>
+            <p className='text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm'>
               Visualize e acompanhe seus sonhos.
             </p>
           </div>
@@ -93,9 +88,9 @@ export default function GoalsClient({
             setSelectedGoal(null);
             setIsModalOpen(true);
           }}
-          className='w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-lg flex items-center justify-center gap-2'
+          className='w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2'
         >
-          <Plus className='w-4 h-4' /> Nova Meta
+          <Plus className='w-4 h-4' /> NOVA META
         </button>
       </div>
 
@@ -109,75 +104,74 @@ export default function GoalsClient({
           return (
             <div
               key={goal.id}
-              className='bg-zinc-900/50 border border-zinc-800 p-6 rounded-2xl group relative overflow-hidden transition-all hover:border-zinc-700'
+              className='bg-surface border border-border-custom p-6 rounded-2xl group relative overflow-hidden transition-all hover:border-zinc-300 dark:hover:border-zinc-700 shadow-sm dark:shadow-none'
             >
-              {/* BOTÕES DE AÇÃO REPOSICIONADOS */}
-              <div className='absolute top-4 right-4 flex gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10'>
+              {/* AÇÕES NO HOVER */}
+              <div className='absolute top-4 right-4 flex gap-2 md:opacity-0 md:group-hover:opacity-100 transition-all z-10'>
                 <button
                   onClick={() => {
                     setSelectedGoal(goal);
                     setIsModalOpen(true);
                   }}
-                  className='p-2 bg-zinc-950/50 hover:bg-zinc-800 rounded-lg text-zinc-400 border border-zinc-800'
+                  className='p-2 bg-background border border-border-custom hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 dark:text-zinc-400 transition-colors'
                 >
-                  <Edit2 className='w-4 h-4' />
+                  <Edit2 className='w-3.5 h-3.5' />
                 </button>
                 <button
                   onClick={() => handleDelete(goal.id)}
-                  className='p-2 bg-zinc-950/50 hover:bg-rose-500/10 rounded-lg text-zinc-400 hover:text-rose-500 border border-zinc-800'
+                  className='p-2 bg-background border border-border-custom hover:bg-rose-500/10 rounded-lg text-zinc-500 hover:text-rose-500 transition-colors'
                 >
-                  <Trash2 className='w-4 h-4' />
+                  <Trash2 className='w-3.5 h-3.5' />
                 </button>
               </div>
 
               <div className='mb-4'>
-                <div className='w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center'>
-                  <Target className='w-6 h-6 text-emerald-500' />
+                <div className='w-12 h-12 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/5 flex items-center justify-center'>
+                  <Target className='w-6 h-6 text-emerald-600 dark:text-emerald-500' />
                 </div>
               </div>
 
-              <h3 className='text-lg font-bold text-white mb-4 truncate pr-10'>
+              <h3 className='text-lg font-bold text-foreground mb-4 truncate pr-16'>
                 {goal.name}
               </h3>
 
-              <div className='space-y-4'>
+              <div className='space-y-5'>
                 <div className='flex justify-between items-end'>
                   <div className='flex flex-col'>
-                    <span className='text-[10px] text-zinc-500 uppercase font-bold mb-1'>
-                      Atual
+                    <span className='text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-bold tracking-widest mb-1'>
+                      Acumulado
                     </span>
-                    <span className='text-white font-bold'>
+                    <span className='text-foreground font-bold text-lg'>
                       {formatMoney(goal.currentAmount)}
                     </span>
                   </div>
                   <div className='flex flex-col items-end'>
-                    <span className='text-[10px] text-zinc-500 uppercase font-bold mb-1'>
+                    <span className='text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-bold tracking-widest mb-1'>
                       Objetivo
                     </span>
-                    <span className='text-zinc-400 text-sm'>
+                    <span className='text-zinc-500 dark:text-zinc-400 text-sm font-medium'>
                       {formatMoney(goal.targetAmount)}
                     </span>
                   </div>
                 </div>
 
-                <div className='space-y-2'>
-                  <div className='h-2.5 w-full bg-zinc-800 rounded-full overflow-hidden p-[2px]'>
+                <div className='space-y-3'>
+                  {/* PROGRESS BAR */}
+                  <div className='h-3 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden shadow-inner'>
                     <div
-                      className='h-full bg-emerald-500 rounded-full transition-all duration-1000'
-                      style={{
-                        width: `${progress}%`,
-                        boxShadow: '0 0 10px #10b98140',
-                      }}
+                      className='h-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out shadow-[0_0_12px_#10b98160]'
+                      style={{ width: `${progress}%` }}
                     />
                   </div>
+
                   <div className='flex justify-between items-center'>
-                    <div className='flex items-center gap-1.5 text-zinc-500'>
-                      <Calendar className='w-3 h-3' />
-                      <span className='text-[10px] font-medium uppercase'>
+                    <div className='flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400'>
+                      <Calendar className='w-3.5 h-3.5' />
+                      <span className='text-[10px] font-bold uppercase'>
                         {goal.deadline}
                       </span>
                     </div>
-                    <p className='text-xs font-bold text-emerald-500'>
+                    <p className='text-xs font-black text-emerald-600 dark:text-emerald-500'>
                       {progress}%
                     </p>
                   </div>
@@ -186,10 +180,10 @@ export default function GoalsClient({
                 <button
                   onClick={() => handleQuickDeposit(goal)}
                   disabled={loadingId === goal.id}
-                  className='w-full mt-2 flex items-center justify-center gap-2 py-2.5 bg-zinc-800/50 hover:bg-emerald-600 hover:text-white rounded-xl text-xs font-bold text-zinc-400 transition-all border border-zinc-800'
+                  className='w-full mt-2 flex items-center justify-center gap-2 py-3 bg-zinc-50 dark:bg-zinc-800/40 hover:bg-emerald-600 hover:text-white rounded-xl text-[10px] font-black tracking-widest text-zinc-500 dark:text-zinc-400 transition-all border border-border-custom hover:border-emerald-600'
                 >
                   {loadingId === goal.id ? (
-                    <Loader2 className='w-3 h-3 animate-spin' />
+                    <Loader2 className='w-4 h-4 animate-spin' />
                   ) : (
                     <PlusCircle className='w-4 h-4' />
                   )}
@@ -199,7 +193,6 @@ export default function GoalsClient({
             </div>
           );
         })}
-        {/* Card de Novo Sonho omitido para brevidade */}
       </div>
     </div>
   );

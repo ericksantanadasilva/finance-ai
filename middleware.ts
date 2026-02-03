@@ -18,17 +18,17 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
+            request.cookies.set(name, value),
           );
           response = NextResponse.next({
             request,
           });
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            response.cookies.set(name, value, options),
           );
         },
       },
-    }
+    },
   );
 
   const {
@@ -69,6 +69,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - auth/callback (important for social login)
      */
-    '/((?!_next/static|_next/image|favicon.ico|auth/callback).*)',
+    '/((?!api|_next/static|_next/image|assets|favicon.ico|sw.js|auth/callback).*)',
   ],
 };

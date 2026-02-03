@@ -85,14 +85,29 @@ export async function getTransactions() {
     const transactions = await prisma.transaction.findMany({
       where: { userId: user.id },
       orderBy: { date: 'desc' },
-      include: { category: true },
+      // OTIMIZAÇÃO 1: Selecione apenas os campos usados na tela
+      select: {
+        id: true,
+        description: true,
+        amount: true,
+        date: true,
+        referenceDate: true,
+        type: true,
+        category: {
+          select: {
+            name: true,
+            color: true,
+          },
+        },
+      },
     });
 
+    // OTIMIZAÇÃO 2: Conversão mais limpa
     return transactions.map((t) => ({
       ...t,
       amount: Number(t.amount),
       date: t.date.toISOString(),
-      referenceDate: t.referenceDate.toISOString(), // Retornando referência
+      referenceDate: t.referenceDate.toISOString(),
     }));
   } catch (error) {
     console.error('Erro ao buscar transações:', error);

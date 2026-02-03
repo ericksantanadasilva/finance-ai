@@ -43,11 +43,9 @@ export default function DashboardClient({
       currency: 'BRL',
     }).format(v);
 
-  // --- LÓGICA: FLUXO DE CAIXA MENSAL (BASEADO NA REFERÊNCIA) ---
   const getChartData = () => {
     const data = [];
     const now = new Date();
-
     for (let i = range - 1; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthLabel = d
@@ -56,7 +54,6 @@ export default function DashboardClient({
         .replace('.', '');
 
       const monthTransactions = transactions.filter((t) => {
-        // MUDANÇA CRÍTICA: Filtra por referenceDate
         const tRefDate = new Date(t.referenceDate);
         return (
           tRefDate.getMonth() === d.getMonth() &&
@@ -78,7 +75,6 @@ export default function DashboardClient({
 
   const chartData = getChartData();
 
-  // --- LÓGICA: GASTOS POR CATEGORIA (MÊS ATUAL DE REFERÊNCIA) ---
   const getCategoryData = () => {
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
@@ -108,7 +104,6 @@ export default function DashboardClient({
 
   const categoryData = getCategoryData();
 
-  // --- RESUMO DO MÊS ATUAL (BASEADO NA REFERÊNCIA) ---
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
   const currentMonthTransactions = transactions.filter((t) => {
@@ -125,71 +120,84 @@ export default function DashboardClient({
   const balance = totalIncome - totalExpense;
 
   return (
-    <div className='min-h-screen bg-zinc-950 text-zinc-50 p-4 sm:p-8 space-y-6 sm:space-y-8 transition-all duration-300'>
+    <div className='min-h-screen bg-background text-foreground p-4 sm:p-8 space-y-6 sm:space-y-8 transition-all duration-300'>
       <TransactionDialog
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />
 
+      {/* HEADER ADAPTATIVO */}
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-10 lg:pt-0'>
         <div>
           <h1 className='text-xl sm:text-2xl font-bold'>Visão Geral</h1>
-          <p className='text-zinc-400 text-xs sm:text-sm'>
+          <p className='text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm'>
             Dashboard baseado no mês de competência.
           </p>
         </div>
         <div className='flex gap-2 w-full sm:w-auto'>
           <button
             onClick={() => router.push('/import')}
-            className='flex-1 sm:flex-none flex items-center justify-center gap-2 bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-lg text-sm hover:bg-zinc-800 transition-all'
+            className='flex-1 sm:flex-none flex items-center justify-center gap-2 bg-surface border border-border-custom px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all shadow-sm'
           >
-            <Sparkles className='w-4 h-4 text-purple-400' /> Importar IA
+            <Sparkles className='w-4 h-4 text-purple-500' /> Importar IA
           </button>
           <button
             onClick={() => setIsModalOpen(true)}
-            className='flex-1 sm:flex-none flex items-center justify-center gap-2 bg-emerald-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-500 transition-all shadow-lg'
+            className='flex-1 sm:flex-none flex items-center justify-center gap-2 bg-emerald-600 px-4 py-2.5 rounded-xl text-sm font-bold text-white hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-500/20'
           >
             <Plus className='w-4 h-4' /> Nova
           </button>
         </div>
       </div>
 
+      {/* CARDS DE RESUMO */}
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
-        <div className='bg-zinc-900/50 border border-zinc-800 p-6 rounded-2xl relative overflow-hidden'>
-          <p className='text-zinc-400 text-xs uppercase font-bold mb-1'>
+        <div className='bg-surface border border-border-custom p-6 rounded-2xl relative overflow-hidden shadow-sm dark:shadow-none'>
+          <p className='text-zinc-500 dark:text-zinc-400 text-[10px] uppercase font-bold tracking-widest mb-1'>
             Saldo (Competência)
           </p>
-          <h3 className='text-2xl sm:text-3xl font-bold'>
+          <h3 className='text-2xl sm:text-3xl font-bold text-foreground'>
             {formatMoney(balance)}
           </h3>
-          <Wallet className='absolute -right-2 -bottom-2 w-16 h-16 text-white/5' />
+          <Wallet className='absolute -right-2 -bottom-2 w-16 h-16 text-zinc-900/5 dark:text-white/5' />
         </div>
-        <div className='bg-zinc-900/50 border border-zinc-800 p-6 rounded-2xl flex justify-between items-center text-emerald-500'>
+
+        <div className='bg-surface border border-border-custom p-6 rounded-2xl flex justify-between items-center shadow-sm dark:shadow-none'>
           <div>
-            <p className='text-xs uppercase font-bold mb-1'>Receitas</p>
-            <h3 className='text-2xl font-bold'>{formatMoney(totalIncome)}</h3>
+            <p className='text-zinc-500 dark:text-zinc-400 text-[10px] uppercase font-bold tracking-widest mb-1'>
+              Receitas
+            </p>
+            <h3 className='text-2xl font-bold text-emerald-600 dark:text-emerald-500'>
+              {formatMoney(totalIncome)}
+            </h3>
           </div>
-          <ArrowUpCircle className='w-8 h-8 opacity-20' />
+          <ArrowUpCircle className='w-8 h-8 text-emerald-500 opacity-20' />
         </div>
-        <div className='bg-zinc-900/50 border border-zinc-800 p-6 rounded-2xl flex justify-between items-center text-rose-500'>
+
+        <div className='bg-surface border border-border-custom p-6 rounded-2xl flex justify-between items-center shadow-sm dark:shadow-none'>
           <div>
-            <p className='text-xs uppercase font-bold mb-1'>Despesas</p>
-            <h3 className='text-2xl font-bold'>{formatMoney(totalExpense)}</h3>
+            <p className='text-zinc-500 dark:text-zinc-400 text-[10px] uppercase font-bold tracking-widest mb-1'>
+              Despesas
+            </p>
+            <h3 className='text-2xl font-bold text-rose-600 dark:text-rose-500'>
+              {formatMoney(totalExpense)}
+            </h3>
           </div>
-          <ArrowDownCircle className='w-8 h-8 opacity-20' />
+          <ArrowDownCircle className='w-8 h-8 text-rose-500 opacity-20' />
         </div>
       </div>
 
+      {/* GRÁFICOS ADAPTATIVOS */}
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8'>
-        <div className='lg:col-span-2 bg-zinc-900/50 border border-zinc-800 p-4 sm:p-6 rounded-2xl min-h-[350px] sm:h-[450px]'>
+        <div className='lg:col-span-2 bg-surface border border-border-custom p-4 sm:p-6 rounded-2xl min-h-[350px] sm:h-[450px] shadow-sm'>
           <div className='flex items-center justify-between mb-8'>
-            <h3 className='font-bold text-zinc-200 text-sm sm:text-base'>
+            <h3 className='font-bold text-foreground text-sm sm:text-base'>
               Fluxo de Caixa (Faturas)
             </h3>
             <select
               value={range}
               onChange={(e) => setRange(Number(e.target.value))}
-              className='bg-zinc-800 border-none text-[10px] sm:text-xs text-zinc-300 rounded p-1.5 outline-none'
+              className='bg-background border border-border-custom text-[10px] sm:text-xs text-zinc-500 rounded-lg p-1.5 outline-none'
             >
               <option value={3}>3 meses</option>
               <option value={6}>6 meses</option>
@@ -201,27 +209,32 @@ export default function DashboardClient({
               <CartesianGrid
                 strokeDasharray='3 3'
                 vertical={false}
-                stroke='#27272a'
+                stroke='currentColor'
+                className='text-zinc-200 dark:text-zinc-800'
               />
               <XAxis
                 dataKey='name'
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#71717a', fontSize: 10 }}
+                tick={{ fill: 'currentColor', fontSize: 10 }}
+                className='text-zinc-400 dark:text-zinc-500'
                 dy={10}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#71717a', fontSize: 10 }}
+                tick={{ fill: 'currentColor', fontSize: 10 }}
+                className='text-zinc-400 dark:text-zinc-500'
               />
               <Tooltip
-                cursor={{ fill: '#ffffff0a' }}
+                cursor={{ fill: 'currentColor', opacity: 0.05 }}
                 contentStyle={{
-                  backgroundColor: '#09090b',
-                  border: '1px solid #27272a',
-                  borderRadius: '8px',
+                  backgroundColor: 'var(--background-surface)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '12px',
+                  boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
                 }}
+                itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
                 formatter={(v: any) => formatMoney(v)}
               />
               <Bar
@@ -240,13 +253,15 @@ export default function DashboardClient({
           </ResponsiveContainer>
         </div>
 
-        <div className='bg-zinc-900/50 border border-zinc-800 p-4 sm:p-6 rounded-2xl flex flex-col min-h-[400px]'>
-          <h3 className='font-bold mb-1 text-zinc-200 text-sm sm:text-base'>
+        {/* PIE CHART CARD */}
+        <div className='bg-surface border border-border-custom p-4 sm:p-6 rounded-2xl flex flex-col min-h-[400px] shadow-sm'>
+          <h3 className='font-bold mb-1 text-foreground text-sm sm:text-base'>
             Categorias
           </h3>
-          <p className='text-[10px] text-zinc-500 mb-6 uppercase tracking-wider'>
+          <p className='text-[10px] text-zinc-500 mb-6 uppercase tracking-widest font-bold'>
             Fatura Atual
           </p>
+
           <div className='h-48 sm:h-64 relative'>
             <ResponsiveContainer width='100%' height='100%'>
               <PieChart>
@@ -264,15 +279,16 @@ export default function DashboardClient({
               </PieChart>
             </ResponsiveContainer>
             <div className='absolute inset-0 flex flex-col items-center justify-center pointer-events-none'>
-              <span className='text-zinc-500 text-[8px] uppercase font-bold'>
+              <span className='text-zinc-500 text-[8px] uppercase font-bold tracking-tighter'>
                 Total Gasto
               </span>
-              <span className='text-white font-bold text-xs sm:text-sm'>
+              <span className='text-foreground font-bold text-xs sm:text-sm'>
                 {formatMoney(totalExpense)}
               </span>
             </div>
           </div>
-          <div className='mt-6 space-y-3 flex-1 overflow-y-auto pr-2 custom-scrollbar'>
+
+          <div className='mt-6 space-y-3 flex-1 overflow-y-auto pr-2 custom-scrollbar text-foreground'>
             {categoryData.map((cat, i) => (
               <div key={i} className='flex justify-between items-center'>
                 <div className='flex items-center gap-2'>
@@ -280,11 +296,11 @@ export default function DashboardClient({
                     className='w-2 h-2 rounded-full'
                     style={{ backgroundColor: cat.color }}
                   />
-                  <span className='text-xs text-zinc-400 truncate max-w-[100px]'>
+                  <span className='text-xs text-zinc-600 dark:text-zinc-400 truncate max-w-[100px]'>
                     {cat.name}
                   </span>
                 </div>
-                <span className='text-xs font-semibold text-zinc-100'>
+                <span className='text-xs font-bold'>
                   {formatMoney(cat.value)}
                 </span>
               </div>
