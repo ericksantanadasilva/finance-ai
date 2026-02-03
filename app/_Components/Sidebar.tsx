@@ -14,26 +14,22 @@ import {
   Menu,
   X,
 } from 'lucide-react';
-import { createBrowserClient } from '@supabase/ssr';
 import { logout } from '@/app/auth/actions';
+import { getUserProfile } from '@/app/_actions/settings'; // Importamos a action que busca no Prisma
 
 export default function Sidebar() {
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
-
+  // BUSCA DADOS DO PRISMA (TABELA PÚBLICA)
   useEffect(() => {
-    const getUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (data?.user) setUser(data.user);
+    const loadProfile = async () => {
+      const profile = await getUserProfile();
+      if (profile) setUser(profile);
     };
-    getUser();
-  }, [supabase.auth]);
+    loadProfile();
+  }, [pathname]); // Recarrega ao mudar de página para garantir sincronia
 
   useEffect(() => {
     setIsOpen(false);
@@ -44,9 +40,8 @@ export default function Sidebar() {
   };
 
   const getInitials = () => {
-    if (!user) return '??';
-    const name = user.user_metadata?.full_name || user.email;
-    return name.substring(0, 2).toUpperCase();
+    if (!user?.name) return '??';
+    return user.name.substring(0, 2).toUpperCase();
   };
 
   const menuItems = [
@@ -75,7 +70,7 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* BOTÃO HAMBÚRGUER */}
+      {/* BOTÃO HAMBÚRGUER (MOBILE) */}
       <button
         onClick={() => setIsOpen(true)}
         className='lg:hidden fixed top-4 left-4 z-50 p-2.5 bg-surface border border-border-custom rounded-xl text-foreground shadow-lg'
@@ -91,7 +86,6 @@ export default function Sidebar() {
         />
       )}
 
-      {/* ASIDE PRINCIPAL */}
       <aside
         className={`
           fixed left-0 top-0 h-screen flex flex-col z-50 transition-all duration-300 w-64
@@ -99,7 +93,7 @@ export default function Sidebar() {
           ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'}
         `}
       >
-        {/* LOGO AREA */}
+        {/* LOGO */}
         <div className='h-16 flex items-center justify-between px-6 border-b border-border-custom'>
           <div className='flex items-center gap-3'>
             <div className='w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-600/20'>
@@ -140,7 +134,7 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* FOOTER DA SIDEBAR (Refatorado sem cores fixas) */}
+        {/* FOOTER & PERFIL */}
         <div className='p-4 border-t border-border-custom space-y-1 bg-surface'>
           <Link
             href='/Settings'
@@ -158,14 +152,25 @@ export default function Sidebar() {
             Sair
           </button>
 
-          {/* PERFIL DO USUÁRIO (Refatorado sem bg-white fixo) */}
+          {/* ÁREA DE PERFIL DINÂMICA */}
           <div className='mt-4 flex items-center gap-3 px-3 py-3 bg-background rounded-xl border border-border-custom shadow-sm'>
-            <div className='w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-[10px] font-black text-emerald-600 dark:text-emerald-500 shrink-0'>
-              {getInitials()}
-            </div>
+            {user?.image ? (
+              /* IMAGEM DE PERFIL REAL */
+              <img
+                src={user.image}
+                alt={user.name}
+                className='w-8 h-8 rounded-full object-cover border border-border-custom'
+              />
+            ) : (
+              /* PLACEHOLDER COM INICIAIS */
+              <div className='w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-[10px] font-black text-emerald-600 dark:text-emerald-500 shrink-0'>
+                {getInitials()}
+              </div>
+            )}
+
             <div className='flex-1 min-w-0'>
-              <p className='text-xs font-bold text-foreground truncate'>
-                {user?.user_metadata?.full_name || 'Usuário'}
+              <p className='text-xs font-black text-foreground truncate'>
+                {user?.name || 'Carregando...'}
               </p>
               <p className='text-[9px] font-medium text-zinc-500 truncate'>
                 {user?.email}
