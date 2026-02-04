@@ -229,7 +229,7 @@ export default function DashboardClient({
               <Tooltip
                 cursor={{ fill: 'currentColor', opacity: 0.05 }}
                 contentStyle={{
-                  backgroundColor: 'var(--background-surface)',
+                  backgroundColor: 'var(--surface)',
                   border: '1px solid var(--border-color)',
                   borderRadius: '12px',
                   boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
