@@ -16,28 +16,22 @@ import {
 } from 'lucide-react';
 import { logout } from '@/app/auth/actions';
 import { useUser } from '../_Context/UserContext';
+import { getAvatarData } from '../utils/utils';
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { user } = useUser(); // Consumimos os dados globais
+  const { user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Fecha a sidebar mobile automaticamente ao trocar de rota
+  // Pegamos os dados do avatar dinâmico baseado no nome do usuário
+  const { initials, theme } = getAvatarData(user?.name || 'Usuário');
+
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
 
   const handleLogout = async () => {
     await logout();
-  };
-
-  const getInitials = () => {
-    if (!user?.name) return '??';
-    const names = user.name.split(' ');
-    if (names.length > 1) {
-      return (names[0][0] + names[1][0]).toUpperCase();
-    }
-    return user.name.substring(0, 2).toUpperCase();
   };
 
   const menuItems = [
@@ -89,7 +83,7 @@ export default function Sidebar() {
           ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'}
         `}
       >
-        {/* LOGO */}
+        {/* LOGO DO APP */}
         <div className='h-16 flex items-center justify-between px-6 border-b border-border-custom'>
           <div className='flex items-center gap-3'>
             <div className='w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-600/20'>
@@ -148,25 +142,22 @@ export default function Sidebar() {
             Sair
           </button>
 
-          {/* PERFIL DO USUÁRIO CONECTADO AO CONTEXTO */}
-          <div className='mt-4 flex items-center gap-3 px-3 py-3 bg-background rounded-xl border border-border-custom shadow-sm'>
-            {user?.image ? (
-              <img
-                src={user.image}
-                alt={user.name}
-                className='w-8 h-8 rounded-full object-cover border border-border-custom'
-              />
-            ) : (
-              <div className='w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-[10px] font-black text-emerald-600 dark:text-emerald-500 shrink-0 border border-emerald-500/20'>
-                {getInitials()}
-              </div>
-            )}
+          {/* PERFIL COM LOGO DE INICIAIS DINÂMICA */}
+          <div className='mt-4 flex items-center gap-3 px-3 py-3 bg-background rounded-xl border border-border-custom shadow-sm group'>
+            {/* AVATAR COM DEGRADÊ DO UTILS */}
+            <div
+              className={`w-9 h-9 rounded-xl bg-gradient-to-br ${theme} flex items-center justify-center shadow-lg shadow-black/5 shrink-0 transition-transform group-hover:scale-105`}
+            >
+              <span className='text-white font-black text-[10px] tracking-tighter'>
+                {initials}
+              </span>
+            </div>
 
             <div className='flex-1 min-w-0'>
-              <p className='text-xs font-black text-foreground truncate'>
+              <p className='text-xs font-black text-foreground truncate uppercase tracking-tighter'>
                 {user?.name || 'Carregando...'}
               </p>
-              <p className='text-[9px] font-medium text-zinc-500 truncate'>
+              <p className='text-[9px] font-bold text-zinc-500 truncate'>
                 {user?.email}
               </p>
             </div>

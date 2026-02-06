@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   User,
   Moon,
@@ -9,23 +9,20 @@ import {
   ShieldAlert,
   Save,
   Loader2,
-  Camera,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { updateProfile, updateProfileImage } from '@/app/_actions/settings';
+import { updateProfile } from '@/app/_actions/settings';
 import { toast } from 'sonner';
 import { useUser } from '@/app/_Context/UserContext';
+import { getAvatarData } from '../../utils/utils';
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const { user, refreshUser } = useUser(); // Consumimos os dados e a função de atualizar
+  const { user, refreshUser } = useUser();
   const [mounted, setMounted] = useState(false);
   const [isPending, setIsPending] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
 
-  // Estado local para edição do input (para não disparar o contexto a cada tecla)
   const [tempName, setTempName] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -34,7 +31,11 @@ export default function SettingsPage() {
 
   if (!mounted) return null;
 
-  // LÓGICA DE SALVAR NOME
+  // Pegamos os dados do avatar dinâmico (Iniciais e Degradê)
+  const { initials, theme: avatarTheme } = getAvatarData(
+    user?.name || 'Usuário',
+  );
+
   async function handleSave() {
     if (!tempName.trim()) return toast.warning('O nome não pode estar vazio');
 
@@ -42,7 +43,7 @@ export default function SettingsPage() {
     try {
       const res = await updateProfile({ name: tempName });
       if (res.success) {
-        await refreshUser(); // ATUALIZA O CONTEXTO GLOBAL (SIDEBAR MUDA NA HORA)
+        await refreshUser();
         toast.success('Perfil atualizado com sucesso!');
       }
     } catch (error) {
@@ -51,41 +52,6 @@ export default function SettingsPage() {
       setIsPending(false);
     }
   }
-
-  // LÓGICA DE UPLOAD DE IMAGEM
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validação básica
-    if (file.size > 2 * 1024 * 1024)
-      return toast.error('Arquivo muito grande (Máx 2MB)');
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    setIsUploading(true);
-    try {
-      const res = await updateProfileImage(formData);
-      if (res.success) {
-        await refreshUser(); // FOTO MUDA NA SIDEBAR INSTANTANEAMENTE
-        toast.success('Foto de perfil atualizada!');
-      }
-    } catch (error) {
-      toast.error('Erro ao subir imagem.');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const getInitials = () => {
-    if (!user?.name) return '??';
-    const names = user.name.split(' ');
-    if (names.length > 1) {
-      return (names[0][0] + names[1][0]).toUpperCase();
-    }
-    return user.name.substring(0, 2).toUpperCase();
-  };
 
   return (
     <div className='min-h-screen bg-background text-foreground font-sans p-4 sm:p-8 transition-all duration-300 lg:ml-64'>
@@ -105,45 +71,26 @@ export default function SettingsPage() {
 
           <div className='bg-surface border border-border-custom rounded-2xl p-6 space-y-8 shadow-sm'>
             <div className='flex flex-col sm:flex-row items-center gap-8'>
-              {/* AVATAR COM UPLOAD */}
-              <div
-                className='relative group cursor-pointer'
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <div className='w-24 h-24 rounded-full bg-emerald-500/10 flex items-center justify-center overflow-hidden border-2 border-border-custom shadow-inner transition-all group-hover:border-emerald-500/50'>
-                  {isUploading ? (
-                    <Loader2 className='w-8 h-8 animate-spin text-emerald-500' />
-                  ) : user?.image ? (
-                    <img
-                      src={user.image}
-                      className='w-full h-full object-cover'
-                      alt='Perfil'
-                    />
-                  ) : (
-                    <span className='text-2xl font-black text-emerald-600 dark:text-emerald-500'>
-                      {getInitials()}
-                    </span>
-                  )}
+              {/* NOVO AVATAR DINÂMICO ESTILIZADO */}
+              <div className='flex flex-col items-center gap-2'>
+                <div
+                  className={`w-24 h-24 rounded-3xl bg-gradient-to-br ${avatarTheme} flex items-center justify-center shadow-2xl rotate-2 transition-transform hover:rotate-0 duration-500`}
+                >
+                  <span className='text-white font-black text-3xl tracking-tighter'>
+                    {initials}
+                  </span>
                 </div>
-                {/* Overlay de Câmera */}
-                <div className='absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity'>
-                  <Camera className='w-6 h-6 text-white' />
-                </div>
-                <input
-                  type='file'
-                  ref={fileInputRef}
-                  className='hidden'
-                  accept='image/*'
-                  onChange={handleFileChange}
-                />
+                <span className='text-[9px] font-black text-zinc-400 uppercase tracking-tighter'>
+                  Avatar Dinâmico
+                </span>
               </div>
 
               <div className='text-center sm:text-left space-y-1'>
-                <h3 className='font-bold text-foreground text-sm uppercase tracking-tight'>
-                  Foto de Perfil
+                <h3 className='font-black text-foreground text-sm uppercase tracking-tight'>
+                  {user?.name || 'Seu Nome'}
                 </h3>
                 <p className='text-[10px] text-zinc-500 uppercase tracking-widest font-bold'>
-                  JPG, GIF ou PNG. Máximo 2MB.
+                  O avatar é gerado automaticamente com base no seu nome.
                 </p>
               </div>
             </div>
@@ -157,7 +104,7 @@ export default function SettingsPage() {
                   type='text'
                   value={tempName}
                   onChange={(e) => setTempName(e.target.value)}
-                  className='w-full bg-background border border-border-custom rounded-xl px-4 py-3.5 text-sm font-bold focus:border-emerald-500/50 outline-none transition-all text-foreground placeholder:text-zinc-500 shadow-inner'
+                  className='w-full bg-background border border-border-custom rounded-xl px-4 py-3.5 text-sm font-bold focus:border-emerald-500/50 outline-none transition-all text-foreground shadow-inner'
                 />
               </div>
               <div className='space-y-2'>
@@ -231,7 +178,7 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* BOTÃO SALVAR (FIXO NO MOBILE) */}
+        {/* BOTÃO SALVAR */}
         <div className='fixed bottom-6 right-6 left-6 sm:relative sm:bottom-0 sm:right-0 sm:left-0 mt-8 flex justify-end'>
           <button
             onClick={handleSave}
