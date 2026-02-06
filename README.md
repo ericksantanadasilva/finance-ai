@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+💰 Finance.ai — Gestão Financeira com IA
+O Finance.ai é um assistente financeiro completo desenvolvido com o que há de mais moderno no ecossistema Web. O diferencial está na integração com Inteligência Artificial para automação de registros e análise de dados, transformando a forma como você cuida do seu dinheiro.
 
-## Getting Started
+🚀 Diferenciais do Projeto
+🤖 Assistente de Importação com IA: Basta copiar o texto do seu extrato bancário e a IA categoriza e registra tudo automaticamente.
 
-First, run the development server:
+📊 Dashboards Dinâmicos: Gráficos de fluxo de caixa e gastos por categoria para visualização clara da saúde financeira.
 
-```bash
+🎯 Gestão de Metas: Planeje seus sonhos com barras de progresso dinâmicas e depósitos rápidos.
+
+🌓 Dark & Light Mode: Interface elegante que se adapta à preferência do usuário ou do sistema.
+
+👤 Perfil em Tempo Real: Atualização instantânea de dados do usuário (nome, iniciais estilizadas) em toda a aplicação via React Context.
+
+🛠 Tech Stack
+O projeto utiliza as tecnologias mais solicitadas pelo mercado de trabalho em 2026:
+
+Framework: Next.js 15 (App Router)
+
+Linguagem: TypeScript
+
+Estilização: Tailwind CSS v4
+
+Banco de Dados: PostgreSQL via Supabase
+
+ORM: Prisma
+
+Autenticação: Supabase Auth
+
+Componentes: Lucide React (Ícones) e Sonner (Toasts)
+
+📦 Como Instalar e Rodar
+
+1. Clonar o repositório
+   Bash
+   git clone https://github.com/seu-usuario/finance-ai.git
+   cd finance-ai
+2. Instalar dependências
+   Bash
+   npm install
+3. Configurar Variáveis de Ambiente
+   Crie um arquivo .env na raiz e preencha com suas credenciais do Supabase e OpenAI/Google AI:
+
+Snippet de código
+DATABASE_URL="sua_url_do_prisma"
+DIRECT_URL="sua_url_direta_supabase"
+NEXT_PUBLIC_SUPABASE_URL="sua_url_api_supabase"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="sua_chave_anon_supabase"
+GOOGLE_AI_API_KEY="sua_chave_da_ia" 4. Sincronizar Banco de Dados
+Bash
+npx prisma db push 5. Rodar o projeto
+Bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+🎨 Design System
+O projeto foi construído sobre um sistema de variáveis CSS customizadas, permitindo a troca de temas sem "flicker" e garantindo acessibilidade em qualquer tela.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+📄 Licença
+Este projeto está sob a licença MIT. Sinta-se à vontade para usar, modificar e comercializar.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+⭐ Gostou do projeto? Considere dar uma estrela no repositório!

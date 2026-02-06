@@ -247,7 +247,7 @@ export default function AIImportClient() {
                         Categoria
                       </label>
                       <select
-                        className='w-full bg-transparent text-xs border-b border-border-custom outline-none h-7'
+                        className='w-full bg-background text-xs border-b border-border-custom outline-none h-7'
                         value={item.category}
                         onChange={(e) =>
                           handleUpdateItem(idx, 'category', e.target.value)
@@ -279,7 +279,7 @@ export default function AIImportClient() {
                         Tipo
                       </label>
                       <select
-                        className='w-full bg-transparent text-[10px] border-b border-border-custom outline-none'
+                        className='w-full bg-background text-[10px] border-b border-border-custom outline-none'
                         value={item.type}
                         onChange={(e) =>
                           handleUpdateItem(idx, 'type', e.target.value)

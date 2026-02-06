@@ -18,24 +18,32 @@ export async function processFileWithAI(base64Data: string, mimeType: string) {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `
-     Você é um especialista em contabilidade brasileira e leitura de extratos bancários (especialmente Itaú).
-  Analise o documento e extraia todas as transações.
-  
-  Hoje é: ${today}.
-  Categorias permitidas: [${
-    categoryList || 'Alimentação, Transporte, Lazer, Outros'
-  }].
+      Você é um extrator de dados de alta precisão especializado em faturas de cartão de crédito Itaú.
+      Sua missão é converter cada linha de gasto em um objeto JSON, sem alterar os nomes.
 
-  INSTRUÇÕES CRÍTICAS PARA IDENTIFICAÇÃO DE TIPO:
-  1. ANALISE O SINAL E O CONTEXTO: 
-     - "PAGTO", "PAG", "DEB.AUT", "PIX TRANSF", "PAG BOLETO", "SAQUE" ou valores com sinal (-) são EXPENSE (saídas).
-     - "REMUNERAÇÃO", "SALARIO", "PIX RECEBIDO", "TRANSF RECEBIDA" ou valores com sinal (+) são INCOME (entradas).
-  2. VALORES: Retorne sempre o valor absoluto (positivo) no campo 'amount'. O tipo será definido pelo campo 'type'.
-  3. CATEGORIZAÇÃO: Tente ser inteligente. "HUB LA" ou "MARKETPLACE" costumam ser compras (expense).
+      Hoje é: ${today}.
+      Categorias permitidas: [${categoryList || 'Alimentação, Transporte, Lazer, Outros'}].
 
-  RETORNO:
-  - Responda APENAS com um array JSON.
-  - Campos: description, amount (number), type ("income" ou "expense"), category, date (YYYY-MM-DD).
+      REGRAS DE OURO (PARA NÃO INVENTAR E NÃO ESQUECER):
+      1. FIDELIDADE TOTAL AO TEXTO: No campo "description", extraia o texto EXATAMENTE como aparece na coluna "ESTABELECIMENTO" ou "PRODUTOS/SERVIÇOS". Não resuma, não remova códigos e não invente nomes (Ex: se está "MP *AGUIACAR", mantenha "MP *AGUIACAR").
+      2. CONSIDERE TODAS AS PÁGINAS: O documento possui várias páginas. Você deve buscar transações até o final, incluindo os blocos "Lançamentos: compras e saques", "Lançamentos: produtos e serviços" e "Lançamentos: Pix".
+      3. REGRA DE LINHA ÚNICA: 1 linha de transação com data e valor no PDF = 1 objeto no JSON. Nunca agrupe valores.
+      4. IGNORE: Apenas linhas de cabeçalho, rodapé, "Total da fatura", "Pagamento efetuado", "Saldo anterior" e resumos de "Lançamentos no cartão (final ...)".
+
+      PRECISÃO DE VALORES E TIPOS:
+      - VALOR: Use o valor numérico exato com centavos (ex: 120,12 -> 120.12).
+      - TIPO:
+        * Se o valor for uma compra ou cobrança de serviço -> "expense".
+        * Se o valor tiver um sinal de menos (-) ao lado ou for identificado como "Estorno" ou "Crédito de" -> "income".
+
+      CATEGORIZAÇÃO LÓGICA:
+      - NUNCA use "Dinheiro Extra" para transações do tipo "expense".
+      - Se o estabelecimento for Shopee, Amazon, Google, Apple, Uber, Ifood ou nomes de serviços, use a categoria de consumo mais lógica dentro das permitidas.
+      - Na dúvida para despesas, use "Outros" ou "Cartão de Crédito".
+
+      RETORNO:
+      - Responda APENAS com o array JSON puro.
+      - Formato: [{"description": string, "amount": number, "type": "income" | "expense", "category": string, "date": "YYYY-MM-DD"}]
     `;
 
     // Enviamos a imagem junto com o prompt
