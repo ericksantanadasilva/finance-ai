@@ -30,25 +30,30 @@ Autenticação: Supabase Auth
 Componentes: Lucide React (Ícones) e Sonner (Toasts)
 
 📦 Como Instalar e Rodar
-
 1. Clonar o repositório
-   Bash
-   git clone https://github.com/seu-usuario/finance-ai.git
-   cd finance-ai
-2. Instalar dependências
-   Bash
-   npm install
-3. Configurar Variáveis de Ambiente
-   Crie um arquivo .env na raiz e preencha com suas credenciais do Supabase e OpenAI/Google AI:
+Bash
+git clone https://github.com/seu-usuario/finance-ai.git
+cd finance-ai
+
+3. Instalar dependências
+Bash
+npm install
+
+4. Configurar Variáveis de Ambiente
+Crie um arquivo .env na raiz e preencha com suas credenciais do Supabase e OpenAI/Google AI:
 
 Snippet de código
 DATABASE_URL="sua_url_do_prisma"
 DIRECT_URL="sua_url_direta_supabase"
 NEXT_PUBLIC_SUPABASE_URL="sua_url_api_supabase"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="sua_chave_anon_supabase"
-GOOGLE_AI_API_KEY="sua_chave_da_ia" 4. Sincronizar Banco de Dados
+GOOGLE_AI_API_KEY="sua_chave_da_ia"
+
+4. Sincronizar Banco de Dados
 Bash
-npx prisma db push 5. Rodar o projeto
+npx prisma db push
+
+6. Rodar o projeto
 Bash
 npm run dev
 🎨 Design System
