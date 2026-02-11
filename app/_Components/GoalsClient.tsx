@@ -99,7 +99,6 @@ export default function GoalsClient({
         goal={quickDepositGoal}
         isOpen={!!quickDepositGoal}
         onClose={() => setQuickDepositGoal(null)}
-        onConfirm={handleConfirmQuickDeposit}
       />
 
       {/* 3. DIALOG DE CONFIRMAÇÃO DE EXCLUSÃO */}
