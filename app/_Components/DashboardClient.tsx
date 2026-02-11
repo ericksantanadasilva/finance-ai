@@ -34,9 +34,10 @@ export default function DashboardClient({
   const [transactions, setTransactions] = useState(initialTransactions);
   const [range, setRange] = useState(6);
 
-  // Estado para o filtro de categorias: 'all' ou 'YYYY-MM'
+  // Filtro de tempo: Default para o mês atual (ex: "2026-02")
+  // Este estado controla o gráfico de categorias e define a competência da nova transação
   const [categoryTimeRange, setCategoryTimeRange] = useState<string>(
-    new Date().toISOString().slice(0, 7), // Default: Mês Atual (ex: "2026-02")
+    new Date().toISOString().slice(0, 7),
   );
 
   useEffect(() => {
@@ -56,10 +57,11 @@ export default function DashboardClient({
       const date = new Date(t.referenceDate);
       months.add(date.toISOString().slice(0, 7));
     });
-    return Array.from(months).sort().reverse(); // Mais recentes primeiro
+    return Array.from(months).sort().reverse();
   }, [transactions]);
 
-  const getChartData = () => {
+  // Lógica do Gráfico de Barras (Fluxo Mensal)
+  const chartData = useMemo(() => {
     const data = [];
     const now = new Date();
     for (let i = range - 1; i >= 0; i--) {
@@ -87,11 +89,10 @@ export default function DashboardClient({
       data.push({ name: monthLabel, receitas: income, despesas: expense });
     }
     return data;
-  };
+  }, [range, transactions]);
 
-  const chartData = getChartData();
-
-  const getCategoryData = () => {
+  // Lógica do Gráfico de Rosca (Categorias)
+  const categoryData = useMemo(() => {
     const categoryMap: Record<string, { value: number; color: string }> = {};
 
     transactions
@@ -117,19 +118,21 @@ export default function DashboardClient({
         color: data.color,
       }))
       .sort((a, b) => b.value - a.value);
-  };
+  }, [categoryTimeRange, transactions]);
 
-  const categoryData = getCategoryData();
   const totalCategoryExpense = categoryData.reduce(
     (acc, cur) => acc + cur.value,
     0,
   );
 
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
+  // Cálculos do Mês Atual (Cards de cima sempre mostram o hoje)
+  const now = new Date();
   const currentMonthTransactions = transactions.filter((t) => {
     const ref = new Date(t.referenceDate);
-    return ref.getMonth() === currentMonth && ref.getFullYear() === currentYear;
+    return (
+      ref.getMonth() === now.getMonth() &&
+      ref.getFullYear() === now.getFullYear()
+    );
   });
 
   const totalIncome = currentMonthTransactions
@@ -140,11 +143,18 @@ export default function DashboardClient({
     .reduce((acc, t) => acc + t.amount, 0);
   const balance = totalIncome - totalExpense;
 
+  // Define qual mês enviar para o Dialog (se estiver em 'all', envia o mês atual)
+  const referenceForDialog =
+    categoryTimeRange === 'all'
+      ? new Date().toISOString().slice(0, 7)
+      : categoryTimeRange;
+
   return (
     <div className='min-h-screen bg-background text-foreground p-4 sm:p-8 space-y-6 sm:space-y-8 transition-all duration-300'>
       <TransactionDialog
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        referenceMonth={referenceForDialog}
       />
 
       {/* HEADER */}
@@ -154,7 +164,7 @@ export default function DashboardClient({
             Visão Geral
           </h1>
           <p className='text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium'>
-            Análise baseada no mês de competência das faturas.
+            Análise baseada no mês de competência.
           </p>
         </div>
         <div className='flex gap-2 w-full sm:w-auto'>
@@ -173,11 +183,11 @@ export default function DashboardClient({
         </div>
       </div>
 
-      {/* CARDS DE RESUMO */}
+      {/* CARDS */}
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
         <div className='bg-surface border border-border-custom p-6 rounded-2xl relative overflow-hidden shadow-sm'>
           <p className='text-zinc-500 dark:text-zinc-400 text-[10px] uppercase font-black tracking-[0.15em] mb-1'>
-            Saldo Atual (Mês)
+            Saldo Mensal
           </p>
           <h3 className='text-2xl sm:text-3xl font-black text-foreground tracking-tight'>
             {formatMoney(balance)}
@@ -210,7 +220,6 @@ export default function DashboardClient({
 
       {/* GRÁFICOS */}
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8'>
-        {/* FLUXO MENSAL */}
         <div className='lg:col-span-2 bg-surface border border-border-custom p-4 sm:p-6 rounded-2xl min-h-[350px] sm:h-[450px] shadow-sm'>
           <div className='flex items-center justify-between mb-8'>
             <h3 className='font-black text-foreground text-xs sm:text-sm uppercase tracking-widest'>
@@ -219,7 +228,7 @@ export default function DashboardClient({
             <select
               value={range}
               onChange={(e) => setRange(Number(e.target.value))}
-              className='bg-background border border-border-custom text-[10px] sm:text-xs text-zinc-500 rounded-lg px-2 py-1.5 outline-none font-bold uppercase cursor-pointer'
+              className='bg-background border border-border-custom text-[10px] sm:text-xs text-zinc-500 rounded-lg px-2 py-1.5 outline-none font-bold uppercase'
             >
               <option value={3}>3 meses</option>
               <option value={6}>6 meses</option>
@@ -261,7 +270,6 @@ export default function DashboardClient({
                   border: '1px solid var(--border-color)',
                   borderRadius: '12px',
                 }}
-                itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
                 formatter={(v: any) => formatMoney(v)}
               />
               <Bar dataKey='receitas' fill='#10b981' radius={[4, 4, 0, 0]} />
@@ -270,7 +278,7 @@ export default function DashboardClient({
           </ResponsiveContainer>
         </div>
 
-        {/* CATEGORIAS (SEM HOVER E COM SELECT DE MESES) */}
+        {/* CATEGORIAS */}
         <div className='bg-surface border border-border-custom p-4 sm:p-6 rounded-2xl flex flex-col min-h-[400px] shadow-sm'>
           <div className='flex items-center justify-between mb-1'>
             <h3 className='font-black text-foreground text-xs sm:text-sm uppercase tracking-widest'>
@@ -306,7 +314,6 @@ export default function DashboardClient({
                   paddingAngle={5}
                   dataKey='value'
                   stroke='none'
-                  isAnimationActive={true} // Mantém animação, mas sem interação de hover
                 >
                   {categoryData.map((entry, index) => (
                     <Cell

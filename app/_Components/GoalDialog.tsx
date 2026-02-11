@@ -2,7 +2,7 @@
 
 import React, { useState, useTransition, useEffect } from 'react';
 import { X, Target, DollarSign, Calendar, Loader2 } from 'lucide-react';
-import { createGoal, updateGoalAmount } from '../_actions/goals';
+import { createGoal, updateGoal } from '../_actions/goals'; // Importada a função updateGoal
 import { toast } from 'sonner';
 
 interface GoalDialogProps {
@@ -24,21 +24,28 @@ export default function GoalDialog({
   const [deadline, setDeadline] = useState('');
 
   useEffect(() => {
-    if (editData) {
-      setName(editData.name);
-      setTargetAmount(editData.targetAmount.toString());
-      setCurrentAmount(editData.currentAmount.toString());
-      if (editData.deadline && editData.deadline !== 'Sem prazo') {
-        const parts = editData.deadline.split('/');
-        if (parts.length === 3) {
-          setDeadline(`${parts[2]}-${parts[1]}-${parts[0]}`);
+    if (isOpen) {
+      if (editData) {
+        setName(editData.name);
+        setTargetAmount(editData.targetAmount.toString());
+        setCurrentAmount(editData.currentAmount.toString());
+
+        // Ajuste na lógica de data para preencher o input type="date"
+        if (editData.deadline) {
+          // Se a data vier do banco como objeto Date ou string ISO
+          const d = new Date(editData.deadline);
+          if (!isNaN(d.getTime())) {
+            setDeadline(d.toISOString().split('T')[0]);
+          }
+        } else {
+          setDeadline('');
         }
+      } else {
+        setName('');
+        setTargetAmount('');
+        setCurrentAmount('0');
+        setDeadline('');
       }
-    } else {
-      setName('');
-      setTargetAmount('');
-      setCurrentAmount('0');
-      setDeadline('');
     }
   }, [editData, isOpen]);
 
@@ -51,19 +58,27 @@ export default function GoalDialog({
     }
 
     startTransition(async () => {
+      const payload = {
+        name,
+        targetAmount: parseFloat(targetAmount),
+        currentAmount: parseFloat(currentAmount || '0'),
+        deadline: deadline || undefined,
+      };
+
       let result;
       if (editData) {
-        result = await updateGoalAmount(editData.id, parseFloat(currentAmount));
+        // Agora chamamos updateGoal para editar todos os campos, não apenas o valor
+        result = await updateGoal(editData.id, payload);
       } else {
-        result = await createGoal({
-          name,
-          targetAmount: parseFloat(targetAmount),
-          currentAmount: parseFloat(currentAmount || '0'),
-          deadline: deadline || undefined,
-        });
+        result = await createGoal(payload);
       }
 
       if (result.success) {
+        toast.success(
+          editData
+            ? 'Meta atualizada com sucesso!'
+            : 'Meta criada com sucesso!',
+        );
         onClose();
       } else {
         toast.error('Erro ao salvar meta!');
@@ -72,11 +87,11 @@ export default function GoalDialog({
   }
 
   return (
-    <div className='fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4'>
-      <div className='w-full max-w-md bg-surface border border-border-custom rounded-2xl shadow-2xl relative animate-in fade-in zoom-in duration-200 overflow-hidden'>
+    <div className='fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300'>
+      <div className='w-full max-w-md bg-surface border border-border-custom rounded-2xl shadow-2xl relative animate-in zoom-in duration-200 overflow-hidden'>
         {/* HEADER */}
         <div className='flex justify-between items-center p-6 border-b border-border-custom'>
-          <h2 className='text-lg font-bold text-foreground flex items-center gap-2'>
+          <h2 className='text-lg font-black text-foreground flex items-center gap-2 uppercase tracking-tight'>
             <div className='p-2 bg-emerald-500/10 rounded-lg'>
               <Target className='w-5 h-5 text-emerald-600 dark:text-emerald-500' />
             </div>
@@ -93,7 +108,7 @@ export default function GoalDialog({
         {/* FORMULÁRIO */}
         <div className='p-6 space-y-5'>
           <div className='space-y-2'>
-            <label className='text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest'>
+            <label className='text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest'>
               Nome do Objetivo
             </label>
             <input
@@ -101,13 +116,13 @@ export default function GoalDialog({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder='Ex: Viagem, Carro Novo...'
-              className='w-full bg-background border border-border-custom rounded-xl px-4 py-3 text-sm text-foreground focus:border-emerald-500 outline-none transition-all placeholder:text-zinc-500 shadow-sm'
+              className='w-full bg-background border border-border-custom rounded-xl px-4 py-3 text-sm font-bold text-foreground focus:border-emerald-500 outline-none transition-all placeholder:text-zinc-500 shadow-sm'
             />
           </div>
 
           <div className='grid grid-cols-2 gap-4'>
             <div className='space-y-2'>
-              <label className='text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest'>
+              <label className='text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest'>
                 Valor Alvo
               </label>
               <div className='relative'>
@@ -117,13 +132,13 @@ export default function GoalDialog({
                   value={targetAmount}
                   onChange={(e) => setTargetAmount(e.target.value)}
                   placeholder='0,00'
-                  className='w-full bg-background border border-border-custom rounded-xl pl-10 pr-4 py-3 text-sm text-foreground focus:border-emerald-500 outline-none transition-all shadow-sm'
+                  className='w-full bg-background border border-border-custom rounded-xl pl-10 pr-4 py-3 text-sm font-bold text-foreground focus:border-emerald-500 outline-none transition-all shadow-sm'
                 />
               </div>
             </div>
 
             <div className='space-y-2'>
-              <label className='text-[10px] font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-widest'>
+              <label className='text-[10px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest'>
                 Guardado (R$)
               </label>
               <div className='relative'>
@@ -132,14 +147,14 @@ export default function GoalDialog({
                   type='number'
                   value={currentAmount}
                   onChange={(e) => setCurrentAmount(e.target.value)}
-                  className='w-full bg-background border border-emerald-500/20 rounded-xl pl-10 pr-4 py-3 text-sm text-foreground focus:border-emerald-500 outline-none transition-all shadow-sm'
+                  className='w-full bg-background border border-emerald-500/20 rounded-xl pl-10 pr-4 py-3 text-sm font-bold text-foreground focus:border-emerald-500 outline-none transition-all shadow-sm'
                 />
               </div>
             </div>
           </div>
 
           <div className='space-y-2'>
-            <label className='text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest'>
+            <label className='text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest'>
               Prazo Final (Opcional)
             </label>
             <div className='relative'>
@@ -148,7 +163,7 @@ export default function GoalDialog({
                 type='date'
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
-                className='w-full bg-background border border-border-custom rounded-xl pl-10 pr-4 py-3 text-sm text-foreground focus:border-emerald-500 outline-none transition-all dark:[&::-webkit-calendar-picker-indicator]:invert shadow-sm'
+                className='w-full bg-background border border-border-custom rounded-xl pl-10 pr-4 py-3 text-sm font-bold text-foreground focus:border-emerald-500 outline-none transition-all dark:[&::-webkit-calendar-picker-indicator]:invert shadow-sm'
               />
             </div>
           </div>
@@ -158,14 +173,14 @@ export default function GoalDialog({
         <div className='p-6 border-t border-border-custom flex gap-3 bg-zinc-50/50 dark:bg-transparent'>
           <button
             onClick={onClose}
-            className='flex-1 px-4 py-3 bg-zinc-100 dark:bg-zinc-900 border border-border-custom rounded-xl text-sm font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:text-white transition-all'
+            className='flex-1 px-4 py-3 bg-zinc-100 dark:bg-zinc-900 border border-border-custom rounded-xl text-xs font-black text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:text-white transition-all uppercase tracking-widest'
           >
             CANCELAR
           </button>
           <button
             onClick={handleSubmit}
             disabled={isPending}
-            className='flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2'
+            className='flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 uppercase tracking-widest'
           >
             {isPending ? (
               <Loader2 className='w-4 h-4 animate-spin' />

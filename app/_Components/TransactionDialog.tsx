@@ -4,12 +4,12 @@ import React, { useState, useTransition, useEffect } from 'react';
 import {
   X,
   Calendar,
-  DollarSign,
   Tag,
   FileText,
   ArrowUpCircle,
   ArrowDownCircle,
   Loader2,
+  Clock,
 } from 'lucide-react';
 import { createTransaction, updateTransaction } from '../_actions/transactions';
 import { getCategories } from '../_actions/categories';
@@ -19,12 +19,14 @@ interface TransactionDialogProps {
   isOpen: boolean;
   onClose: () => void;
   editData?: any;
+  referenceMonth: string; // Mês vindo do Dashboard ou Filtro
 }
 
 export default function TransactionDialog({
   isOpen,
   onClose,
   editData,
+  referenceMonth,
 }: TransactionDialogProps) {
   const [isPending, startTransition] = useTransition();
 
@@ -34,8 +36,30 @@ export default function TransactionDialog({
   const [category, setCategory] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
+  // NOVO: Estado para controlar o Mês de Competência dentro do modal
+  const [selectedReference, setSelectedReference] = useState(referenceMonth);
+
   const [dbCategories, setDbCategories] = useState<{ name: string }[]>([]);
   const defaultCategories = ['Alimentação', 'Lazer', 'Transporte', 'Saúde'];
+
+  // Gera opções de meses para o seletor de competência (3 meses atrás até 6 meses à frente)
+  const referenceOptions = React.useMemo(() => {
+    const options = [];
+    const now = new Date();
+    for (let i = -3; i <= 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const value = d.toISOString().slice(0, 7);
+      const label = d.toLocaleDateString('pt-BR', {
+        month: 'long',
+        year: 'numeric',
+      });
+      options.push({
+        value,
+        label: label.charAt(0).toUpperCase() + label.slice(1),
+      });
+    }
+    return options;
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -45,17 +69,23 @@ export default function TransactionDialog({
         setDescription(editData.description);
         setCategory(editData.category?.name || '');
 
+        // Se for edição, pega o referenceDate real do banco de dados
+        if (editData.referenceDate) {
+          setSelectedReference(
+            new Date(editData.referenceDate).toISOString().slice(0, 7),
+          );
+        }
+
         const d = new Date(editData.date);
-        const year = d.getUTCFullYear();
-        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
-        const day = String(d.getUTCDate()).padStart(2, '0');
-        setDate(`${year}-${month}-${day}`);
+        setDate(d.toISOString().split('T')[0]);
       } else {
         setType('expense');
         setAmount('');
         setDescription('');
         setCategory('');
         setDate(new Date().toISOString().split('T')[0]);
+        // Se for novo, usa o que veio do Dashboard (ex: 2026-02)
+        setSelectedReference(referenceMonth);
       }
 
       async function load() {
@@ -64,13 +94,11 @@ export default function TransactionDialog({
       }
       load();
     }
-  }, [isOpen, editData]);
+  }, [isOpen, editData, referenceMonth]);
 
   const allCategories = Array.from(
     new Set([...defaultCategories, ...dbCategories.map((c) => c.name)]),
   ).sort();
-
-  if (!isOpen) return null;
 
   async function handleSubmit() {
     if (!amount || !description || !category) {
@@ -87,11 +115,13 @@ export default function TransactionDialog({
         type,
       };
 
+      // Enviamos o selectedReference que o usuário escolheu no Modal
       const result = editData
-        ? await updateTransaction(editData.id, payload)
-        : await createTransaction(payload);
+        ? await updateTransaction(editData.id, payload, selectedReference)
+        : await createTransaction(payload, selectedReference);
 
       if (result.success) {
+        toast.success('Sucesso!');
         onClose();
       } else {
         toast.error('Erro ao salvar!');
@@ -99,107 +129,108 @@ export default function TransactionDialog({
     });
   }
 
+  if (!isOpen) return null;
+
   return (
-    <div className='fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300'>
-      <div className='w-full max-w-md bg-surface border border-border-custom rounded-2xl shadow-2xl relative animate-in zoom-in duration-200 flex flex-col max-h-[90vh]'>
+    <div className='fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4'>
+      <div className='w-full max-w-md bg-surface border border-border-custom rounded-2xl shadow-2xl flex flex-col max-h-[90vh]'>
         {/* HEADER */}
         <div className='flex justify-between items-center p-6 border-b border-border-custom'>
-          <h2 className='text-lg font-black text-foreground'>
-            {editData ? 'Editar Transação' : 'Nova Transação'}
+          <h2 className='text-lg font-black text-foreground uppercase tracking-tight'>
+            {editData ? 'Editar Lançamento' : 'Novo Lançamento'}
           </h2>
           <button
             onClick={onClose}
-            className='text-zinc-400 hover:text-foreground transition-colors p-1'
+            className='text-zinc-400 hover:text-foreground transition-colors'
           >
             <X className='w-5 h-5' />
           </button>
         </div>
 
-        <div className='p-6 overflow-y-auto custom-scrollbar'>
-          <form className='space-y-6' onSubmit={(e) => e.preventDefault()}>
-            {/* SELETOR DE TIPO (TROCA DE COR DINÂMICA) */}
-            <div className='grid grid-cols-2 gap-2 p-1.5 bg-background border border-border-custom rounded-xl'>
-              <button
-                type='button'
-                onClick={() => setType('income')}
-                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all ${
-                  type === 'income'
-                    ? 'bg-surface text-emerald-600 dark:text-emerald-500 shadow-sm border border-border-custom scale-[1.02]'
-                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
-                }`}
-              >
-                <ArrowUpCircle
-                  className={`w-4 h-4 ${type === 'income' ? 'text-emerald-600' : ''}`}
-                />
-                RECEITA
-              </button>
-              <button
-                type='button'
-                onClick={() => setType('expense')}
-                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all ${
-                  type === 'expense'
-                    ? 'bg-surface text-rose-600 dark:text-rose-500 shadow-sm border border-border-custom scale-[1.02]'
-                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
-                }`}
-              >
-                <ArrowDownCircle
-                  className={`w-4 h-4 ${type === 'expense' ? 'text-rose-600' : ''}`}
-                />
-                DESPESA
-              </button>
-            </div>
+        <div className='p-6 overflow-y-auto custom-scrollbar space-y-6'>
+          {/* TIPO */}
+          <div className='grid grid-cols-2 gap-2 p-1.5 bg-background border border-border-custom rounded-xl'>
+            <button
+              type='button'
+              onClick={() => setType('income')}
+              className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all ${
+                type === 'income'
+                  ? 'bg-surface text-emerald-600 shadow-sm border border-border-custom'
+                  : 'text-zinc-500'
+              }`}
+            >
+              <ArrowUpCircle className='w-4 h-4' /> RECEITA
+            </button>
+            <button
+              type='button'
+              onClick={() => setType('expense')}
+              className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all ${
+                type === 'expense'
+                  ? 'bg-surface text-rose-600 shadow-sm border border-border-custom'
+                  : 'text-zinc-500'
+              }`}
+            >
+              <ArrowDownCircle className='w-4 h-4' /> DESPESA
+            </button>
+          </div>
 
-            {/* INPUT VALOR (TROCA DE COR DINÂMICA) */}
-            <div className='space-y-2'>
-              <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
-                Valor
+          {/* VALOR */}
+          <div className='space-y-2'>
+            <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
+              Valor
+            </label>
+            <div className='relative'>
+              <span className='absolute left-4 top-1/2 -translate-y-1/2 font-bold text-zinc-400'>
+                R$
+              </span>
+              <input
+                type='number'
+                step='0.01'
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                style={{ color: type === 'income' ? '#10b981' : '#e11d48' }}
+                className='w-full bg-background border border-border-custom rounded-xl pl-12 pr-4 py-4 text-2xl font-black outline-none focus:ring-2 focus:ring-emerald-500/10'
+              />
+            </div>
+          </div>
+
+          {/* SELETOR DE COMPETÊNCIA (O MÊS QUE APARECE NO DASHBOARD) */}
+          <div className='p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-xl space-y-3'>
+            <div className='flex items-center gap-2 text-emerald-600 dark:text-emerald-500'>
+              <Clock className='w-4 h-4' />
+              <label className='text-[10px] font-black uppercase tracking-widest'>
+                Mês de Competência
               </label>
-              <div className='relative'>
-                {/* Símbolo R$ - Cor via Style para garantir prioridade */}
-                <div
-                  className='absolute left-4 top-1/2 -translate-y-1/2 font-bold transition-colors duration-200 z-10'
-                  style={{
-                    color:
-                      type === 'income'
-                        ? 'var(--color-emerald-600, #10b981)'
-                        : 'var(--color-rose-600, #e11d48)',
-                  }}
-                >
-                  R$
-                </div>
-
-                <input
-                  type='number'
-                  step='0.01'
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder='0,00'
-                  /* Mantemos o style para o número digitado */
-                  style={{ color: type === 'income' ? '#059669' : '#e11d48' }}
-                  className={`w-full bg-background border border-border-custom rounded-xl pl-12 pr-4 py-4 text-2xl font-black outline-none transition-all duration-200 focus:ring-2 ${
-                    type === 'income'
-                      ? 'focus:border-emerald-500/50 focus:ring-emerald-500/10 placeholder:text-emerald-600/50'
-                      : 'focus:border-rose-500/50 focus:ring-rose-500/10 placeholder:text-rose-600/50'
-                  }`}
-                />
-              </div>
             </div>
+            <select
+              value={selectedReference}
+              onChange={(e) => setSelectedReference(e.target.value)}
+              className='w-full bg-surface border border-border-custom rounded-lg px-3 py-2 text-xs font-bold outline-none cursor-pointer'
+            >
+              {referenceOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <p className='text-[9px] text-zinc-500 font-medium'>
+              * Este é o mês onde este valor será somado nos gráficos.
+            </p>
+          </div>
 
+          <div className='space-y-4'>
             {/* DESCRIÇÃO */}
             <div className='space-y-2'>
               <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
                 Descrição
               </label>
               <div className='relative'>
-                <div className='absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400'>
-                  <FileText className='w-4 h-4' />
-                </div>
+                <FileText className='absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400' />
                 <input
                   type='text'
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder='Ex: Supermercado...'
-                  className='w-full bg-background border border-border-custom rounded-xl pl-12 pr-4 py-3.5 text-sm font-bold text-foreground outline-none focus:border-primary/30 transition-all'
+                  className='w-full bg-background border border-border-custom rounded-xl pl-12 pr-4 py-3.5 text-sm font-bold outline-none'
                 />
               </div>
             </div>
@@ -211,72 +242,65 @@ export default function TransactionDialog({
                   Categoria
                 </label>
                 <div className='relative'>
-                  <div className='absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400'>
-                    <Tag className='w-4 h-4' />
-                  </div>
+                  <Tag className='absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400' />
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className='w-full bg-background border border-border-custom rounded-xl pl-12 pr-4 py-3.5 text-xs font-bold text-foreground outline-none appearance-none cursor-pointer focus:border-primary/30'
+                    className='w-full bg-background border border-border-custom rounded-xl pl-12 pr-4 py-3.5 text-xs font-bold outline-none appearance-none'
                   >
                     <option value='' disabled>
-                      Filtrar...
+                      Selecionar...
                     </option>
-                    {allCategories.map((catName) => (
-                      <option key={catName} value={catName}>
-                        {catName}
+                    {allCategories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              {/* DATA */}
+              {/* DATA REAL */}
               <div className='space-y-2'>
                 <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
-                  Data
+                  Data da Compra
                 </label>
                 <div className='relative'>
-                  <div className='absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400'>
-                    <Calendar className='w-4 h-4' />
-                  </div>
+                  <Calendar className='absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400' />
                   <input
                     type='date'
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className='w-full bg-background border border-border-custom rounded-xl pl-12 pr-4 py-3.5 text-xs font-bold text-foreground outline-none focus:border-primary/30 transition-all dark:[&::-webkit-calendar-picker-indicator]:invert'
+                    className='w-full bg-background border border-border-custom rounded-xl pl-12 pr-4 py-3.5 text-xs font-bold outline-none'
                   />
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* ACTIONS */}
-            <div className='pt-6 flex gap-3'>
-              <button
-                type='button'
-                onClick={onClose}
-                className='flex-1 py-4 px-4 bg-background border border-border-custom rounded-xl text-xs font-bold text-zinc-500 hover:text-foreground transition-all active:scale-95'
-              >
-                CANCELAR
-              </button>
-              <button
-                type='button'
-                onClick={handleSubmit}
-                disabled={isPending}
-                className={`flex-1 py-4 px-4 text-white rounded-xl text-xs font-black tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 active:scale-95 ${
-                  type === 'income'
-                    ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20'
-                    : 'bg-rose-600 hover:bg-rose-500 shadow-rose-500/20'
-                }`}
-              >
-                {isPending ? (
-                  <Loader2 className='w-4 h-4 animate-spin' />
-                ) : (
-                  'SALVAR'
-                )}
-              </button>
-            </div>
-          </form>
+          {/* ACTIONS */}
+          <div className='pt-4 flex gap-3'>
+            <button
+              type='button'
+              onClick={onClose}
+              className='flex-1 py-4 bg-background border border-border-custom rounded-xl text-xs font-bold text-zinc-500'
+            >
+              CANCELAR
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isPending}
+              className={`flex-1 py-4 text-white rounded-xl text-xs font-black tracking-widest flex items-center justify-center gap-2 ${
+                type === 'income' ? 'bg-emerald-600' : 'bg-rose-600'
+              }`}
+            >
+              {isPending ? (
+                <Loader2 className='w-4 h-4 animate-spin' />
+              ) : (
+                'SALVAR'
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

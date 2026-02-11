@@ -1,27 +1,24 @@
-// components/_Components/UpdateGoalDialog.tsx
 'use client';
 
 import React, { useState, useTransition, useEffect } from 'react';
 import { X, DollarSign, Loader2, Target, TrendingUp } from 'lucide-react';
+import { updateGoalAmount } from '../_actions/goals';
 import { toast } from 'sonner';
 
 interface UpdateGoalDialogProps {
   goal: { id: string; name: string } | null;
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (amount: number) => Promise<void>;
 }
 
 export default function UpdateGoalDialog({
   goal,
   isOpen,
   onClose,
-  onConfirm,
 }: UpdateGoalDialogProps) {
   const [isPending, startTransition] = useTransition();
   const [amount, setAmount] = useState('');
 
-  // Limpa o input sempre que abrir para uma nova meta
   useEffect(() => {
     if (isOpen) setAmount('');
   }, [isOpen]);
@@ -38,10 +35,20 @@ export default function UpdateGoalDialog({
 
     startTransition(async () => {
       try {
-        await onConfirm(numAmount);
-        onClose();
+        // Chamamos a action diretamente aqui.
+        // Como o goals.ts usa 'increment', passamos APENAS o numAmount (ex: 1)
+        const res = await updateGoalAmount(goal.id, numAmount);
+
+        if (res.success) {
+          toast.success(
+            `R$ ${numAmount.toLocaleString('pt-BR')} adicionados à meta!`,
+          );
+          onClose();
+        } else {
+          toast.error('Erro ao atualizar a meta.');
+        }
       } catch (error) {
-        toast.error('Erro ao atualizar a meta.');
+        toast.error('Erro na requisição.');
       }
     });
   };
@@ -56,7 +63,7 @@ export default function UpdateGoalDialog({
               <Target className='w-5 h-5 text-blue-500' />
             </div>
             <h2 className='text-lg font-black text-foreground uppercase tracking-tight'>
-              Atualizar Meta
+              Aporte Rápido
             </h2>
           </div>
           <button
@@ -69,21 +76,21 @@ export default function UpdateGoalDialog({
 
         {/* CONTEÚDO */}
         <div className='p-6 space-y-6'>
-          <div className='space-y-1'>
-            <p className='text-sm text-zinc-500 font-medium'>
-              Quanto você deseja poupar para:
+          <div className='bg-blue-500/5 p-4 rounded-xl border border-blue-500/10'>
+            <p className='text-[10px] text-blue-500 font-black uppercase tracking-widest mb-1'>
+              Depositando em:
             </p>
-            <p className='text-base font-bold text-foreground'>
+            <p className='text-base font-bold text-foreground truncate'>
               🎯 {goal.name}
             </p>
           </div>
 
           <div className='space-y-2'>
-            <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
-              Valor do Depósito
+            <label className='text-[10px] font-black text-zinc-500 uppercase tracking-widest'>
+              Quanto deseja adicionar?
             </label>
             <div className='relative'>
-              <div className='absolute left-4 top-1/2 -translate-y-1/2 text-blue-500 font-bold z-10'>
+              <div className='absolute left-4 top-1/2 -translate-y-1/2 text-blue-500 font-black z-10'>
                 R$
               </div>
               <input
@@ -96,6 +103,9 @@ export default function UpdateGoalDialog({
                 className='w-full bg-background border border-border-custom rounded-xl pl-12 pr-4 py-4 text-2xl font-black text-foreground outline-none focus:border-blue-500/50 transition-all placeholder:text-zinc-400'
               />
             </div>
+            <p className='text-[9px] text-zinc-500 font-medium italic'>
+              * Este valor será somado ao saldo atual da meta.
+            </p>
           </div>
 
           {/* ACTIONS */}
@@ -103,7 +113,7 @@ export default function UpdateGoalDialog({
             <button
               type='button'
               onClick={onClose}
-              className='flex-1 py-4 px-4 bg-background border border-border-custom rounded-xl text-xs font-bold text-zinc-500 hover:text-foreground transition-all active:scale-95'
+              className='flex-1 py-4 px-4 bg-background border border-border-custom rounded-xl text-xs font-black text-zinc-500 hover:text-foreground transition-all uppercase tracking-widest'
             >
               CANCELAR
             </button>

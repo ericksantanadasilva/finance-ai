@@ -5,20 +5,22 @@ import { MoreHorizontal, Trash2, Edit2, Loader2 } from 'lucide-react';
 import { deleteTransaction } from '@/app/_actions/transactions';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import ConfirmDialog from '@/app/_Components/ConfirmDialog'; // Importamos o novo Dialog
+import ConfirmDialog from '@/app/_Components/ConfirmDialog';
 
 interface RowActionsProps {
   transactionId: string;
   onEdit: () => void;
+  isLast?: boolean;
 }
 
 export function TransactionRowActions({
   transactionId,
   onEdit,
+  isLast = false,
 }: RowActionsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false); // Estado para o modal de confirmação
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const router = useRouter();
 
   const handleDelete = async () => {
@@ -36,13 +38,15 @@ export function TransactionRowActions({
     } finally {
       setIsDeleting(false);
       setIsOpen(false);
-      setIsConfirmOpen(false); // Fecha o modal de confirmação
+      setIsConfirmOpen(false);
     }
   };
 
   return (
-    <div className='relative'>
-      {/* BOTÃO DISPARADOR */}
+    /* Aumentamos o z-index do container relativo quando aberto */
+    <div
+      className={`relative flex items-center justify-center ${isOpen ? 'z-50' : 'z-auto'}`}
+    >
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isDeleting}
@@ -57,19 +61,19 @@ export function TransactionRowActions({
 
       {isOpen && (
         <>
-          {/* OVERLAY PARA FECHAR AO CLICAR FORA */}
+          {/* Overlay fixo para fechar e garantir que o clique fora funcione */}
           <div
-            className='fixed inset-0 z-[80]'
+            className='fixed inset-0 z-[80] bg-transparent'
             onClick={() => setIsOpen(false)}
           />
 
-          {/* MENU DROPDOWN */}
           <div
             className={`
-            absolute right-0 bottom-full mb-2 md:top-full md:bottom-auto md:mt-2 w-40 
-            bg-surface border border-border-custom rounded-2xl shadow-xl z-[90] 
-            overflow-hidden animate-in fade-in zoom-in duration-200
-          `}
+              absolute right-0 w-40 
+              bg-surface border border-border-custom rounded-2xl shadow-2xl z-[110] 
+              overflow-hidden animate-in fade-in zoom-in duration-200
+              ${isLast ? 'bottom-full mb-2' : 'top-full mt-2'}
+            `}
           >
             <div className='p-1.5 flex flex-col gap-1'>
               <button
@@ -77,18 +81,17 @@ export function TransactionRowActions({
                   onEdit();
                   setIsOpen(false);
                 }}
-                className='w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors group'
+                className='w-full flex items-center gap-2.5 px-3 py-2.5 text-[11px] font-black uppercase tracking-tight text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors group'
               >
-                <Edit2 className='w-3.5 h-3.5 text-zinc-400 group-hover:text-primary transition-colors' />
+                <Edit2 className='w-3.5 h-3.5 text-zinc-400 group-hover:text-emerald-500 transition-colors' />
                 Editar
               </button>
 
               <div className='h-px bg-border-custom mx-2' />
 
-              {/* Botão que agora abre o ConfirmDialog em vez de deletar direto */}
               <button
                 onClick={() => setIsConfirmOpen(true)}
-                className='w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors group'
+                className='w-full flex items-center gap-2.5 px-3 py-2.5 text-[11px] font-black uppercase tracking-tight text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors group'
               >
                 <Trash2 className='w-3.5 h-3.5 text-rose-400 group-hover:text-rose-500 transition-colors' />
                 Excluir
@@ -98,7 +101,6 @@ export function TransactionRowActions({
         </>
       )}
 
-      {/* COMPONENTE DE CONFIRMAÇÃO CUSTOMIZADO */}
       <ConfirmDialog
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}

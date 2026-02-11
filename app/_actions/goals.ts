@@ -16,12 +16,8 @@ export async function getGoals() {
   if (!user) return [];
 
   return await prisma.goal.findMany({
-    where: {
-      userId: user.id,
-    },
-    orderBy: {
-      deadline: 'asc',
-    },
+    where: { userId: user.id },
+    orderBy: { deadline: 'asc' },
   });
 }
 
@@ -41,7 +37,6 @@ export async function createGoal(data: {
 
   if (!user) throw new Error('Não autorizado');
 
-  // TRATAMENTO DE DATA: Tenta converter, se falhar, fica nulo
   let parsedDeadline: Date | null = null;
   if (data.deadline) {
     const d = new Date(data.deadline);
@@ -50,7 +45,7 @@ export async function createGoal(data: {
     }
   }
 
-  const result = await prisma.goal.create({
+  await prisma.goal.create({
     data: {
       name: data.name,
       targetAmount: Number(data.targetAmount),
@@ -65,7 +60,58 @@ export async function createGoal(data: {
 }
 
 /**
- * ATUALIZAR VALOR ATUAL DA META (Adicionar fundos)
+ * ATUALIZAR META COMPLETA (Edição de Nome, Valores e Prazo)
+ */
+export async function updateGoal(
+  id: string,
+  data: {
+    name: string;
+    targetAmount: number;
+    currentAmount: number;
+    deadline?: string;
+  },
+) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) throw new Error('Não autorizado');
+
+    let parsedDeadline: Date | null = null;
+    if (data.deadline) {
+      const d = new Date(data.deadline);
+      if (!isNaN(d.getTime())) {
+        parsedDeadline = d;
+      }
+    }
+
+    await prisma.goal.update({
+      where: {
+        id: id,
+        userId: user.id,
+      },
+      data: {
+        name: data.name,
+        targetAmount: Number(data.targetAmount),
+        currentAmount: Number(data.currentAmount), // Aqui ele substitui o valor, ideal para correções
+        deadline: parsedDeadline,
+      },
+    });
+
+    revalidatePath('/Goals');
+    revalidatePath('/Dashboard');
+
+    return { success: true };
+  } catch (error) {
+    console.error('Erro ao editar meta:', error);
+    return { success: false };
+  }
+}
+
+/**
+ * ATUALIZAR APENAS O VALOR ATUAL (Aporte rápido)
  */
 export async function updateGoalAmount(id: string, amountToAdd: number) {
   try {
@@ -79,7 +125,6 @@ export async function updateGoalAmount(id: string, amountToAdd: number) {
     const value = Number(amountToAdd);
     if (isNaN(value)) throw new Error('Valor inválido');
 
-    // Usamos o 'increment' do Prisma para somar ao valor atual no banco
     await prisma.goal.update({
       where: {
         id: id,
@@ -97,7 +142,7 @@ export async function updateGoalAmount(id: string, amountToAdd: number) {
 
     return { success: true };
   } catch (error) {
-    console.error('Erro ao atualizar meta:', error);
+    console.error('Erro ao atualizar valor da meta:', error);
     return { success: false };
   }
 }

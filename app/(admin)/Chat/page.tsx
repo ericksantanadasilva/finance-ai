@@ -11,6 +11,7 @@ import {
   Loader2,
   Sparkles,
   Receipt,
+  Calendar,
 } from 'lucide-react';
 import { sendMessage } from '@/app/_actions/chat';
 import { createTransaction } from '@/app/_actions/transactions';
@@ -56,20 +57,37 @@ export default function AIAgentChat() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, isLoading]);
 
-  // AÇÕES (Mantidas conforme lógica original)
+  // AÇÃO DE TRANSAÇÃO ATUALIZADA COM SUPORTE A MÊS DE REFERÊNCIA
   const handleConfirmTransaction = async (index: number, data: any) => {
     try {
-      const res = await createTransaction({
-        description: data.description,
-        amount: data.amount,
-        type: data.type,
-        category: data.category,
-        date: new Date().toISOString(),
-      });
+      // 1. Pega o mês atual como fallback (ex: 2026-02)
+      const currentMonth = new Date().toISOString().slice(0, 7);
+
+      // 2. Prioriza o mês que a IA identificou no texto (ex: "em março")
+      // Certifique-se que sua Server Action 'sendMessage' retorne 'referenceMonth' no JSON
+      const referenceMonthToUse = data.referenceMonth || currentMonth;
+
+      const res = await createTransaction(
+        {
+          description: data.description,
+          amount: data.amount,
+          type: data.type,
+          category: data.category,
+          date: new Date().toISOString(),
+        },
+        referenceMonthToUse,
+      );
+
       if (res.success) {
+        const [year, month] = referenceMonthToUse.split('-');
+        const monthName = new Date(
+          Number(year),
+          Number(month) - 1,
+        ).toLocaleString('pt-BR', { month: 'long' });
+
         updateMessageAfterAction(
           index,
-          `✅ Transação registrada: ${data.description}`,
+          `✅ Registrado para ${monthName}: ${data.description}`,
         );
       }
     } catch (error) {
@@ -159,6 +177,8 @@ export default function AIAgentChat() {
     ]);
     setIsLoading(true);
     try {
+      // DICA: No seu sendMessage, garanta que você passa a data atual como contexto
+      // para que a IA saiba o que é "mês que vem" ou "março".
       const response = await sendMessage(userMsg, messages);
       setMessages((prev) => [
         ...prev,
@@ -245,12 +265,22 @@ export default function AIAgentChat() {
                       <h4 className='font-black text-foreground text-sm truncate uppercase tracking-tight'>
                         {msg.action.data.description || msg.action.data.name}
                       </h4>
-                      <p className='text-[10px] text-zinc-500 font-bold uppercase tracking-widest'>
+                      <p className='text-[10px] text-zinc-500 font-bold uppercase tracking-widest flex items-center gap-1'>
                         {msg.action.action === 'CREATE_GOAL'
                           ? '✨ Nova Meta'
                           : msg.action.action === 'UPDATE_GOAL'
                             ? '🎯 Meta Existente'
                             : `📂 ${msg.action.data.category || 'Geral'}`}
+
+                        {/* Exibe o mês de competência se detectado pela IA */}
+                        {msg.action.data.referenceMonth && (
+                          <span className='flex items-center gap-1 text-emerald-600 dark:text-emerald-500 lowercase'>
+                            • <Calendar className='w-2.5 h-2.5' />
+                            {new Date(
+                              msg.action.data.referenceMonth + '-02',
+                            ).toLocaleString('pt-BR', { month: 'short' })}
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>
@@ -302,12 +332,11 @@ export default function AIAgentChat() {
       {/* INPUT DE MENSAGEM */}
       <div className='w-full max-w-3xl p-4 bg-transparent pb-safe shrink-0'>
         <div className='relative flex items-center group'>
-          {/* O input agora carrega a borda e o fundo, eliminando a "caixa" externa */}
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder='Gastei 50 no almoço...'
+            placeholder='Gastei 50 no almoço e pago em março...'
             autoComplete='off'
             className='w-full bg-surface border border-border-custom rounded-2xl pl-5 pr-14 py-4 text-sm text-foreground outline-none focus:border-emerald-500/50 transition-all shadow-lg dark:shadow-none placeholder:text-zinc-400'
           />

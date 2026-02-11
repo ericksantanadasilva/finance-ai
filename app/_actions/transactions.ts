@@ -13,7 +13,7 @@ const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
   Geral: '#71717a',
 };
 
-export async function createTransaction(data: any) {
+export async function createTransaction(data: any, referenceMounth: string) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -42,22 +42,17 @@ export async function createTransaction(data: any) {
       },
     });
 
-    // Lógica de Referência: Para transações manuais, usamos o 1º dia do mês da transação
-    const tDate = new Date(data.date);
-    const referenceDate = new Date(
-      tDate.getFullYear(),
-      tDate.getMonth(),
-      1,
-      12,
-      0,
-      0,
-    );
+    const safeReferenceMounth =
+      referenceMounth || new Date().toISOString().slice(0, 7);
+
+    const [year, mounth] = safeReferenceMounth.split('-').map(Number);
+    const referenceDate = new Date(year, mounth - 1, 1, 12, 0, 0);
 
     await prisma.transaction.create({
       data: {
         description: data.description,
         amount: data.amount,
-        date: tDate,
+        date: new Date(data.date),
         referenceDate: referenceDate, // Campo de competência
         type: data.type,
         userId: user.id,
@@ -161,7 +156,11 @@ export async function deleteTransaction(id: string) {
   }
 }
 
-export async function updateTransaction(id: string, data: any) {
+export async function updateTransaction(
+  id: string,
+  data: any,
+  referenceMounth: string,
+) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -180,22 +179,15 @@ export async function updateTransaction(id: string, data: any) {
       },
     });
 
-    const tDate = new Date(data.date);
-    const referenceDate = new Date(
-      tDate.getFullYear(),
-      tDate.getMonth(),
-      1,
-      12,
-      0,
-      0,
-    );
+    const [year, mounth] = referenceMounth.split('-').map(Number);
+    const referenceDate = new Date(year, mounth - 1, 1, 12, 0, 0);
 
     await prisma.transaction.update({
       where: { id, userId: user.id },
       data: {
         description: data.description,
         amount: data.amount,
-        date: tDate,
+        date: new Date(data.date),
         referenceDate: referenceDate,
         type: data.type,
         categoryId: category.id,
