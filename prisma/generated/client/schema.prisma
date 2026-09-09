@@ -4,9 +4,9 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -72,4 +72,23 @@ model Goal {
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ExternalIdentity {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id") // UUID do usuário no sistema/Supabase
+  provider       String // 'telegram', 'discord', 'whatsapp', 'web'
+  providerUserId String   @map("provider_user_id") // Chat ID do Telegram, ID do Discord, etc.
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@unique([provider, providerUserId])
+  @@map("external_identities")
+}
+
+model LinkToken {
+  token     String   @id // Código alfanumérico curto (ex: 6 dígitos)
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+
+  @@map("link_tokens")
 }

@@ -166,6 +166,20 @@ exports.Prisma.GoalScalarFieldEnum = {
   userId: 'userId'
 };
 
+exports.Prisma.ExternalIdentityScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  provider: 'provider',
+  providerUserId: 'providerUserId',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.LinkTokenScalarFieldEnum = {
+  token: 'token',
+  userId: 'userId',
+  expiresAt: 'expiresAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -197,7 +211,9 @@ exports.Prisma.ModelName = {
   User: 'User',
   Category: 'Category',
   Transaction: 'Transaction',
-  Goal: 'Goal'
+  Goal: 'Goal',
+  ExternalIdentity: 'ExternalIdentity',
+  LinkToken: 'LinkToken'
 };
 
 /**

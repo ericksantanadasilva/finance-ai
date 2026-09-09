@@ -33,6 +33,16 @@ export type Transaction = $Result.DefaultSelection<Prisma.$TransactionPayload>
  * 
  */
 export type Goal = $Result.DefaultSelection<Prisma.$GoalPayload>
+/**
+ * Model ExternalIdentity
+ * 
+ */
+export type ExternalIdentity = $Result.DefaultSelection<Prisma.$ExternalIdentityPayload>
+/**
+ * Model LinkToken
+ * 
+ */
+export type LinkToken = $Result.DefaultSelection<Prisma.$LinkTokenPayload>
 
 /**
  * ##  Prisma Client ʲˢ
@@ -196,6 +206,26 @@ export class PrismaClient<
     * ```
     */
   get goal(): Prisma.GoalDelegate<ExtArgs>;
+
+  /**
+   * `prisma.externalIdentity`: Exposes CRUD operations for the **ExternalIdentity** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ExternalIdentities
+    * const externalIdentities = await prisma.externalIdentity.findMany()
+    * ```
+    */
+  get externalIdentity(): Prisma.ExternalIdentityDelegate<ExtArgs>;
+
+  /**
+   * `prisma.linkToken`: Exposes CRUD operations for the **LinkToken** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more LinkTokens
+    * const linkTokens = await prisma.linkToken.findMany()
+    * ```
+    */
+  get linkToken(): Prisma.LinkTokenDelegate<ExtArgs>;
 }
 
 export namespace Prisma {
@@ -640,7 +670,9 @@ export namespace Prisma {
     User: 'User',
     Category: 'Category',
     Transaction: 'Transaction',
-    Goal: 'Goal'
+    Goal: 'Goal',
+    ExternalIdentity: 'ExternalIdentity',
+    LinkToken: 'LinkToken'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -656,7 +688,7 @@ export namespace Prisma {
 
   export type TypeMap<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, ClientOptions = {}> = {
     meta: {
-      modelProps: "user" | "category" | "transaction" | "goal"
+      modelProps: "user" | "category" | "transaction" | "goal" | "externalIdentity" | "linkToken"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -937,6 +969,146 @@ export namespace Prisma {
           count: {
             args: Prisma.GoalCountArgs<ExtArgs>
             result: $Utils.Optional<GoalCountAggregateOutputType> | number
+          }
+        }
+      }
+      ExternalIdentity: {
+        payload: Prisma.$ExternalIdentityPayload<ExtArgs>
+        fields: Prisma.ExternalIdentityFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ExternalIdentityFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalIdentityPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ExternalIdentityFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalIdentityPayload>
+          }
+          findFirst: {
+            args: Prisma.ExternalIdentityFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalIdentityPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ExternalIdentityFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalIdentityPayload>
+          }
+          findMany: {
+            args: Prisma.ExternalIdentityFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalIdentityPayload>[]
+          }
+          create: {
+            args: Prisma.ExternalIdentityCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalIdentityPayload>
+          }
+          createMany: {
+            args: Prisma.ExternalIdentityCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.ExternalIdentityCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalIdentityPayload>[]
+          }
+          delete: {
+            args: Prisma.ExternalIdentityDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalIdentityPayload>
+          }
+          update: {
+            args: Prisma.ExternalIdentityUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalIdentityPayload>
+          }
+          deleteMany: {
+            args: Prisma.ExternalIdentityDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ExternalIdentityUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.ExternalIdentityUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalIdentityPayload>
+          }
+          aggregate: {
+            args: Prisma.ExternalIdentityAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateExternalIdentity>
+          }
+          groupBy: {
+            args: Prisma.ExternalIdentityGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ExternalIdentityGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ExternalIdentityCountArgs<ExtArgs>
+            result: $Utils.Optional<ExternalIdentityCountAggregateOutputType> | number
+          }
+        }
+      }
+      LinkToken: {
+        payload: Prisma.$LinkTokenPayload<ExtArgs>
+        fields: Prisma.LinkTokenFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.LinkTokenFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LinkTokenPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.LinkTokenFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LinkTokenPayload>
+          }
+          findFirst: {
+            args: Prisma.LinkTokenFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LinkTokenPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.LinkTokenFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LinkTokenPayload>
+          }
+          findMany: {
+            args: Prisma.LinkTokenFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LinkTokenPayload>[]
+          }
+          create: {
+            args: Prisma.LinkTokenCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LinkTokenPayload>
+          }
+          createMany: {
+            args: Prisma.LinkTokenCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.LinkTokenCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LinkTokenPayload>[]
+          }
+          delete: {
+            args: Prisma.LinkTokenDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LinkTokenPayload>
+          }
+          update: {
+            args: Prisma.LinkTokenUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LinkTokenPayload>
+          }
+          deleteMany: {
+            args: Prisma.LinkTokenDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.LinkTokenUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.LinkTokenUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LinkTokenPayload>
+          }
+          aggregate: {
+            args: Prisma.LinkTokenAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateLinkToken>
+          }
+          groupBy: {
+            args: Prisma.LinkTokenGroupByArgs<ExtArgs>
+            result: $Utils.Optional<LinkTokenGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.LinkTokenCountArgs<ExtArgs>
+            result: $Utils.Optional<LinkTokenCountAggregateOutputType> | number
           }
         }
       }
@@ -5235,6 +5407,1738 @@ export namespace Prisma {
 
 
   /**
+   * Model ExternalIdentity
+   */
+
+  export type AggregateExternalIdentity = {
+    _count: ExternalIdentityCountAggregateOutputType | null
+    _min: ExternalIdentityMinAggregateOutputType | null
+    _max: ExternalIdentityMaxAggregateOutputType | null
+  }
+
+  export type ExternalIdentityMinAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    provider: string | null
+    providerUserId: string | null
+    createdAt: Date | null
+  }
+
+  export type ExternalIdentityMaxAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    provider: string | null
+    providerUserId: string | null
+    createdAt: Date | null
+  }
+
+  export type ExternalIdentityCountAggregateOutputType = {
+    id: number
+    userId: number
+    provider: number
+    providerUserId: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type ExternalIdentityMinAggregateInputType = {
+    id?: true
+    userId?: true
+    provider?: true
+    providerUserId?: true
+    createdAt?: true
+  }
+
+  export type ExternalIdentityMaxAggregateInputType = {
+    id?: true
+    userId?: true
+    provider?: true
+    providerUserId?: true
+    createdAt?: true
+  }
+
+  export type ExternalIdentityCountAggregateInputType = {
+    id?: true
+    userId?: true
+    provider?: true
+    providerUserId?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type ExternalIdentityAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ExternalIdentity to aggregate.
+     */
+    where?: ExternalIdentityWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ExternalIdentities to fetch.
+     */
+    orderBy?: ExternalIdentityOrderByWithRelationInput | ExternalIdentityOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ExternalIdentityWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ExternalIdentities from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ExternalIdentities.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ExternalIdentities
+    **/
+    _count?: true | ExternalIdentityCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ExternalIdentityMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ExternalIdentityMaxAggregateInputType
+  }
+
+  export type GetExternalIdentityAggregateType<T extends ExternalIdentityAggregateArgs> = {
+        [P in keyof T & keyof AggregateExternalIdentity]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateExternalIdentity[P]>
+      : GetScalarType<T[P], AggregateExternalIdentity[P]>
+  }
+
+
+
+
+  export type ExternalIdentityGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ExternalIdentityWhereInput
+    orderBy?: ExternalIdentityOrderByWithAggregationInput | ExternalIdentityOrderByWithAggregationInput[]
+    by: ExternalIdentityScalarFieldEnum[] | ExternalIdentityScalarFieldEnum
+    having?: ExternalIdentityScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ExternalIdentityCountAggregateInputType | true
+    _min?: ExternalIdentityMinAggregateInputType
+    _max?: ExternalIdentityMaxAggregateInputType
+  }
+
+  export type ExternalIdentityGroupByOutputType = {
+    id: string
+    userId: string
+    provider: string
+    providerUserId: string
+    createdAt: Date
+    _count: ExternalIdentityCountAggregateOutputType | null
+    _min: ExternalIdentityMinAggregateOutputType | null
+    _max: ExternalIdentityMaxAggregateOutputType | null
+  }
+
+  type GetExternalIdentityGroupByPayload<T extends ExternalIdentityGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ExternalIdentityGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ExternalIdentityGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ExternalIdentityGroupByOutputType[P]>
+            : GetScalarType<T[P], ExternalIdentityGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ExternalIdentitySelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    provider?: boolean
+    providerUserId?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["externalIdentity"]>
+
+  export type ExternalIdentitySelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    provider?: boolean
+    providerUserId?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["externalIdentity"]>
+
+  export type ExternalIdentitySelectScalar = {
+    id?: boolean
+    userId?: boolean
+    provider?: boolean
+    providerUserId?: boolean
+    createdAt?: boolean
+  }
+
+
+  export type $ExternalIdentityPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ExternalIdentity"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      userId: string
+      provider: string
+      providerUserId: string
+      createdAt: Date
+    }, ExtArgs["result"]["externalIdentity"]>
+    composites: {}
+  }
+
+  type ExternalIdentityGetPayload<S extends boolean | null | undefined | ExternalIdentityDefaultArgs> = $Result.GetResult<Prisma.$ExternalIdentityPayload, S>
+
+  type ExternalIdentityCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<ExternalIdentityFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: ExternalIdentityCountAggregateInputType | true
+    }
+
+  export interface ExternalIdentityDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ExternalIdentity'], meta: { name: 'ExternalIdentity' } }
+    /**
+     * Find zero or one ExternalIdentity that matches the filter.
+     * @param {ExternalIdentityFindUniqueArgs} args - Arguments to find a ExternalIdentity
+     * @example
+     * // Get one ExternalIdentity
+     * const externalIdentity = await prisma.externalIdentity.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ExternalIdentityFindUniqueArgs>(args: SelectSubset<T, ExternalIdentityFindUniqueArgs<ExtArgs>>): Prisma__ExternalIdentityClient<$Result.GetResult<Prisma.$ExternalIdentityPayload<ExtArgs>, T, "findUnique"> | null, null, ExtArgs>
+
+    /**
+     * Find one ExternalIdentity that matches the filter or throw an error with `error.code='P2025'` 
+     * if no matches were found.
+     * @param {ExternalIdentityFindUniqueOrThrowArgs} args - Arguments to find a ExternalIdentity
+     * @example
+     * // Get one ExternalIdentity
+     * const externalIdentity = await prisma.externalIdentity.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ExternalIdentityFindUniqueOrThrowArgs>(args: SelectSubset<T, ExternalIdentityFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ExternalIdentityClient<$Result.GetResult<Prisma.$ExternalIdentityPayload<ExtArgs>, T, "findUniqueOrThrow">, never, ExtArgs>
+
+    /**
+     * Find the first ExternalIdentity that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExternalIdentityFindFirstArgs} args - Arguments to find a ExternalIdentity
+     * @example
+     * // Get one ExternalIdentity
+     * const externalIdentity = await prisma.externalIdentity.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ExternalIdentityFindFirstArgs>(args?: SelectSubset<T, ExternalIdentityFindFirstArgs<ExtArgs>>): Prisma__ExternalIdentityClient<$Result.GetResult<Prisma.$ExternalIdentityPayload<ExtArgs>, T, "findFirst"> | null, null, ExtArgs>
+
+    /**
+     * Find the first ExternalIdentity that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExternalIdentityFindFirstOrThrowArgs} args - Arguments to find a ExternalIdentity
+     * @example
+     * // Get one ExternalIdentity
+     * const externalIdentity = await prisma.externalIdentity.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ExternalIdentityFindFirstOrThrowArgs>(args?: SelectSubset<T, ExternalIdentityFindFirstOrThrowArgs<ExtArgs>>): Prisma__ExternalIdentityClient<$Result.GetResult<Prisma.$ExternalIdentityPayload<ExtArgs>, T, "findFirstOrThrow">, never, ExtArgs>
+
+    /**
+     * Find zero or more ExternalIdentities that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExternalIdentityFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ExternalIdentities
+     * const externalIdentities = await prisma.externalIdentity.findMany()
+     * 
+     * // Get first 10 ExternalIdentities
+     * const externalIdentities = await prisma.externalIdentity.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const externalIdentityWithIdOnly = await prisma.externalIdentity.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ExternalIdentityFindManyArgs>(args?: SelectSubset<T, ExternalIdentityFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ExternalIdentityPayload<ExtArgs>, T, "findMany">>
+
+    /**
+     * Create a ExternalIdentity.
+     * @param {ExternalIdentityCreateArgs} args - Arguments to create a ExternalIdentity.
+     * @example
+     * // Create one ExternalIdentity
+     * const ExternalIdentity = await prisma.externalIdentity.create({
+     *   data: {
+     *     // ... data to create a ExternalIdentity
+     *   }
+     * })
+     * 
+     */
+    create<T extends ExternalIdentityCreateArgs>(args: SelectSubset<T, ExternalIdentityCreateArgs<ExtArgs>>): Prisma__ExternalIdentityClient<$Result.GetResult<Prisma.$ExternalIdentityPayload<ExtArgs>, T, "create">, never, ExtArgs>
+
+    /**
+     * Create many ExternalIdentities.
+     * @param {ExternalIdentityCreateManyArgs} args - Arguments to create many ExternalIdentities.
+     * @example
+     * // Create many ExternalIdentities
+     * const externalIdentity = await prisma.externalIdentity.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ExternalIdentityCreateManyArgs>(args?: SelectSubset<T, ExternalIdentityCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many ExternalIdentities and returns the data saved in the database.
+     * @param {ExternalIdentityCreateManyAndReturnArgs} args - Arguments to create many ExternalIdentities.
+     * @example
+     * // Create many ExternalIdentities
+     * const externalIdentity = await prisma.externalIdentity.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many ExternalIdentities and only return the `id`
+     * const externalIdentityWithIdOnly = await prisma.externalIdentity.createManyAndReturn({ 
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends ExternalIdentityCreateManyAndReturnArgs>(args?: SelectSubset<T, ExternalIdentityCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ExternalIdentityPayload<ExtArgs>, T, "createManyAndReturn">>
+
+    /**
+     * Delete a ExternalIdentity.
+     * @param {ExternalIdentityDeleteArgs} args - Arguments to delete one ExternalIdentity.
+     * @example
+     * // Delete one ExternalIdentity
+     * const ExternalIdentity = await prisma.externalIdentity.delete({
+     *   where: {
+     *     // ... filter to delete one ExternalIdentity
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ExternalIdentityDeleteArgs>(args: SelectSubset<T, ExternalIdentityDeleteArgs<ExtArgs>>): Prisma__ExternalIdentityClient<$Result.GetResult<Prisma.$ExternalIdentityPayload<ExtArgs>, T, "delete">, never, ExtArgs>
+
+    /**
+     * Update one ExternalIdentity.
+     * @param {ExternalIdentityUpdateArgs} args - Arguments to update one ExternalIdentity.
+     * @example
+     * // Update one ExternalIdentity
+     * const externalIdentity = await prisma.externalIdentity.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ExternalIdentityUpdateArgs>(args: SelectSubset<T, ExternalIdentityUpdateArgs<ExtArgs>>): Prisma__ExternalIdentityClient<$Result.GetResult<Prisma.$ExternalIdentityPayload<ExtArgs>, T, "update">, never, ExtArgs>
+
+    /**
+     * Delete zero or more ExternalIdentities.
+     * @param {ExternalIdentityDeleteManyArgs} args - Arguments to filter ExternalIdentities to delete.
+     * @example
+     * // Delete a few ExternalIdentities
+     * const { count } = await prisma.externalIdentity.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ExternalIdentityDeleteManyArgs>(args?: SelectSubset<T, ExternalIdentityDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ExternalIdentities.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExternalIdentityUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ExternalIdentities
+     * const externalIdentity = await prisma.externalIdentity.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ExternalIdentityUpdateManyArgs>(args: SelectSubset<T, ExternalIdentityUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one ExternalIdentity.
+     * @param {ExternalIdentityUpsertArgs} args - Arguments to update or create a ExternalIdentity.
+     * @example
+     * // Update or create a ExternalIdentity
+     * const externalIdentity = await prisma.externalIdentity.upsert({
+     *   create: {
+     *     // ... data to create a ExternalIdentity
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ExternalIdentity we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ExternalIdentityUpsertArgs>(args: SelectSubset<T, ExternalIdentityUpsertArgs<ExtArgs>>): Prisma__ExternalIdentityClient<$Result.GetResult<Prisma.$ExternalIdentityPayload<ExtArgs>, T, "upsert">, never, ExtArgs>
+
+
+    /**
+     * Count the number of ExternalIdentities.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExternalIdentityCountArgs} args - Arguments to filter ExternalIdentities to count.
+     * @example
+     * // Count the number of ExternalIdentities
+     * const count = await prisma.externalIdentity.count({
+     *   where: {
+     *     // ... the filter for the ExternalIdentities we want to count
+     *   }
+     * })
+    **/
+    count<T extends ExternalIdentityCountArgs>(
+      args?: Subset<T, ExternalIdentityCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ExternalIdentityCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ExternalIdentity.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExternalIdentityAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ExternalIdentityAggregateArgs>(args: Subset<T, ExternalIdentityAggregateArgs>): Prisma.PrismaPromise<GetExternalIdentityAggregateType<T>>
+
+    /**
+     * Group by ExternalIdentity.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExternalIdentityGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ExternalIdentityGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ExternalIdentityGroupByArgs['orderBy'] }
+        : { orderBy?: ExternalIdentityGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ExternalIdentityGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetExternalIdentityGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ExternalIdentity model
+   */
+  readonly fields: ExternalIdentityFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ExternalIdentity.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ExternalIdentityClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ExternalIdentity model
+   */ 
+  interface ExternalIdentityFieldRefs {
+    readonly id: FieldRef<"ExternalIdentity", 'String'>
+    readonly userId: FieldRef<"ExternalIdentity", 'String'>
+    readonly provider: FieldRef<"ExternalIdentity", 'String'>
+    readonly providerUserId: FieldRef<"ExternalIdentity", 'String'>
+    readonly createdAt: FieldRef<"ExternalIdentity", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ExternalIdentity findUnique
+   */
+  export type ExternalIdentityFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalIdentity
+     */
+    select?: ExternalIdentitySelect<ExtArgs> | null
+    /**
+     * Filter, which ExternalIdentity to fetch.
+     */
+    where: ExternalIdentityWhereUniqueInput
+  }
+
+  /**
+   * ExternalIdentity findUniqueOrThrow
+   */
+  export type ExternalIdentityFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalIdentity
+     */
+    select?: ExternalIdentitySelect<ExtArgs> | null
+    /**
+     * Filter, which ExternalIdentity to fetch.
+     */
+    where: ExternalIdentityWhereUniqueInput
+  }
+
+  /**
+   * ExternalIdentity findFirst
+   */
+  export type ExternalIdentityFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalIdentity
+     */
+    select?: ExternalIdentitySelect<ExtArgs> | null
+    /**
+     * Filter, which ExternalIdentity to fetch.
+     */
+    where?: ExternalIdentityWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ExternalIdentities to fetch.
+     */
+    orderBy?: ExternalIdentityOrderByWithRelationInput | ExternalIdentityOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ExternalIdentities.
+     */
+    cursor?: ExternalIdentityWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ExternalIdentities from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ExternalIdentities.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ExternalIdentities.
+     */
+    distinct?: ExternalIdentityScalarFieldEnum | ExternalIdentityScalarFieldEnum[]
+  }
+
+  /**
+   * ExternalIdentity findFirstOrThrow
+   */
+  export type ExternalIdentityFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalIdentity
+     */
+    select?: ExternalIdentitySelect<ExtArgs> | null
+    /**
+     * Filter, which ExternalIdentity to fetch.
+     */
+    where?: ExternalIdentityWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ExternalIdentities to fetch.
+     */
+    orderBy?: ExternalIdentityOrderByWithRelationInput | ExternalIdentityOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ExternalIdentities.
+     */
+    cursor?: ExternalIdentityWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ExternalIdentities from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ExternalIdentities.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ExternalIdentities.
+     */
+    distinct?: ExternalIdentityScalarFieldEnum | ExternalIdentityScalarFieldEnum[]
+  }
+
+  /**
+   * ExternalIdentity findMany
+   */
+  export type ExternalIdentityFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalIdentity
+     */
+    select?: ExternalIdentitySelect<ExtArgs> | null
+    /**
+     * Filter, which ExternalIdentities to fetch.
+     */
+    where?: ExternalIdentityWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ExternalIdentities to fetch.
+     */
+    orderBy?: ExternalIdentityOrderByWithRelationInput | ExternalIdentityOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ExternalIdentities.
+     */
+    cursor?: ExternalIdentityWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ExternalIdentities from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ExternalIdentities.
+     */
+    skip?: number
+    distinct?: ExternalIdentityScalarFieldEnum | ExternalIdentityScalarFieldEnum[]
+  }
+
+  /**
+   * ExternalIdentity create
+   */
+  export type ExternalIdentityCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalIdentity
+     */
+    select?: ExternalIdentitySelect<ExtArgs> | null
+    /**
+     * The data needed to create a ExternalIdentity.
+     */
+    data: XOR<ExternalIdentityCreateInput, ExternalIdentityUncheckedCreateInput>
+  }
+
+  /**
+   * ExternalIdentity createMany
+   */
+  export type ExternalIdentityCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ExternalIdentities.
+     */
+    data: ExternalIdentityCreateManyInput | ExternalIdentityCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ExternalIdentity createManyAndReturn
+   */
+  export type ExternalIdentityCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalIdentity
+     */
+    select?: ExternalIdentitySelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * The data used to create many ExternalIdentities.
+     */
+    data: ExternalIdentityCreateManyInput | ExternalIdentityCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ExternalIdentity update
+   */
+  export type ExternalIdentityUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalIdentity
+     */
+    select?: ExternalIdentitySelect<ExtArgs> | null
+    /**
+     * The data needed to update a ExternalIdentity.
+     */
+    data: XOR<ExternalIdentityUpdateInput, ExternalIdentityUncheckedUpdateInput>
+    /**
+     * Choose, which ExternalIdentity to update.
+     */
+    where: ExternalIdentityWhereUniqueInput
+  }
+
+  /**
+   * ExternalIdentity updateMany
+   */
+  export type ExternalIdentityUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ExternalIdentities.
+     */
+    data: XOR<ExternalIdentityUpdateManyMutationInput, ExternalIdentityUncheckedUpdateManyInput>
+    /**
+     * Filter which ExternalIdentities to update
+     */
+    where?: ExternalIdentityWhereInput
+  }
+
+  /**
+   * ExternalIdentity upsert
+   */
+  export type ExternalIdentityUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalIdentity
+     */
+    select?: ExternalIdentitySelect<ExtArgs> | null
+    /**
+     * The filter to search for the ExternalIdentity to update in case it exists.
+     */
+    where: ExternalIdentityWhereUniqueInput
+    /**
+     * In case the ExternalIdentity found by the `where` argument doesn't exist, create a new ExternalIdentity with this data.
+     */
+    create: XOR<ExternalIdentityCreateInput, ExternalIdentityUncheckedCreateInput>
+    /**
+     * In case the ExternalIdentity was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ExternalIdentityUpdateInput, ExternalIdentityUncheckedUpdateInput>
+  }
+
+  /**
+   * ExternalIdentity delete
+   */
+  export type ExternalIdentityDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalIdentity
+     */
+    select?: ExternalIdentitySelect<ExtArgs> | null
+    /**
+     * Filter which ExternalIdentity to delete.
+     */
+    where: ExternalIdentityWhereUniqueInput
+  }
+
+  /**
+   * ExternalIdentity deleteMany
+   */
+  export type ExternalIdentityDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ExternalIdentities to delete
+     */
+    where?: ExternalIdentityWhereInput
+  }
+
+  /**
+   * ExternalIdentity without action
+   */
+  export type ExternalIdentityDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalIdentity
+     */
+    select?: ExternalIdentitySelect<ExtArgs> | null
+  }
+
+
+  /**
+   * Model LinkToken
+   */
+
+  export type AggregateLinkToken = {
+    _count: LinkTokenCountAggregateOutputType | null
+    _min: LinkTokenMinAggregateOutputType | null
+    _max: LinkTokenMaxAggregateOutputType | null
+  }
+
+  export type LinkTokenMinAggregateOutputType = {
+    token: string | null
+    userId: string | null
+    expiresAt: Date | null
+  }
+
+  export type LinkTokenMaxAggregateOutputType = {
+    token: string | null
+    userId: string | null
+    expiresAt: Date | null
+  }
+
+  export type LinkTokenCountAggregateOutputType = {
+    token: number
+    userId: number
+    expiresAt: number
+    _all: number
+  }
+
+
+  export type LinkTokenMinAggregateInputType = {
+    token?: true
+    userId?: true
+    expiresAt?: true
+  }
+
+  export type LinkTokenMaxAggregateInputType = {
+    token?: true
+    userId?: true
+    expiresAt?: true
+  }
+
+  export type LinkTokenCountAggregateInputType = {
+    token?: true
+    userId?: true
+    expiresAt?: true
+    _all?: true
+  }
+
+  export type LinkTokenAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which LinkToken to aggregate.
+     */
+    where?: LinkTokenWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LinkTokens to fetch.
+     */
+    orderBy?: LinkTokenOrderByWithRelationInput | LinkTokenOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: LinkTokenWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LinkTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LinkTokens.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned LinkTokens
+    **/
+    _count?: true | LinkTokenCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: LinkTokenMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: LinkTokenMaxAggregateInputType
+  }
+
+  export type GetLinkTokenAggregateType<T extends LinkTokenAggregateArgs> = {
+        [P in keyof T & keyof AggregateLinkToken]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateLinkToken[P]>
+      : GetScalarType<T[P], AggregateLinkToken[P]>
+  }
+
+
+
+
+  export type LinkTokenGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: LinkTokenWhereInput
+    orderBy?: LinkTokenOrderByWithAggregationInput | LinkTokenOrderByWithAggregationInput[]
+    by: LinkTokenScalarFieldEnum[] | LinkTokenScalarFieldEnum
+    having?: LinkTokenScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: LinkTokenCountAggregateInputType | true
+    _min?: LinkTokenMinAggregateInputType
+    _max?: LinkTokenMaxAggregateInputType
+  }
+
+  export type LinkTokenGroupByOutputType = {
+    token: string
+    userId: string
+    expiresAt: Date
+    _count: LinkTokenCountAggregateOutputType | null
+    _min: LinkTokenMinAggregateOutputType | null
+    _max: LinkTokenMaxAggregateOutputType | null
+  }
+
+  type GetLinkTokenGroupByPayload<T extends LinkTokenGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<LinkTokenGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof LinkTokenGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], LinkTokenGroupByOutputType[P]>
+            : GetScalarType<T[P], LinkTokenGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type LinkTokenSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    token?: boolean
+    userId?: boolean
+    expiresAt?: boolean
+  }, ExtArgs["result"]["linkToken"]>
+
+  export type LinkTokenSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    token?: boolean
+    userId?: boolean
+    expiresAt?: boolean
+  }, ExtArgs["result"]["linkToken"]>
+
+  export type LinkTokenSelectScalar = {
+    token?: boolean
+    userId?: boolean
+    expiresAt?: boolean
+  }
+
+
+  export type $LinkTokenPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "LinkToken"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      token: string
+      userId: string
+      expiresAt: Date
+    }, ExtArgs["result"]["linkToken"]>
+    composites: {}
+  }
+
+  type LinkTokenGetPayload<S extends boolean | null | undefined | LinkTokenDefaultArgs> = $Result.GetResult<Prisma.$LinkTokenPayload, S>
+
+  type LinkTokenCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<LinkTokenFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: LinkTokenCountAggregateInputType | true
+    }
+
+  export interface LinkTokenDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['LinkToken'], meta: { name: 'LinkToken' } }
+    /**
+     * Find zero or one LinkToken that matches the filter.
+     * @param {LinkTokenFindUniqueArgs} args - Arguments to find a LinkToken
+     * @example
+     * // Get one LinkToken
+     * const linkToken = await prisma.linkToken.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends LinkTokenFindUniqueArgs>(args: SelectSubset<T, LinkTokenFindUniqueArgs<ExtArgs>>): Prisma__LinkTokenClient<$Result.GetResult<Prisma.$LinkTokenPayload<ExtArgs>, T, "findUnique"> | null, null, ExtArgs>
+
+    /**
+     * Find one LinkToken that matches the filter or throw an error with `error.code='P2025'` 
+     * if no matches were found.
+     * @param {LinkTokenFindUniqueOrThrowArgs} args - Arguments to find a LinkToken
+     * @example
+     * // Get one LinkToken
+     * const linkToken = await prisma.linkToken.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends LinkTokenFindUniqueOrThrowArgs>(args: SelectSubset<T, LinkTokenFindUniqueOrThrowArgs<ExtArgs>>): Prisma__LinkTokenClient<$Result.GetResult<Prisma.$LinkTokenPayload<ExtArgs>, T, "findUniqueOrThrow">, never, ExtArgs>
+
+    /**
+     * Find the first LinkToken that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LinkTokenFindFirstArgs} args - Arguments to find a LinkToken
+     * @example
+     * // Get one LinkToken
+     * const linkToken = await prisma.linkToken.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends LinkTokenFindFirstArgs>(args?: SelectSubset<T, LinkTokenFindFirstArgs<ExtArgs>>): Prisma__LinkTokenClient<$Result.GetResult<Prisma.$LinkTokenPayload<ExtArgs>, T, "findFirst"> | null, null, ExtArgs>
+
+    /**
+     * Find the first LinkToken that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LinkTokenFindFirstOrThrowArgs} args - Arguments to find a LinkToken
+     * @example
+     * // Get one LinkToken
+     * const linkToken = await prisma.linkToken.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends LinkTokenFindFirstOrThrowArgs>(args?: SelectSubset<T, LinkTokenFindFirstOrThrowArgs<ExtArgs>>): Prisma__LinkTokenClient<$Result.GetResult<Prisma.$LinkTokenPayload<ExtArgs>, T, "findFirstOrThrow">, never, ExtArgs>
+
+    /**
+     * Find zero or more LinkTokens that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LinkTokenFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all LinkTokens
+     * const linkTokens = await prisma.linkToken.findMany()
+     * 
+     * // Get first 10 LinkTokens
+     * const linkTokens = await prisma.linkToken.findMany({ take: 10 })
+     * 
+     * // Only select the `token`
+     * const linkTokenWithTokenOnly = await prisma.linkToken.findMany({ select: { token: true } })
+     * 
+     */
+    findMany<T extends LinkTokenFindManyArgs>(args?: SelectSubset<T, LinkTokenFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LinkTokenPayload<ExtArgs>, T, "findMany">>
+
+    /**
+     * Create a LinkToken.
+     * @param {LinkTokenCreateArgs} args - Arguments to create a LinkToken.
+     * @example
+     * // Create one LinkToken
+     * const LinkToken = await prisma.linkToken.create({
+     *   data: {
+     *     // ... data to create a LinkToken
+     *   }
+     * })
+     * 
+     */
+    create<T extends LinkTokenCreateArgs>(args: SelectSubset<T, LinkTokenCreateArgs<ExtArgs>>): Prisma__LinkTokenClient<$Result.GetResult<Prisma.$LinkTokenPayload<ExtArgs>, T, "create">, never, ExtArgs>
+
+    /**
+     * Create many LinkTokens.
+     * @param {LinkTokenCreateManyArgs} args - Arguments to create many LinkTokens.
+     * @example
+     * // Create many LinkTokens
+     * const linkToken = await prisma.linkToken.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends LinkTokenCreateManyArgs>(args?: SelectSubset<T, LinkTokenCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many LinkTokens and returns the data saved in the database.
+     * @param {LinkTokenCreateManyAndReturnArgs} args - Arguments to create many LinkTokens.
+     * @example
+     * // Create many LinkTokens
+     * const linkToken = await prisma.linkToken.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many LinkTokens and only return the `token`
+     * const linkTokenWithTokenOnly = await prisma.linkToken.createManyAndReturn({ 
+     *   select: { token: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends LinkTokenCreateManyAndReturnArgs>(args?: SelectSubset<T, LinkTokenCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LinkTokenPayload<ExtArgs>, T, "createManyAndReturn">>
+
+    /**
+     * Delete a LinkToken.
+     * @param {LinkTokenDeleteArgs} args - Arguments to delete one LinkToken.
+     * @example
+     * // Delete one LinkToken
+     * const LinkToken = await prisma.linkToken.delete({
+     *   where: {
+     *     // ... filter to delete one LinkToken
+     *   }
+     * })
+     * 
+     */
+    delete<T extends LinkTokenDeleteArgs>(args: SelectSubset<T, LinkTokenDeleteArgs<ExtArgs>>): Prisma__LinkTokenClient<$Result.GetResult<Prisma.$LinkTokenPayload<ExtArgs>, T, "delete">, never, ExtArgs>
+
+    /**
+     * Update one LinkToken.
+     * @param {LinkTokenUpdateArgs} args - Arguments to update one LinkToken.
+     * @example
+     * // Update one LinkToken
+     * const linkToken = await prisma.linkToken.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends LinkTokenUpdateArgs>(args: SelectSubset<T, LinkTokenUpdateArgs<ExtArgs>>): Prisma__LinkTokenClient<$Result.GetResult<Prisma.$LinkTokenPayload<ExtArgs>, T, "update">, never, ExtArgs>
+
+    /**
+     * Delete zero or more LinkTokens.
+     * @param {LinkTokenDeleteManyArgs} args - Arguments to filter LinkTokens to delete.
+     * @example
+     * // Delete a few LinkTokens
+     * const { count } = await prisma.linkToken.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends LinkTokenDeleteManyArgs>(args?: SelectSubset<T, LinkTokenDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more LinkTokens.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LinkTokenUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many LinkTokens
+     * const linkToken = await prisma.linkToken.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends LinkTokenUpdateManyArgs>(args: SelectSubset<T, LinkTokenUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one LinkToken.
+     * @param {LinkTokenUpsertArgs} args - Arguments to update or create a LinkToken.
+     * @example
+     * // Update or create a LinkToken
+     * const linkToken = await prisma.linkToken.upsert({
+     *   create: {
+     *     // ... data to create a LinkToken
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the LinkToken we want to update
+     *   }
+     * })
+     */
+    upsert<T extends LinkTokenUpsertArgs>(args: SelectSubset<T, LinkTokenUpsertArgs<ExtArgs>>): Prisma__LinkTokenClient<$Result.GetResult<Prisma.$LinkTokenPayload<ExtArgs>, T, "upsert">, never, ExtArgs>
+
+
+    /**
+     * Count the number of LinkTokens.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LinkTokenCountArgs} args - Arguments to filter LinkTokens to count.
+     * @example
+     * // Count the number of LinkTokens
+     * const count = await prisma.linkToken.count({
+     *   where: {
+     *     // ... the filter for the LinkTokens we want to count
+     *   }
+     * })
+    **/
+    count<T extends LinkTokenCountArgs>(
+      args?: Subset<T, LinkTokenCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], LinkTokenCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a LinkToken.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LinkTokenAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends LinkTokenAggregateArgs>(args: Subset<T, LinkTokenAggregateArgs>): Prisma.PrismaPromise<GetLinkTokenAggregateType<T>>
+
+    /**
+     * Group by LinkToken.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LinkTokenGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends LinkTokenGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: LinkTokenGroupByArgs['orderBy'] }
+        : { orderBy?: LinkTokenGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, LinkTokenGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetLinkTokenGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the LinkToken model
+   */
+  readonly fields: LinkTokenFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for LinkToken.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__LinkTokenClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the LinkToken model
+   */ 
+  interface LinkTokenFieldRefs {
+    readonly token: FieldRef<"LinkToken", 'String'>
+    readonly userId: FieldRef<"LinkToken", 'String'>
+    readonly expiresAt: FieldRef<"LinkToken", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * LinkToken findUnique
+   */
+  export type LinkTokenFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LinkToken
+     */
+    select?: LinkTokenSelect<ExtArgs> | null
+    /**
+     * Filter, which LinkToken to fetch.
+     */
+    where: LinkTokenWhereUniqueInput
+  }
+
+  /**
+   * LinkToken findUniqueOrThrow
+   */
+  export type LinkTokenFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LinkToken
+     */
+    select?: LinkTokenSelect<ExtArgs> | null
+    /**
+     * Filter, which LinkToken to fetch.
+     */
+    where: LinkTokenWhereUniqueInput
+  }
+
+  /**
+   * LinkToken findFirst
+   */
+  export type LinkTokenFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LinkToken
+     */
+    select?: LinkTokenSelect<ExtArgs> | null
+    /**
+     * Filter, which LinkToken to fetch.
+     */
+    where?: LinkTokenWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LinkTokens to fetch.
+     */
+    orderBy?: LinkTokenOrderByWithRelationInput | LinkTokenOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for LinkTokens.
+     */
+    cursor?: LinkTokenWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LinkTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LinkTokens.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of LinkTokens.
+     */
+    distinct?: LinkTokenScalarFieldEnum | LinkTokenScalarFieldEnum[]
+  }
+
+  /**
+   * LinkToken findFirstOrThrow
+   */
+  export type LinkTokenFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LinkToken
+     */
+    select?: LinkTokenSelect<ExtArgs> | null
+    /**
+     * Filter, which LinkToken to fetch.
+     */
+    where?: LinkTokenWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LinkTokens to fetch.
+     */
+    orderBy?: LinkTokenOrderByWithRelationInput | LinkTokenOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for LinkTokens.
+     */
+    cursor?: LinkTokenWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LinkTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LinkTokens.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of LinkTokens.
+     */
+    distinct?: LinkTokenScalarFieldEnum | LinkTokenScalarFieldEnum[]
+  }
+
+  /**
+   * LinkToken findMany
+   */
+  export type LinkTokenFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LinkToken
+     */
+    select?: LinkTokenSelect<ExtArgs> | null
+    /**
+     * Filter, which LinkTokens to fetch.
+     */
+    where?: LinkTokenWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LinkTokens to fetch.
+     */
+    orderBy?: LinkTokenOrderByWithRelationInput | LinkTokenOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing LinkTokens.
+     */
+    cursor?: LinkTokenWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LinkTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LinkTokens.
+     */
+    skip?: number
+    distinct?: LinkTokenScalarFieldEnum | LinkTokenScalarFieldEnum[]
+  }
+
+  /**
+   * LinkToken create
+   */
+  export type LinkTokenCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LinkToken
+     */
+    select?: LinkTokenSelect<ExtArgs> | null
+    /**
+     * The data needed to create a LinkToken.
+     */
+    data: XOR<LinkTokenCreateInput, LinkTokenUncheckedCreateInput>
+  }
+
+  /**
+   * LinkToken createMany
+   */
+  export type LinkTokenCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many LinkTokens.
+     */
+    data: LinkTokenCreateManyInput | LinkTokenCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * LinkToken createManyAndReturn
+   */
+  export type LinkTokenCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LinkToken
+     */
+    select?: LinkTokenSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * The data used to create many LinkTokens.
+     */
+    data: LinkTokenCreateManyInput | LinkTokenCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * LinkToken update
+   */
+  export type LinkTokenUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LinkToken
+     */
+    select?: LinkTokenSelect<ExtArgs> | null
+    /**
+     * The data needed to update a LinkToken.
+     */
+    data: XOR<LinkTokenUpdateInput, LinkTokenUncheckedUpdateInput>
+    /**
+     * Choose, which LinkToken to update.
+     */
+    where: LinkTokenWhereUniqueInput
+  }
+
+  /**
+   * LinkToken updateMany
+   */
+  export type LinkTokenUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update LinkTokens.
+     */
+    data: XOR<LinkTokenUpdateManyMutationInput, LinkTokenUncheckedUpdateManyInput>
+    /**
+     * Filter which LinkTokens to update
+     */
+    where?: LinkTokenWhereInput
+  }
+
+  /**
+   * LinkToken upsert
+   */
+  export type LinkTokenUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LinkToken
+     */
+    select?: LinkTokenSelect<ExtArgs> | null
+    /**
+     * The filter to search for the LinkToken to update in case it exists.
+     */
+    where: LinkTokenWhereUniqueInput
+    /**
+     * In case the LinkToken found by the `where` argument doesn't exist, create a new LinkToken with this data.
+     */
+    create: XOR<LinkTokenCreateInput, LinkTokenUncheckedCreateInput>
+    /**
+     * In case the LinkToken was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<LinkTokenUpdateInput, LinkTokenUncheckedUpdateInput>
+  }
+
+  /**
+   * LinkToken delete
+   */
+  export type LinkTokenDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LinkToken
+     */
+    select?: LinkTokenSelect<ExtArgs> | null
+    /**
+     * Filter which LinkToken to delete.
+     */
+    where: LinkTokenWhereUniqueInput
+  }
+
+  /**
+   * LinkToken deleteMany
+   */
+  export type LinkTokenDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which LinkTokens to delete
+     */
+    where?: LinkTokenWhereInput
+  }
+
+  /**
+   * LinkToken without action
+   */
+  export type LinkTokenDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LinkToken
+     */
+    select?: LinkTokenSelect<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -5302,6 +7206,26 @@ export namespace Prisma {
   };
 
   export type GoalScalarFieldEnum = (typeof GoalScalarFieldEnum)[keyof typeof GoalScalarFieldEnum]
+
+
+  export const ExternalIdentityScalarFieldEnum: {
+    id: 'id',
+    userId: 'userId',
+    provider: 'provider',
+    providerUserId: 'providerUserId',
+    createdAt: 'createdAt'
+  };
+
+  export type ExternalIdentityScalarFieldEnum = (typeof ExternalIdentityScalarFieldEnum)[keyof typeof ExternalIdentityScalarFieldEnum]
+
+
+  export const LinkTokenScalarFieldEnum: {
+    token: 'token',
+    userId: 'userId',
+    expiresAt: 'expiresAt'
+  };
+
+  export type LinkTokenScalarFieldEnum = (typeof LinkTokenScalarFieldEnum)[keyof typeof LinkTokenScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -5720,6 +7644,101 @@ export namespace Prisma {
     userId?: StringWithAggregatesFilter<"Goal"> | string
   }
 
+  export type ExternalIdentityWhereInput = {
+    AND?: ExternalIdentityWhereInput | ExternalIdentityWhereInput[]
+    OR?: ExternalIdentityWhereInput[]
+    NOT?: ExternalIdentityWhereInput | ExternalIdentityWhereInput[]
+    id?: StringFilter<"ExternalIdentity"> | string
+    userId?: StringFilter<"ExternalIdentity"> | string
+    provider?: StringFilter<"ExternalIdentity"> | string
+    providerUserId?: StringFilter<"ExternalIdentity"> | string
+    createdAt?: DateTimeFilter<"ExternalIdentity"> | Date | string
+  }
+
+  export type ExternalIdentityOrderByWithRelationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    provider?: SortOrder
+    providerUserId?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type ExternalIdentityWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    provider_providerUserId?: ExternalIdentityProviderProviderUserIdCompoundUniqueInput
+    AND?: ExternalIdentityWhereInput | ExternalIdentityWhereInput[]
+    OR?: ExternalIdentityWhereInput[]
+    NOT?: ExternalIdentityWhereInput | ExternalIdentityWhereInput[]
+    userId?: StringFilter<"ExternalIdentity"> | string
+    provider?: StringFilter<"ExternalIdentity"> | string
+    providerUserId?: StringFilter<"ExternalIdentity"> | string
+    createdAt?: DateTimeFilter<"ExternalIdentity"> | Date | string
+  }, "id" | "provider_providerUserId">
+
+  export type ExternalIdentityOrderByWithAggregationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    provider?: SortOrder
+    providerUserId?: SortOrder
+    createdAt?: SortOrder
+    _count?: ExternalIdentityCountOrderByAggregateInput
+    _max?: ExternalIdentityMaxOrderByAggregateInput
+    _min?: ExternalIdentityMinOrderByAggregateInput
+  }
+
+  export type ExternalIdentityScalarWhereWithAggregatesInput = {
+    AND?: ExternalIdentityScalarWhereWithAggregatesInput | ExternalIdentityScalarWhereWithAggregatesInput[]
+    OR?: ExternalIdentityScalarWhereWithAggregatesInput[]
+    NOT?: ExternalIdentityScalarWhereWithAggregatesInput | ExternalIdentityScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"ExternalIdentity"> | string
+    userId?: StringWithAggregatesFilter<"ExternalIdentity"> | string
+    provider?: StringWithAggregatesFilter<"ExternalIdentity"> | string
+    providerUserId?: StringWithAggregatesFilter<"ExternalIdentity"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"ExternalIdentity"> | Date | string
+  }
+
+  export type LinkTokenWhereInput = {
+    AND?: LinkTokenWhereInput | LinkTokenWhereInput[]
+    OR?: LinkTokenWhereInput[]
+    NOT?: LinkTokenWhereInput | LinkTokenWhereInput[]
+    token?: StringFilter<"LinkToken"> | string
+    userId?: StringFilter<"LinkToken"> | string
+    expiresAt?: DateTimeFilter<"LinkToken"> | Date | string
+  }
+
+  export type LinkTokenOrderByWithRelationInput = {
+    token?: SortOrder
+    userId?: SortOrder
+    expiresAt?: SortOrder
+  }
+
+  export type LinkTokenWhereUniqueInput = Prisma.AtLeast<{
+    token?: string
+    AND?: LinkTokenWhereInput | LinkTokenWhereInput[]
+    OR?: LinkTokenWhereInput[]
+    NOT?: LinkTokenWhereInput | LinkTokenWhereInput[]
+    userId?: StringFilter<"LinkToken"> | string
+    expiresAt?: DateTimeFilter<"LinkToken"> | Date | string
+  }, "token">
+
+  export type LinkTokenOrderByWithAggregationInput = {
+    token?: SortOrder
+    userId?: SortOrder
+    expiresAt?: SortOrder
+    _count?: LinkTokenCountOrderByAggregateInput
+    _max?: LinkTokenMaxOrderByAggregateInput
+    _min?: LinkTokenMinOrderByAggregateInput
+  }
+
+  export type LinkTokenScalarWhereWithAggregatesInput = {
+    AND?: LinkTokenScalarWhereWithAggregatesInput | LinkTokenScalarWhereWithAggregatesInput[]
+    OR?: LinkTokenScalarWhereWithAggregatesInput[]
+    NOT?: LinkTokenScalarWhereWithAggregatesInput | LinkTokenScalarWhereWithAggregatesInput[]
+    token?: StringWithAggregatesFilter<"LinkToken"> | string
+    userId?: StringWithAggregatesFilter<"LinkToken"> | string
+    expiresAt?: DateTimeWithAggregatesFilter<"LinkToken"> | Date | string
+  }
+
   export type UserCreateInput = {
     id?: string
     email: string
@@ -6038,6 +8057,104 @@ export namespace Prisma {
     currentAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     deadline?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     userId?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type ExternalIdentityCreateInput = {
+    id?: string
+    userId: string
+    provider: string
+    providerUserId: string
+    createdAt?: Date | string
+  }
+
+  export type ExternalIdentityUncheckedCreateInput = {
+    id?: string
+    userId: string
+    provider: string
+    providerUserId: string
+    createdAt?: Date | string
+  }
+
+  export type ExternalIdentityUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    provider?: StringFieldUpdateOperationsInput | string
+    providerUserId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ExternalIdentityUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    provider?: StringFieldUpdateOperationsInput | string
+    providerUserId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ExternalIdentityCreateManyInput = {
+    id?: string
+    userId: string
+    provider: string
+    providerUserId: string
+    createdAt?: Date | string
+  }
+
+  export type ExternalIdentityUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    provider?: StringFieldUpdateOperationsInput | string
+    providerUserId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ExternalIdentityUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    provider?: StringFieldUpdateOperationsInput | string
+    providerUserId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LinkTokenCreateInput = {
+    token: string
+    userId: string
+    expiresAt: Date | string
+  }
+
+  export type LinkTokenUncheckedCreateInput = {
+    token: string
+    userId: string
+    expiresAt: Date | string
+  }
+
+  export type LinkTokenUpdateInput = {
+    token?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LinkTokenUncheckedUpdateInput = {
+    token?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LinkTokenCreateManyInput = {
+    token: string
+    userId: string
+    expiresAt: Date | string
+  }
+
+  export type LinkTokenUpdateManyMutationInput = {
+    token?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LinkTokenUncheckedUpdateManyInput = {
+    token?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type StringFilter<$PrismaModel = never> = {
@@ -6439,6 +8556,53 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedDateTimeNullableFilter<$PrismaModel>
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  }
+
+  export type ExternalIdentityProviderProviderUserIdCompoundUniqueInput = {
+    provider: string
+    providerUserId: string
+  }
+
+  export type ExternalIdentityCountOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    provider?: SortOrder
+    providerUserId?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type ExternalIdentityMaxOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    provider?: SortOrder
+    providerUserId?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type ExternalIdentityMinOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    provider?: SortOrder
+    providerUserId?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type LinkTokenCountOrderByAggregateInput = {
+    token?: SortOrder
+    userId?: SortOrder
+    expiresAt?: SortOrder
+  }
+
+  export type LinkTokenMaxOrderByAggregateInput = {
+    token?: SortOrder
+    userId?: SortOrder
+    expiresAt?: SortOrder
+  }
+
+  export type LinkTokenMinOrderByAggregateInput = {
+    token?: SortOrder
+    userId?: SortOrder
+    expiresAt?: SortOrder
   }
 
   export type TransactionCreateNestedManyWithoutUserInput = {
@@ -7591,6 +9755,14 @@ export namespace Prisma {
      * @deprecated Use GoalDefaultArgs instead
      */
     export type GoalArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = GoalDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use ExternalIdentityDefaultArgs instead
+     */
+    export type ExternalIdentityArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = ExternalIdentityDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use LinkTokenDefaultArgs instead
+     */
+    export type LinkTokenArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = LinkTokenDefaultArgs<ExtArgs>
 
   /**
    * Batch Payload for updateMany & deleteMany & createMany
