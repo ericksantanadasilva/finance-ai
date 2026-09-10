@@ -121,13 +121,24 @@ export async function POST(request: Request) {
 
     // 6. Retorna status 201 com o objeto da transação criada
     return NextResponse.json(
+      // {
+      //   ...transaction,
+      //   amount: Number(transaction.amount),
+      //   date: transaction.date.toISOString(),
+      //   referenceDate: transaction.referenceDate.toISOString(),
+      // },
+      // { status: 201 },
       {
-        ...transaction,
+        success: true,
+        message: 'Transação registrada com sucesso',
+        id: transaction.id,
+        description: transaction.description,
         amount: Number(transaction.amount),
+        type: transaction.type,
+        category: category.name,
         date: transaction.date.toISOString(),
-        referenceDate: transaction.referenceDate.toISOString(),
       },
-      { status: 201 },
+      { status: 200 },
     );
   } catch (error: any) {
     console.error('Erro ao criar transação via integração:', error);
