@@ -44,3 +44,9 @@ next-env.d.ts
 
 # Prisma Client gerado
 /prisma/generated
+
+
+# Configuração local de deploy na VPS
+/Dockerfile
+/docker-compose.yml
+/docker-compose.yml.bak
