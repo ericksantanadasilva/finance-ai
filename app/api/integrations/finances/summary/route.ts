@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const categoryName = searchParams.get('categoryName');
-    const dateField = searchParams.get('dateField'); // 'date' (padrão) ou 'createdAt'
+    const dateField = searchParams.get('dateField'); // 'date' (padrão), 'referenceDate' (competência) ou 'createdAt'
 
     if (!userId) {
       return NextResponse.json(
@@ -50,6 +50,8 @@ export async function GET(request: Request) {
       // Aplica na data financeira 'date' por padrão ou 'createdAt' se explicitado
       if (dateField === 'createdAt') {
         where.createdAt = dateFilter;
+      } else if (dateField === 'referenceDate') {
+        where.referenceDate = dateFilter;
       } else {
         where.date = dateFilter;
       }
