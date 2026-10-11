@@ -9,7 +9,14 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function processFileWithAI(base64Data: string, mimeType: string) {
   try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return null;
+
     const categories = await prisma.category.findMany({
+      where: { userId: user.id },
       select: { name: true },
     });
     const categoryList = categories.map((c) => c.name).join(', ');
@@ -91,41 +98,57 @@ export async function saveTransactions(
     const [year, month] = referenceMonth.split('-').map(Number);
     const referenceDate = new Date(year, month - 1, 1, 12, 0, 0);
 
-    for (const tx of transactions) {
-      await prisma.transaction.create({
-        data: {
-          description: tx.description,
-          amount: tx.amount,
-          type: tx.type === 'income' ? 'income' : 'expense',
-          date: new Date(tx.date), // Data real da compra (Extrato)
-          referenceDate: referenceDate, // Data de competência (Dashboard)
+    // Evita duplicatas ao reimportar a mesma fatura (mesma descrição, valor, data e competência)
+    const existing = await prisma.transaction.findMany({
+      where: { userId, referenceDate },
+      select: { description: true, amount: true, date: true },
+    });
+    const makeKey = (d: string, a: number, dt: Date) =>
+      `${d}|${Number(a).toFixed(2)}|${dt.toISOString().slice(0, 10)}`;
+    const seen = new Set(
+      existing.map((e) => makeKey(e.description, Number(e.amount), e.date)),
+    );
+
+    const toSave = transactions.filter((tx) => {
+      const key = makeKey(tx.description, tx.amount, new Date(tx.date));
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    // Uma única transação do banco: ou salva tudo, ou nada
+    await prisma.$transaction(async (tx) => {
+      const categoryIds = new Map<string, string>();
+      for (const name of new Set(toSave.map((t) => t.category as string))) {
+        const category = await tx.category.upsert({
+          where: { name_userId: { name, userId } },
+          update: {},
+          create: { name, userId, color: '#71717a', type: 'expense' },
+        });
+        categoryIds.set(name, category.id);
+      }
+
+      await tx.transaction.createMany({
+        data: toSave.map((t) => ({
+          description: t.description,
+          amount: t.amount,
+          type: t.type === 'income' ? 'income' : 'expense',
+          date: new Date(t.date), // Data real da compra (Extrato)
+          referenceDate, // Data de competência (Dashboard)
           aiGenerated: true,
-          category: {
-            connectOrCreate: {
-              where: {
-                name_userId: {
-                  name: tx.category,
-                  userId: userId,
-                },
-              },
-              create: {
-                name: tx.category,
-                userId: userId,
-                color: '#71717a',
-                type: 'expense',
-              },
-            },
-          },
-          user: {
-            connect: { id: userId },
-          },
-        },
+          categoryId: categoryIds.get(t.category),
+          userId,
+        })),
       });
-    }
+    });
 
     revalidatePath('/Dashboard');
     revalidatePath('/Transactions');
-    return { sucess: true };
+    return {
+      success: true,
+      imported: toSave.length,
+      skipped: transactions.length - toSave.length,
+    };
   } catch (error) {
     console.error('Erro detalhado ao salvar:', error);
     throw new Error('Falha ao salvar transações');

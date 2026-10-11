@@ -94,8 +94,13 @@ export default function AIImportClient() {
     if (results.length === 0) return;
     setSaving(true);
     try {
-      await saveTransactions(results, selectedMonth);
-      toast.success('Transações importadas com sucesso!');
+      const res = await saveTransactions(results, selectedMonth);
+      const skipped = res?.skipped ?? 0;
+      toast.success(
+        skipped > 0
+          ? `${res.imported} importadas, ${skipped} duplicadas ignoradas.`
+          : 'Transações importadas com sucesso!',
+      );
       setResults([]);
       setFiles([]);
       router.push('/Dashboard');
