@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import {
   Search,
   Plus,
@@ -8,50 +9,99 @@ import {
   ArrowDownLeft,
   Filter,
   CalendarDays,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  X,
 } from 'lucide-react';
 import { TransactionRowActions } from './TransactionRowActions';
 import TransactionDialog from '../_Components/TransactionDialog';
+import type { TransactionItem } from '@/app/_actions/transactions';
 
-export default function TransactionsClient({
-  initialTransactions,
-}: {
-  initialTransactions: any[];
-}) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [monthFilter, setMonthFilter] = useState('all');
+type PageData = {
+  items: TransactionItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  totals: { income: number; expense: number };
+  categories: string[];
+  months: string[];
+};
+
+export default function TransactionsClient({ data }: { data: PageData }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+
+  const categoryFilter = searchParams.get('category') ?? 'all';
+  const monthFilter = searchParams.get('month') ?? 'all';
+  const typeFilter = searchParams.get('type') ?? 'all';
+  const sortFilter = searchParams.get('sort') ?? 'date_desc';
+  const urlSearch = searchParams.get('q') ?? '';
+
+  const [searchTerm, setSearchTerm] = useState(urlSearch);
+  const [minAmount, setMinAmount] = useState(searchParams.get('min') ?? '');
+  const [maxAmount, setMaxAmount] = useState(searchParams.get('max') ?? '');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
 
-  const categories = useMemo(() => {
-    const cats = new Set<string>();
-    initialTransactions.forEach((t) => {
-      if (t.category?.name) cats.add(t.category.name);
+  const categories = data.categories;
+  const availableMonths = data.months;
+  const filteredTransactions = data.items;
+
+  // Atualiza a URL (fonte da verdade dos filtros). Qualquer filtro volta para a página 1.
+  const updateParams = (patch: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(patch).forEach(([key, value]) => {
+      if (value === null || value === '' || value === 'all') params.delete(key);
+      else params.set(key, value);
     });
-    return Array.from(cats).sort();
-  }, [initialTransactions]);
-
-  const availableMonths = useMemo(() => {
-    const months = new Set<string>();
-    initialTransactions.forEach((t) => {
-      const date = new Date(t.referenceDate);
-      months.add(date.toISOString().slice(0, 7));
+    if (!('page' in patch)) params.delete('page');
+    const qs = params.toString();
+    startTransition(() => {
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     });
-    return Array.from(months).sort().reverse();
-  }, [initialTransactions]);
+  };
 
-  const filteredTransactions = initialTransactions.filter((tx) => {
-    const matchesSearch = tx.description
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesCategory =
-      categoryFilter === 'all' || tx.category?.name === categoryFilter;
-    const matchesMonth =
-      monthFilter === 'all' || tx.referenceDate.startsWith(monthFilter);
+  // Debounce para busca por texto e faixa de valor (evita uma consulta por tecla)
+  useEffect(() => {
+    const current = {
+      q: urlSearch,
+      min: searchParams.get('min') ?? '',
+      max: searchParams.get('max') ?? '',
+    };
+    if (
+      searchTerm === current.q &&
+      minAmount === current.min &&
+      maxAmount === current.max
+    )
+      return;
+    const t = setTimeout(() => {
+      updateParams({ q: searchTerm, min: minAmount, max: maxAmount });
+    }, 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, minAmount, maxAmount]);
 
-    return matchesSearch && matchesCategory && matchesMonth;
-  });
+  const hasActiveFilters =
+    !!urlSearch ||
+    categoryFilter !== 'all' ||
+    monthFilter !== 'all' ||
+    typeFilter !== 'all' ||
+    !!searchParams.get('min') ||
+    !!searchParams.get('max');
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setMinAmount('');
+    setMaxAmount('');
+    startTransition(() => {
+      router.replace(pathname, { scroll: false });
+    });
+  };
 
   const handleEdit = (transaction: any) => {
     setSelectedTransaction(transaction);
@@ -101,60 +151,161 @@ export default function TransactionsClient({
       </div>
 
       {/* BARRA DE FILTROS */}
-      <div className='bg-surface border border-border-custom rounded-2xl p-4 shadow-sm mb-6 flex flex-col lg:flex-row gap-4'>
-        <div className='relative flex-1'>
-          <Search className='absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400' />
-          <input
-            type='text'
-            placeholder='Buscar transação...'
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className='w-full bg-background border border-border-custom focus:border-emerald-500/50 rounded-xl pl-12 pr-4 py-3 text-sm font-bold outline-none transition-all placeholder:text-zinc-500 shadow-inner'
-          />
+      <div className='bg-surface border border-border-custom rounded-2xl p-4 shadow-sm mb-6 flex flex-col gap-4'>
+        <div className='flex flex-col lg:flex-row gap-4'>
+          <div className='relative flex-1'>
+            <Search className='absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400' />
+            <input
+              type='text'
+              placeholder='Buscar transação...'
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className='w-full bg-background border border-border-custom focus:border-emerald-500/50 rounded-xl pl-12 pr-4 py-3 text-sm font-bold outline-none transition-all placeholder:text-zinc-500 shadow-inner'
+            />
+          </div>
+
+          <div className='flex flex-wrap sm:flex-nowrap gap-4'>
+            <div className='relative min-w-[160px] flex-1 sm:flex-none'>
+              <Filter className='absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400' />
+              <select
+                value={categoryFilter}
+                onChange={(e) => updateParams({ category: e.target.value })}
+                className='w-full bg-background border border-border-custom rounded-xl pl-10 pr-4 py-3 text-[11px] font-black uppercase tracking-tighter outline-none cursor-pointer appearance-none'
+              >
+                <option value='all'>Todas Categorias</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className='relative min-w-[160px] flex-1 sm:flex-none'>
+              <CalendarDays className='absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400' />
+              <select
+                value={monthFilter}
+                onChange={(e) => updateParams({ month: e.target.value })}
+                className='w-full bg-background border border-border-custom rounded-xl pl-10 pr-4 py-3 text-[11px] font-black uppercase tracking-tighter outline-none cursor-pointer appearance-none'
+              >
+                <option value='all'>Todos os Meses</option>
+                {availableMonths.map((m) => (
+                  <option key={m} value={m}>
+                    {new Date(m + '-02')
+                      .toLocaleDateString('pt-BR', {
+                        month: 'short',
+                        year: 'numeric',
+                      })
+                      .toUpperCase()}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
 
-        <div className='flex flex-wrap sm:flex-nowrap gap-4'>
-          <div className='relative min-w-[160px] flex-1 sm:flex-none'>
-            <Filter className='absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400' />
+        <div className='flex flex-col lg:flex-row gap-4 lg:items-center'>
+          <div className='flex gap-2'>
+            {[
+              { value: 'all', label: 'Todas' },
+              { value: 'income', label: 'Receitas' },
+              { value: 'expense', label: 'Despesas' },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => updateParams({ type: opt.value })}
+                className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-tighter border transition-all ${
+                  typeFilter === opt.value
+                    ? 'bg-emerald-600 text-white border-emerald-600'
+                    : 'bg-background border-border-custom text-zinc-500 hover:border-emerald-500/50'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          <div className='flex gap-2 items-center'>
+            <input
+              type='number'
+              inputMode='decimal'
+              min='0'
+              step='0.01'
+              placeholder='Valor mín.'
+              value={minAmount}
+              onChange={(e) => setMinAmount(e.target.value)}
+              className='w-28 bg-background border border-border-custom rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-emerald-500/50'
+            />
+            <span className='text-zinc-400 text-xs'>até</span>
+            <input
+              type='number'
+              inputMode='decimal'
+              min='0'
+              step='0.01'
+              placeholder='Valor máx.'
+              value={maxAmount}
+              onChange={(e) => setMaxAmount(e.target.value)}
+              className='w-28 bg-background border border-border-custom rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-emerald-500/50'
+            />
+          </div>
+
+          <div className='relative min-w-[180px] lg:ml-auto'>
+            <ArrowUpDown className='absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400' />
             <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className='w-full bg-background border border-border-custom rounded-xl pl-10 pr-4 py-3 text-[11px] font-black uppercase tracking-tighter outline-none cursor-pointer appearance-none'
+              value={sortFilter}
+              onChange={(e) => updateParams({ sort: e.target.value })}
+              className='w-full bg-background border border-border-custom rounded-xl pl-10 pr-4 py-2.5 text-[11px] font-black uppercase tracking-tighter outline-none cursor-pointer appearance-none'
             >
-              <option value='all'>Todas Categorias</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
+              <option value='date_desc'>Mais recentes</option>
+              <option value='date_asc'>Mais antigas</option>
+              <option value='amount_desc'>Maior valor</option>
+              <option value='amount_asc'>Menor valor</option>
             </select>
           </div>
 
-          <div className='relative min-w-[160px] flex-1 sm:flex-none'>
-            <CalendarDays className='absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400' />
-            <select
-              value={monthFilter}
-              onChange={(e) => setMonthFilter(e.target.value)}
-              className='w-full bg-background border border-border-custom rounded-xl pl-10 pr-4 py-3 text-[11px] font-black uppercase tracking-tighter outline-none cursor-pointer appearance-none'
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className='flex items-center gap-1 text-[11px] font-black uppercase tracking-tighter text-rose-500 hover:text-rose-400 transition-colors'
             >
-              <option value='all'>Todos os Meses</option>
-              {availableMonths.map((m) => (
-                <option key={m} value={m}>
-                  {new Date(m + '-02')
-                    .toLocaleDateString('pt-BR', {
-                      month: 'short',
-                      year: 'numeric',
-                    })
-                    .toUpperCase()}
-                </option>
-              ))}
-            </select>
-          </div>
+              <X className='w-3.5 h-3.5' /> Limpar filtros
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* RESUMO DO CONJUNTO FILTRADO */}
+      <div className='grid grid-cols-3 gap-3 mb-6'>
+        <div className='bg-surface border border-border-custom rounded-2xl p-4'>
+          <p className='text-[10px] font-black uppercase tracking-widest text-zinc-500'>
+            Receitas
+          </p>
+          <p className='text-sm sm:text-lg font-black text-emerald-600'>
+            {formatMoney(data.totals.income)}
+          </p>
+        </div>
+        <div className='bg-surface border border-border-custom rounded-2xl p-4'>
+          <p className='text-[10px] font-black uppercase tracking-widest text-zinc-500'>
+            Despesas
+          </p>
+          <p className='text-sm sm:text-lg font-black text-rose-600'>
+            {formatMoney(data.totals.expense)}
+          </p>
+        </div>
+        <div className='bg-surface border border-border-custom rounded-2xl p-4'>
+          <p className='text-[10px] font-black uppercase tracking-widest text-zinc-500'>
+            Saldo
+          </p>
+          <p className='text-sm sm:text-lg font-black text-foreground'>
+            {formatMoney(data.totals.income - data.totals.expense)}
+          </p>
         </div>
       </div>
 
       {/* TABELA PRINCIPAL COM FIX DE OVERFLOW */}
-      <div className='bg-surface border border-border-custom rounded-2xl shadow-sm overflow-visible relative z-10'>
+      <div
+        className={`bg-surface border border-border-custom rounded-2xl shadow-sm overflow-visible relative z-10 transition-opacity ${isPending ? 'opacity-60' : 'opacity-100'}`}
+      >
         <div className='hidden md:block overflow-visible'>
           <table className='w-full text-sm text-left border-separate border-spacing-0'>
             <thead className='bg-zinc-50 dark:bg-zinc-900/50 text-zinc-500 sticky top-0 z-20'>
@@ -292,6 +443,37 @@ export default function TransactionsClient({
         {filteredTransactions.length === 0 && (
           <div className='p-16 text-center text-zinc-400 text-xs font-bold uppercase tracking-widest opacity-50 italic'>
             Nenhuma transação corresponde aos filtros.
+          </div>
+        )}
+
+        {/* PAGINAÇÃO */}
+        {data.total > 0 && (
+          <div className='flex items-center justify-between gap-4 px-4 sm:px-6 py-4 border-t border-border-custom'>
+            <p className='text-[11px] font-bold uppercase tracking-tighter text-zinc-500'>
+              {(data.page - 1) * data.pageSize + 1}–
+              {Math.min(data.page * data.pageSize, data.total)} de {data.total}
+            </p>
+            <div className='flex items-center gap-2'>
+              <button
+                disabled={data.page <= 1 || isPending}
+                onClick={() => updateParams({ page: String(data.page - 1) })}
+                aria-label='Página anterior'
+                className='p-2 rounded-xl border border-border-custom bg-background disabled:opacity-40 hover:border-emerald-500/50 transition-all'
+              >
+                <ChevronLeft className='w-4 h-4' />
+              </button>
+              <span className='text-[11px] font-black uppercase tracking-tighter'>
+                {data.page} / {data.totalPages}
+              </span>
+              <button
+                disabled={data.page >= data.totalPages || isPending}
+                onClick={() => updateParams({ page: String(data.page + 1) })}
+                aria-label='Próxima página'
+                className='p-2 rounded-xl border border-border-custom bg-background disabled:opacity-40 hover:border-emerald-500/50 transition-all'
+              >
+                <ChevronRight className='w-4 h-4' />
+              </button>
+            </div>
           </div>
         )}
       </div>

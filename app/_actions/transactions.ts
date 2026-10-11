@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import type { Prisma } from '@/prisma/generated/client';
 
 const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
   Alimentação: '#ef4444',
@@ -137,6 +138,168 @@ export async function getAllTransactions(query?: string) {
     }));
   } catch (error) {
     return [];
+  }
+}
+
+export type TransactionFilters = {
+  q?: string;
+  category?: string;
+  month?: string; // YYYY-MM (mês de competência)
+  type?: 'income' | 'expense';
+  minAmount?: number;
+  maxAmount?: number;
+  sort?: 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc';
+  page?: number;
+  pageSize?: number;
+};
+
+export type TransactionItem = {
+  id: string;
+  description: string;
+  amount: number;
+  date: string;
+  referenceDate: string;
+  type: string;
+  category: { name: string; color: string } | null;
+};
+
+const SORT_MAP: Record<
+  NonNullable<TransactionFilters['sort']>,
+  Prisma.TransactionOrderByWithRelationInput[]
+> = {
+  date_desc: [{ date: 'desc' }, { id: 'desc' }],
+  date_asc: [{ date: 'asc' }, { id: 'asc' }],
+  amount_desc: [{ amount: 'desc' }, { id: 'desc' }],
+  amount_asc: [{ amount: 'asc' }, { id: 'asc' }],
+};
+
+/**
+ * Busca paginada com filtros aplicados no banco.
+ * Retorna também os totais (receita/despesa) do conjunto filtrado e as
+ * opções disponíveis para os selects de categoria e mês.
+ */
+export async function getTransactionsPage(filters: TransactionFilters = {}) {
+  const empty = {
+    items: [] as TransactionItem[],
+    total: 0,
+    page: 1,
+    pageSize: 20,
+    totalPages: 1,
+    totals: { income: 0, expense: 0 },
+    categories: [] as string[],
+    months: [] as string[],
+  };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return empty;
+
+  try {
+    const pageSize = Math.min(Math.max(filters.pageSize ?? 20, 1), 100);
+    const requestedPage = Math.max(Math.floor(filters.page ?? 1), 1);
+
+    const where: Prisma.TransactionWhereInput = { userId: user.id };
+
+    if (filters.q?.trim()) {
+      where.description = { contains: filters.q.trim(), mode: 'insensitive' };
+    }
+
+    if (filters.category) {
+      where.category = { name: filters.category };
+    }
+
+    if (filters.type === 'income' || filters.type === 'expense') {
+      where.type = filters.type;
+    }
+
+    if (filters.month && /^\d{4}-\d{2}$/.test(filters.month)) {
+      const [year, month] = filters.month.split('-').map(Number);
+      where.referenceDate = {
+        gte: new Date(year, month - 1, 1),
+        lt: new Date(year, month, 1),
+      };
+    }
+
+    const amountFilter: Prisma.DecimalFilter = {};
+    if (typeof filters.minAmount === 'number' && !isNaN(filters.minAmount)) {
+      amountFilter.gte = filters.minAmount;
+    }
+    if (typeof filters.maxAmount === 'number' && !isNaN(filters.maxAmount)) {
+      amountFilter.lte = filters.maxAmount;
+    }
+    if (Object.keys(amountFilter).length) where.amount = amountFilter;
+
+    const orderBy = SORT_MAP[filters.sort ?? 'date_desc'] ?? SORT_MAP.date_desc;
+
+    const [total, totalsByType, categories, months] = await Promise.all([
+      prisma.transaction.count({ where }),
+      prisma.transaction.groupBy({
+        by: ['type'],
+        where,
+        _sum: { amount: true },
+      }),
+      prisma.category.findMany({
+        where: { userId: user.id },
+        select: { name: true },
+        orderBy: { name: 'asc' },
+      }),
+      prisma.transaction.findMany({
+        where: { userId: user.id },
+        select: { referenceDate: true },
+        distinct: ['referenceDate'],
+        orderBy: { referenceDate: 'desc' },
+      }),
+    ]);
+
+    const totalPages = Math.max(Math.ceil(total / pageSize), 1);
+    const page = Math.min(requestedPage, totalPages);
+
+    const rows = await prisma.transaction.findMany({
+      where,
+      orderBy,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      select: {
+        id: true,
+        description: true,
+        amount: true,
+        date: true,
+        referenceDate: true,
+        type: true,
+        category: { select: { name: true, color: true } },
+      },
+    });
+
+    const sumOf = (type: string) =>
+      Number(totalsByType.find((t) => t.type === type)?._sum.amount ?? 0);
+
+    return {
+      items: rows.map((t) => ({
+        ...t,
+        amount: Number(t.amount),
+        date: t.date.toISOString(),
+        referenceDate: t.referenceDate.toISOString(),
+      })),
+      total,
+      page,
+      pageSize,
+      totalPages,
+      totals: { income: sumOf('income'), expense: sumOf('expense') },
+      categories: categories.map((c) => c.name),
+      months: Array.from(
+        new Set(
+          months.map(
+            (m) =>
+              `${m.referenceDate.getFullYear()}-${String(m.referenceDate.getMonth() + 1).padStart(2, '0')}`,
+          ),
+        ),
+      ),
+    };
+  } catch (error) {
+    console.error('Erro ao buscar transações paginadas:', error);
+    return empty;
   }
 }
 
