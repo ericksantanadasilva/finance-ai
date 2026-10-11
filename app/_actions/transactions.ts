@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import type { Prisma } from '@/prisma/generated/client';
+import { getBudgetStatus } from './categories';
 
 const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
   Alimentação: '#ef4444',
@@ -63,7 +64,23 @@ export async function createTransaction(data: any, referenceMounth: string) {
 
     revalidatePath('/Dashboard');
     revalidatePath('/Transactions');
-    return { success: true };
+    revalidatePath('/Categories');
+
+    // Alerta de orçamento (não deve impedir o lançamento se falhar)
+    let budgetAlert: Awaited<ReturnType<typeof getBudgetStatus>> = null;
+    if (data.type === 'expense') {
+      try {
+        const status = await getBudgetStatus(
+          data.category,
+          safeReferenceMounth,
+        );
+        if (status && status.percent >= 80) budgetAlert = status;
+      } catch (e) {
+        console.error('Erro ao calcular orçamento:', e);
+      }
+    }
+
+    return { success: true, budgetAlert };
   } catch (error) {
     console.error('Erro ao criar transação:', error);
     return { success: false };

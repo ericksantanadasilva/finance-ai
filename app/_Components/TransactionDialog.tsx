@@ -12,7 +12,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { createTransaction, updateTransaction } from '../_actions/transactions';
-import { getCategories } from '../_actions/categories';
+import { getCategories, type BudgetStatus } from '../_actions/categories';
 import { toast } from 'sonner';
 
 interface TransactionDialogProps {
@@ -122,6 +122,17 @@ export default function TransactionDialog({
 
       if (result.success) {
         toast.success('Sucesso!');
+        const a = (result as { budgetAlert?: BudgetStatus | null })
+          .budgetAlert;
+        if (a) {
+          const fmt = (v: number) =>
+            v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          const msg =
+            a.percent >= 100
+              ? `Orçamento de ${a.category} estourado: ${fmt(a.spent)} de ${fmt(a.budget)}.`
+              : `${a.category}: ${Math.round(a.percent)}% do orçamento usado (${fmt(a.spent)} de ${fmt(a.budget)}).`;
+          toast.warning(msg);
+        }
         onClose();
       } else {
         toast.error('Erro ao salvar!');

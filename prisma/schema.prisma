@@ -28,6 +28,7 @@ model Category {
   name      String
   color     String   @default("bg-zinc-500")
   type      String // "income" or "expense" (minusculo)
+  budget    Decimal? @db.Decimal(10, 2) // limite mensal de gastos (null = sem limite)
   userId    String
   createdAt DateTime @default(now())
 

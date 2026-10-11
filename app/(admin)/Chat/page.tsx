@@ -89,6 +89,17 @@ export default function AIAgentChat() {
           index,
           `✅ Registrado para ${monthName}: ${data.description}`,
         );
+
+        if (res.budgetAlert) {
+          const a = res.budgetAlert;
+          const fmt = (v: number) =>
+            v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          toast.warning(
+            a.percent >= 100
+              ? `Orçamento de ${a.category} estourado: ${fmt(a.spent)} de ${fmt(a.budget)}.`
+              : `${a.category}: ${Math.round(a.percent)}% do orçamento usado (${fmt(a.spent)} de ${fmt(a.budget)}).`,
+          );
+        }
       }
     } catch (error) {
       toast.error('Erro ao salvar transação');

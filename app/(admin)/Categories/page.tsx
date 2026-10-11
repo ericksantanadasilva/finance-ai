@@ -1,12 +1,12 @@
 import { Suspense } from 'react';
-import { getCategories } from '@/app/_actions/categories';
+import { getCategoriesWithBudget } from '@/app/_actions/categories';
 import CategoriesClient from '@/app/_Components/CategoriesClient';
 import CategoriesSkeleton from '@/app/_Components/categoriesSkeleton';
 import { Tag } from 'lucide-react';
 
 // Componente interno para buscar os dados
 async function CategoriesList() {
-  const categories = await getCategories();
+  const categories = await getCategoriesWithBudget();
   return <CategoriesClient initialCategories={categories} />;
 }
 
