@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { ensureDbUser } from '@/lib/ensure-user';
+import { APP_TIME_ZONE, currentMonthISO } from '@/app/utils/dates';
 
 const MONTH_RE = /^\d{4}-\d{2}$/;
 const MAX_CATCH_UP_MONTHS = 36; // trava de segurança contra loops/backfills enormes
@@ -11,8 +12,7 @@ const MAX_CATCH_UP_MONTHS = 36; // trava de segurança contra loops/backfills en
 const pad = (n: number) => String(n).padStart(2, '0');
 
 function currentMonth() {
-  const d = new Date();
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+  return currentMonthISO(APP_TIME_ZONE);
 }
 
 function shiftMonth(month: string, delta: number) {

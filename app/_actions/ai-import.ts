@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { ensureDbUser } from '@/lib/ensure-user';
+import { APP_TIME_ZONE, parseDateOnly, todayISO } from '@/app/utils/dates';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -21,7 +22,7 @@ export async function processFileWithAI(base64Data: string, mimeType: string) {
       select: { name: true },
     });
     const categoryList = categories.map((c) => c.name).join(', ');
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayISO(APP_TIME_ZONE);
 
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
@@ -112,7 +113,7 @@ export async function saveTransactions(
     );
 
     const toSave = transactions.filter((tx) => {
-      const key = makeKey(tx.description, tx.amount, new Date(tx.date));
+      const key = makeKey(tx.description, tx.amount, parseDateOnly(tx.date));
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -135,7 +136,7 @@ export async function saveTransactions(
           description: t.description,
           amount: t.amount,
           type: t.type === 'income' ? 'income' : 'expense',
-          date: new Date(t.date), // Data real da compra (Extrato)
+          date: parseDateOnly(t.date), // Data real da compra (Extrato)
           referenceDate, // Data de competência (Dashboard)
           aiGenerated: true,
           categoryId: categoryIds.get(t.category),

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { ensureDbUser } from '@/lib/ensure-user';
+import { APP_TIME_ZONE, currentMonthISO } from '@/app/utils/dates';
 
 export async function getCategories() {
   const supabase = await createClient();
@@ -28,10 +29,11 @@ export async function getCategories() {
 }
 
 function monthRange(month?: string) {
-  const base = month && /^\d{4}-\d{2}$/.test(month) ? month : null;
-  const [year, m] = base
-    ? base.split('-').map(Number)
-    : [new Date().getFullYear(), new Date().getMonth() + 1];
+  const base =
+    month && /^\d{4}-\d{2}$/.test(month)
+      ? month
+      : currentMonthISO(APP_TIME_ZONE);
+  const [year, m] = base.split('-').map(Number);
   return {
     gte: new Date(year, m - 1, 1),
     lt: new Date(year, m, 1),

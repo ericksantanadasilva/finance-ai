@@ -14,6 +14,7 @@ import {
 import { createTransaction, updateTransaction } from '../_actions/transactions';
 import { getCategories, type BudgetStatus } from '../_actions/categories';
 import { toast } from 'sonner';
+import { todayISO } from '@/app/utils/dates';
 
 interface TransactionDialogProps {
   isOpen: boolean;
@@ -34,7 +35,7 @@ export default function TransactionDialog({
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(todayISO());
 
   // NOVO: Estado para controlar o Mês de Competência dentro do modal
   const [selectedReference, setSelectedReference] = useState(referenceMonth);
@@ -83,7 +84,7 @@ export default function TransactionDialog({
         setAmount('');
         setDescription('');
         setCategory('');
-        setDate(new Date().toISOString().split('T')[0]);
+        setDate(todayISO());
         // Se for novo, usa o que veio do Dashboard (ex: 2026-02)
         setSelectedReference(referenceMonth);
       }

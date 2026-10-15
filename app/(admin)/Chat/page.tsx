@@ -17,6 +17,7 @@ import { sendMessage } from '@/app/_actions/chat';
 import { createTransaction } from '@/app/_actions/transactions';
 import { updateGoalAmount, createGoal } from '@/app/_actions/goals';
 import { toast } from 'sonner';
+import { currentMonthISO, todayISO } from '@/app/utils/dates';
 
 export default function AIAgentChat() {
   const [messages, setMessages] = useState<any[]>([
@@ -61,7 +62,7 @@ export default function AIAgentChat() {
   const handleConfirmTransaction = async (index: number, data: any) => {
     try {
       // 1. Pega o mês atual como fallback (ex: 2026-02)
-      const currentMonth = new Date().toISOString().slice(0, 7);
+      const currentMonth = currentMonthISO();
 
       // 2. Prioriza o mês que a IA identificou no texto (ex: "em março")
       // Certifique-se que sua Server Action 'sendMessage' retorne 'referenceMonth' no JSON
@@ -73,7 +74,7 @@ export default function AIAgentChat() {
           amount: data.amount,
           type: data.type,
           category: data.category,
-          date: new Date().toISOString(),
+          date: todayISO(),
         },
         referenceMonthToUse,
       );

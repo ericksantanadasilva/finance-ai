@@ -3,6 +3,7 @@ import GoalsClient from '@/app/_Components/GoalsClient';
 import GoalsSkeleton from '@/app/_Components/GoalsSkeleton';
 import { Goal } from 'lucide-react';
 import { Suspense } from 'react';
+import { formatDateOnly } from '@/app/utils/dates';
 
 export default async function GoalsPage() {
   return (
@@ -22,7 +23,7 @@ export async function GoalsDataFetch() {
     targetAmount: Number(goal.targetAmount),
     currentAmount: Number(goal.currentAmount),
     deadline: goal.deadline
-      ? new Date(goal.deadline).toLocaleDateString('pt-BR')
+      ? formatDateOnly(goal.deadline)
       : 'Sem prazo',
   }));
 

@@ -18,6 +18,7 @@ import { TransactionRowActions } from './TransactionRowActions';
 import TransactionDialog from '../_Components/TransactionDialog';
 import TransactionStatus from './TransactionStatus';
 import type { TransactionItem } from '@/app/_actions/transactions';
+import { currentMonthISO, formatDateOnly } from '@/app/utils/dates';
 
 type PageData = {
   items: TransactionItem[];
@@ -130,7 +131,7 @@ export default function TransactionsClient({ data }: { data: PageData }) {
         editData={selectedTransaction}
         referenceMonth={
           monthFilter === 'all'
-            ? new Date().toISOString().slice(0, 7)
+            ? currentMonthISO()
             : monthFilter
         }
       />
@@ -393,7 +394,7 @@ export default function TransactionsClient({ data }: { data: PageData }) {
                     </span>
                   </td>
                   <td className='px-6 py-4 text-zinc-500 font-bold text-xs uppercase border-b border-border-custom'>
-                    {new Date(tx.date).toLocaleDateString('pt-BR')}
+                    {formatDateOnly(tx.date)}
                   </td>
                   <td
                     className={`px-6 py-4 text-right font-black border-b border-border-custom ${tx.type === 'income' ? 'text-emerald-600' : 'text-foreground'}`}
@@ -438,7 +439,7 @@ export default function TransactionsClient({ data }: { data: PageData }) {
                       {tx.description}
                     </p>
                     <p className='text-[10px] font-bold text-zinc-500 uppercase'>
-                      {new Date(tx.date).toLocaleDateString('pt-BR')}
+                      {formatDateOnly(tx.date)}
                     </p>
                     <div className='mt-1'>
                       <TransactionStatus

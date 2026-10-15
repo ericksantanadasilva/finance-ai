@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateApiKey } from '@/lib/api-auth';
+import { APP_TIME_ZONE, parseDateOnly, todayISO } from '@/app/utils/dates';
 
 interface CreateTransactionBody {
   userId: string;
@@ -59,7 +60,7 @@ export async function POST(request: Request) {
     }
 
     // 3. Tratamento de datas
-    const transactionDate = date ? new Date(date) : new Date();
+    const transactionDate = parseDateOnly(date || todayISO(APP_TIME_ZONE));
     if (isNaN(transactionDate.getTime())) {
       return NextResponse.json(
         { error: 'Invalid date format' },

@@ -16,6 +16,7 @@ import {
   saveTransactions,
   getCategories2,
 } from '@/app/_actions/ai-import';
+import { currentMonthISO } from '@/app/utils/dates';
 import { toast } from 'sonner';
 
 export default function AIImportClient() {
@@ -29,7 +30,7 @@ export default function AIImportClient() {
   const [saving, setSaving] = useState(false);
 
   const [selectedMonth, setSelectedMonth] = useState(
-    new Date().toISOString().slice(0, 7),
+    currentMonthISO(),
   );
 
   useEffect(() => {

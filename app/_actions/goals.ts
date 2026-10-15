@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { ensureDbUser } from '@/lib/ensure-user';
+import { parseDateOnly } from '@/app/utils/dates';
 
 /**
  * BUSCAR TODAS AS METAS DO USUÁRIO
@@ -41,7 +42,7 @@ export async function createGoal(data: {
 
   let parsedDeadline: Date | null = null;
   if (data.deadline) {
-    const d = new Date(data.deadline);
+    const d = parseDateOnly(data.deadline);
     if (!isNaN(d.getTime())) {
       parsedDeadline = d;
     }
@@ -83,7 +84,7 @@ export async function updateGoal(
 
     let parsedDeadline: Date | null = null;
     if (data.deadline) {
-      const d = new Date(data.deadline);
+      const d = parseDateOnly(data.deadline);
       if (!isNaN(d.getTime())) {
         parsedDeadline = d;
       }

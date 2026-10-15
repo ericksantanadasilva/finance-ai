@@ -5,6 +5,7 @@ import { getTransactions } from './transactions';
 import { getCategories } from './categories';
 import { getGoals } from './goals';
 import { createClient } from '@/lib/supabase/server';
+import { APP_TIME_ZONE, currentMonthISO } from '@/app/utils/dates';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -44,7 +45,7 @@ export async function sendMessage(message: string, history: any[] = []) {
 
   // Capturamos o mês/ano atual para a IA ter base de cálculo
   const now = new Date();
-  const currentMonthYear = now.toISOString().slice(0, 7); // Ex: "2026-02"
+  const currentMonthYear = currentMonthISO(APP_TIME_ZONE); // Ex: "2026-02"
 
   const prompt = `
     Você é um assistente financeiro pessoal chamado Finance.ai.
@@ -52,7 +53,7 @@ export async function sendMessage(message: string, history: any[] = []) {
     - Transações recentes: ${JSON.stringify(transactions)}
     - Categorias disponíveis: ${categories.map((c) => c.name).join(', ')}
     - Metas atuais: ${JSON.stringify(goals.map((g) => ({ id: g.id, name: g.name, current: g.currentAmount, target: g.targetAmount })))}
-    - Mês/Ano Atual: ${currentMonthYear} (Hoje é ${now.toLocaleDateString()})
+    - Mês/Ano Atual: ${currentMonthYear} (Hoje é ${now.toLocaleDateString('pt-BR', { timeZone: APP_TIME_ZONE })})
 
     Histórico recente da conversa:
     ${conversation || '(vazio)'}

@@ -23,6 +23,7 @@ import {
   PieChart,
   Pie,
 } from 'recharts';
+import { currentMonthISO } from '@/app/utils/dates';
 
 export default function DashboardClient({
   initialTransactions,
@@ -37,7 +38,7 @@ export default function DashboardClient({
   // Filtro de tempo: Default para o mês atual (ex: "2026-02")
   // Este estado controla o gráfico de categorias e define a competência da nova transação
   const [categoryTimeRange, setCategoryTimeRange] = useState<string>(
-    new Date().toISOString().slice(0, 7),
+    currentMonthISO(),
   );
 
   useEffect(() => {
@@ -146,7 +147,7 @@ export default function DashboardClient({
   // Define qual mês enviar para o Dialog (se estiver em 'all', envia o mês atual)
   const referenceForDialog =
     categoryTimeRange === 'all'
-      ? new Date().toISOString().slice(0, 7)
+      ? currentMonthISO()
       : categoryTimeRange;
 
   return (

@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 import type { Prisma } from '@/prisma/generated/client';
 import { getBudgetStatus } from './categories';
 import { ensureDbUser } from '@/lib/ensure-user';
+import { parseDateOnly } from '@/app/utils/dates';
 
 const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
   Alimentação: '#ef4444',
@@ -47,7 +48,7 @@ export async function createTransaction(data: any, referenceMounth: string) {
       data: {
         description: data.description,
         amount: data.amount,
-        date: new Date(data.date),
+        date: parseDateOnly(data.date),
         referenceDate: referenceDate, // Campo de competência
         type: data.type,
         userId: user.id,
@@ -391,7 +392,7 @@ export async function updateTransaction(
       data: {
         description: data.description,
         amount: data.amount,
-        date: new Date(data.date),
+        date: parseDateOnly(data.date),
         referenceDate: referenceDate,
         type: data.type,
         categoryId: category.id,
