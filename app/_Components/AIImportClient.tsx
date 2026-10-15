@@ -19,6 +19,9 @@ import {
 import { currentMonthISO } from '@/app/utils/dates';
 import { toast } from 'sonner';
 
+// Server Actions aceitam no máximo 1 MB por requisição e o base64 aumenta o arquivo em ~33%
+const MAX_IMPORT_FILE_BYTES = 700 * 1024;
+
 export default function AIImportClient() {
   const router = useRouter();
   const [files, setFiles] = useState<File[]>([]);
@@ -56,6 +59,9 @@ export default function AIImportClient() {
       'application/pdf': ['.pdf'],
     },
     multiple: false,
+    maxSize: MAX_IMPORT_FILE_BYTES,
+    onDropRejected: () =>
+      toast.error('Arquivo inválido. Envie PDF, JPG ou PNG de até 700 KB.'),
   });
 
   const fileToBase64 = (file: File): Promise<string> => {
@@ -74,6 +80,7 @@ export default function AIImportClient() {
       const base64 = await fileToBase64(files[0]);
       const data = await processFileWithAI(base64, files[0].type);
       if (data) setResults(data);
+      else toast.error('Não foi possível processar o arquivo.');
     } catch (error) {
       toast.error('Erro ao ler o arquivo.');
     } finally {

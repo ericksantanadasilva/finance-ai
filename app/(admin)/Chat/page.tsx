@@ -101,6 +101,8 @@ export default function AIAgentChat() {
               : `${a.category}: ${Math.round(a.percent)}% do orçamento usado (${fmt(a.spent)} de ${fmt(a.budget)}).`,
           );
         }
+      } else {
+        toast.error('Erro ao salvar transação');
       }
     } catch (error) {
       toast.error('Erro ao salvar transação');
