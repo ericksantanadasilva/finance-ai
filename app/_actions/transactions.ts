@@ -123,6 +123,48 @@ export async function getTransactions(limit?: number) {
   }
 }
 
+/**
+ * Totais por mês de competência, tipo e categoria para o Dashboard.
+ * Soma no banco em vez de enviar todas as transações para o navegador;
+ * cada linha tem o mesmo formato de uma transação (referenceDate, type, amount, category).
+ */
+export async function getDashboardTotals() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  try {
+    const [groups, categories] = await Promise.all([
+      prisma.transaction.groupBy({
+        by: ['referenceDate', 'type', 'categoryId'],
+        where: { userId: user.id },
+        _sum: { amount: true },
+      }),
+      prisma.category.findMany({
+        where: { userId: user.id },
+        select: { id: true, name: true, color: true },
+      }),
+    ]);
+
+    const categoryById = new Map(categories.map((c) => [c.id, c]));
+
+    return groups.map((g) => {
+      const category = g.categoryId ? categoryById.get(g.categoryId) : null;
+      return {
+        referenceDate: g.referenceDate.toISOString(),
+        type: g.type,
+        amount: Number(g._sum.amount ?? 0),
+        category: category ? { name: category.name, color: category.color } : null,
+      };
+    });
+  } catch (error) {
+    console.error('Erro ao buscar totais do dashboard:', error);
+    return [];
+  }
+}
+
 export type TransactionFilters = {
   q?: string;
   category?: string;
