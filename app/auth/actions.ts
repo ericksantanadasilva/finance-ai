@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { ensureDbUser } from '@/lib/ensure-user';
 import { redirect } from 'next/navigation';
 
 export async function loginWithEmail(formData: FormData) {
@@ -11,12 +12,13 @@ export async function loginWithEmail(formData: FormData) {
     password: formData.get('password') as string,
   };
 
-  const { error } = await supabase.auth.signInWithPassword(data);
+  const { data: session, error } = await supabase.auth.signInWithPassword(data);
 
   if (error) {
     return { error: error.message };
   }
 
+  await ensureDbUser(session.user);
   redirect('/Dashboard');
 }
 
@@ -39,8 +41,7 @@ export async function signUp(formData: FormData) {
     return { error: error.message };
   }
 
-  // Se o registro for bem sucedido, redirecionamos para o login ou home
-  redirect('/login?message=Verifique seu e-mail para confirmar o cadastro');
+  redirect('/?message=confirm_email');
 }
 
 export async function logout() {

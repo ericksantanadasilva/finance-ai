@@ -1,13 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { use, useState } from 'react';
 import { Wallet, ArrowRight, Loader2 } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
 import { loginWithEmail } from './auth/actions';
 
-export default function LoginPage() {
+const NOTICES: Record<string, string> = {
+  confirm_email: 'Conta criada! Verifique seu e-mail para confirmar o cadastro.',
+};
+
+export default function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ message?: string; error?: string }>;
+}) {
+  const params = use(searchParams);
+  const notice = params.message ? NOTICES[params.message] : undefined;
   const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    params.error ? 'Não foi possível entrar com o Google. Tente novamente.' : null,
+  );
 
   // Cliente para o Login Social (Client Side)
   const supabase = createBrowserClient(
@@ -89,6 +101,12 @@ export default function LoginPage() {
             </span>
           </div>
         </div>
+
+        {notice && (
+          <div className='bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs p-3 rounded-lg mb-4'>
+            {notice}
+          </div>
+        )}
 
         {error && (
           <div className='bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs p-3 rounded-lg mb-4'>
