@@ -157,25 +157,3 @@ export async function saveTransactions(
     throw new Error('Falha ao salvar transações');
   }
 }
-
-export async function getCategories2() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return [];
-
-  return await prisma.category.findMany({
-    where: {
-      userId: user.id,
-    },
-    select: {
-      id: true,
-      name: true,
-    },
-    orderBy: {
-      name: 'asc',
-    },
-  });
-}

@@ -11,11 +11,8 @@ import {
   Save,
   CalendarDays,
 } from 'lucide-react';
-import {
-  processFileWithAI,
-  saveTransactions,
-  getCategories2,
-} from '@/app/_actions/ai-import';
+import { processFileWithAI, saveTransactions } from '@/app/_actions/ai-import';
+import { getCategories } from '@/app/_actions/categories';
 import { currentMonthISO } from '@/app/utils/dates';
 import { toast } from 'sonner';
 
@@ -39,7 +36,7 @@ export default function AIImportClient() {
   useEffect(() => {
     async function loadCategories() {
       try {
-        const data = await getCategories2();
+        const data = await getCategories();
         setCategories(data);
       } catch (error) {
         console.error('Erro ao carregar categorias:', error);

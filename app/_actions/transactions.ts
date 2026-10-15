@@ -123,36 +123,6 @@ export async function getTransactions(limit?: number) {
   }
 }
 
-export async function getAllTransactions(query?: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  try {
-    const transactions = await prisma.transaction.findMany({
-      where: {
-        userId: user.id,
-        ...(query
-          ? { description: { contains: query, mode: 'insensitive' } }
-          : {}),
-      },
-      orderBy: { date: 'desc' },
-      include: { category: true },
-    });
-
-    return transactions.map((t) => ({
-      ...t,
-      amount: Number(t.amount),
-      date: t.date.toISOString(),
-      referenceDate: t.referenceDate.toISOString(),
-    }));
-  } catch (error) {
-    return [];
-  }
-}
-
 export type TransactionFilters = {
   q?: string;
   category?: string;
