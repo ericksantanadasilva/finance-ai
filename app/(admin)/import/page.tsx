@@ -10,7 +10,7 @@ export default function AIImportPage() {
           {/* Badge Gemini: Mais elegante no modo claro */}
           <div className='inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-black uppercase tracking-widest border border-purple-100 dark:border-purple-500/20 mb-2 shadow-sm'>
             <Sparkles className='w-3 h-3' />
-            <span>Powered by Gemini 1.5 Flash</span>
+            <span>Powered by Gemini 2.5 Flash</span>
           </div>
 
           {/* Título com Gradiente Adaptativo */}

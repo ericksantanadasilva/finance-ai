@@ -19,7 +19,7 @@
 <h3>🛠 Tech Stack</h3>
 <p>Projeto atualizado para 2026 com as tecnologias:</p>
 <ul>
-  <li><b>Framework:</b> Next.js 15 (App Router)</li>
+  <li><b>Framework:</b> Next.js 16 (App Router)</li>
   <li><b>Linguagem:</b> TypeScript</li>
   <li><b>Estilização:</b> Tailwind CSS v4</li>
   <li><b>Banco de Dados:</b> PostgreSQL (Supabase)</li>
@@ -47,7 +47,8 @@ cd finance-ai</code>
 DIRECT_URL="sua_url_direta_supabase"
 NEXT_PUBLIC_SUPABASE_URL="sua_url_api_supabase"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="sua_chave_anon_supabase"
-GOOGLE_AI_API_KEY="sua_chave_da_ia"</code>
+GEMINI_API_KEY="sua_chave_da_ia"
+N8N_INTERNAL_SECRET="segredo_das_integracoes_n8n"</code>
 </pre>
 
 <p>4. Sincronizar Banco e Rodar:</p>
