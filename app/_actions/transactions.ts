@@ -87,7 +87,7 @@ export async function createTransaction(data: any, referenceMounth: string) {
   }
 }
 
-export async function getTransactions() {
+export async function getTransactions(limit?: number) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -98,6 +98,7 @@ export async function getTransactions() {
     const transactions = await prisma.transaction.findMany({
       where: { userId: user.id },
       orderBy: { date: 'desc' },
+      take: limit,
       // OTIMIZAÇÃO 1: Selecione apenas os campos usados na tela
       select: {
         id: true,

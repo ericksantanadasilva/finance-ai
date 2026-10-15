@@ -22,9 +22,11 @@ export async function sendMessage(message: string, history: any[] = []) {
     };
   }
 
-  const transactions = await getTransactions();
-  const categories = await getCategories();
-  const goals = await getGoals();
+  const [transactions, categories, goals] = await Promise.all([
+    getTransactions(20),
+    getCategories(),
+    getGoals(),
+  ]);
 
   // Últimas 10 mensagens como memória da conversa (somente texto)
   const conversation = (history ?? [])
@@ -47,7 +49,7 @@ export async function sendMessage(message: string, history: any[] = []) {
   const prompt = `
     Você é um assistente financeiro pessoal chamado Finance.ai.
     Contexto do usuário:
-    - Transações recentes: ${JSON.stringify(transactions.slice(0, 20))}
+    - Transações recentes: ${JSON.stringify(transactions)}
     - Categorias disponíveis: ${categories.map((c) => c.name).join(', ')}
     - Metas atuais: ${JSON.stringify(goals.map((g) => ({ id: g.id, name: g.name, current: g.currentAmount, target: g.targetAmount })))}
     - Mês/Ano Atual: ${currentMonthYear} (Hoje é ${now.toLocaleDateString()})
