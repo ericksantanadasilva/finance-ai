@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@/lib/supabase/server';
+import { ensureDbUser } from '@/lib/ensure-user';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -45,6 +46,7 @@ export async function updateProfile(data: { name: string }) {
   if (!user) throw new Error('Não autorizado');
 
   try {
+    await ensureDbUser(user);
     await prisma.user.update({
       where: { id: user.id },
       data: { name: data.name },

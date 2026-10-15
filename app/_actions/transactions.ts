@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import type { Prisma } from '@/prisma/generated/client';
 import { getBudgetStatus } from './categories';
+import { ensureDbUser } from '@/lib/ensure-user';
 
 const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
   Alimentação: '#ef4444',
@@ -23,15 +24,7 @@ export async function createTransaction(data: any, referenceMounth: string) {
   if (!user) throw new Error('Não autorizado');
 
   try {
-    await prisma.user.upsert({
-      where: { id: user.id },
-      update: { email: user.email! },
-      create: {
-        id: user.id,
-        email: user.email!,
-        name: user.user_metadata?.full_name || 'Usuário',
-      },
-    });
+    await ensureDbUser(user);
 
     const category = await prisma.category.upsert({
       where: { name_userId: { name: data.category, userId: user.id } },

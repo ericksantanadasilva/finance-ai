@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { ensureDbUser } from '@/lib/ensure-user';
 
 /**
  * BUSCAR TODAS AS METAS DO USUÁRIO
@@ -36,6 +37,7 @@ export async function createGoal(data: {
   } = await supabase.auth.getUser();
 
   if (!user) throw new Error('Não autorizado');
+  await ensureDbUser(user);
 
   let parsedDeadline: Date | null = null;
   if (data.deadline) {

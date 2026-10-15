@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { ensureDbUser } from '@/lib/ensure-user';
 
 export async function getCategories() {
   const supabase = await createClient();
@@ -159,6 +160,7 @@ export async function createCategory(
   } = await supabase.auth.getUser();
 
   if (!user) throw new Error('Não autorizado');
+  await ensureDbUser(user);
 
   await prisma.category.create({
     data: {

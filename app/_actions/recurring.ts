@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { ensureDbUser } from '@/lib/ensure-user';
 
 const MONTH_RE = /^\d{4}-\d{2}$/;
 const MAX_CATCH_UP_MONTHS = 36; // trava de segurança contra loops/backfills enormes
@@ -164,6 +165,8 @@ export async function createRecurringRule(input: {
     return { success: false, error: 'Tipo inválido.' };
 
   try {
+    await ensureDbUser(user);
+
     let categoryId: string | null = null;
     if (input.category?.trim()) {
       const category = await prisma.category.upsert({
