@@ -92,7 +92,8 @@ export async function POST(request: Request) {
         name: trimmedCategoryName,
         userId,
         type: normalizedType,
-        color: normalizedType === 'income' ? 'bg-emerald-500' : 'bg-zinc-500',
+        // As telas aplicam a cor como CSS (hex), não como classe do Tailwind
+        color: normalizedType === 'income' ? '#10b981' : '#71717a',
       },
       update: {},
     });
