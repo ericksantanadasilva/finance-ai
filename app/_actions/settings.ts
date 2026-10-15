@@ -52,7 +52,7 @@ export async function updateProfile(data: { name: string }) {
       data: { name: data.name },
     });
 
-    revalidatePath('/settings');
+    revalidatePath('/Settings');
     return { success: true };
   } catch (error) {
     return { success: false };
