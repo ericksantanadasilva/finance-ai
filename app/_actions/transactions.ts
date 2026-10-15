@@ -163,6 +163,7 @@ export type TransactionFilters = {
   category?: string;
   month?: string; // YYYY-MM (mês de competência)
   type?: 'income' | 'expense';
+  status?: 'paid' | 'pending';
   minAmount?: number;
   maxAmount?: number;
   sort?: 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc';
@@ -177,6 +178,8 @@ export type TransactionItem = {
   date: string;
   referenceDate: string;
   type: string;
+  isPaid: boolean;
+  recurringRuleId: string | null;
   category: { name: string; color: string } | null;
 };
 
@@ -230,6 +233,9 @@ export async function getTransactionsPage(filters: TransactionFilters = {}) {
     if (filters.type === 'income' || filters.type === 'expense') {
       where.type = filters.type;
     }
+
+    if (filters.status === 'paid') where.isPaid = true;
+    if (filters.status === 'pending') where.isPaid = false;
 
     if (filters.month && /^\d{4}-\d{2}$/.test(filters.month)) {
       const [year, month] = filters.month.split('-').map(Number);
@@ -285,6 +291,8 @@ export async function getTransactionsPage(filters: TransactionFilters = {}) {
         date: true,
         referenceDate: true,
         type: true,
+        isPaid: true,
+        recurringRuleId: true,
         category: { select: { name: true, color: true } },
       },
     });
@@ -317,6 +325,28 @@ export async function getTransactionsPage(filters: TransactionFilters = {}) {
   } catch (error) {
     console.error('Erro ao buscar transações paginadas:', error);
     return empty;
+  }
+}
+
+export async function setTransactionPaid(id: string, isPaid: boolean) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Não autorizado');
+  try {
+    // updateMany garante que só altera transações do próprio usuário
+    const result = await prisma.transaction.updateMany({
+      where: { id, userId: user.id },
+      data: { isPaid },
+    });
+    if (result.count === 0) return { success: false };
+    revalidatePath('/Transactions');
+    revalidatePath('/Recurring');
+    return { success: true };
+  } catch (error) {
+    console.error('Erro ao atualizar status de pagamento:', error);
+    return { success: false };
   }
 }
 

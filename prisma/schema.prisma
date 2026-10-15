@@ -17,10 +17,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  transactions Transaction[]
-  categories   Category[]
-  goals        Goal[]
-  settings     Json?
+  transactions   Transaction[]
+  categories     Category[]
+  goals          Goal[]
+  recurringRules RecurringRule[]
+  settings       Json?
 }
 
 model Category {
@@ -32,8 +33,9 @@ model Category {
   userId    String
   createdAt DateTime @default(now())
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions   Transaction[]
+  recurringRules RecurringRule[]
 
   @@unique([name, userId])
 }
@@ -50,6 +52,10 @@ model Transaction {
   isRecurring Boolean @default(false)
   isPaid      Boolean @default(true)
 
+  // Preenchido quando a transação foi gerada por uma regra recorrente
+  recurringRuleId String?
+  recurringRule   RecurringRule? @relation(fields: [recurringRuleId], references: [id], onDelete: SetNull)
+
   categoryId String?
   category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
@@ -61,7 +67,32 @@ model Transaction {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([recurringRuleId, referenceDate]) // uma ocorrência por regra/mês (nulls não conflitam)
   @@index([referenceDate]) //Index para buscaas rápidas no dashboard
+}
+
+// Regra de lançamento mensal (aluguel, assinaturas, salário...)
+model RecurringRule {
+  id                 String   @id @default(cuid())
+  description        String
+  amount             Decimal  @db.Decimal(10, 2)
+  type               String // "income" or "expense"
+  dayOfMonth         Int // 1-31; em meses curtos usa o último dia
+  startMonth         String // "YYYY-MM" primeiro mês a gerar
+  // Último mês já gerado ("YYYY-MM"). Impede recriar uma ocorrência que o usuário apagou.
+  lastGeneratedMonth String?
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now())
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  transactions Transaction[]
+
+  @@index([userId])
 }
 
 model Goal {
@@ -78,7 +109,7 @@ model Goal {
 model ExternalIdentity {
   id             String   @id @default(uuid())
   userId         String   @map("user_id") // UUID do usuário no sistema/Supabase
-  provider       String   // 'telegram', 'discord', 'whatsapp', 'web'
+  provider       String // 'telegram', 'discord', 'whatsapp', 'web'
   providerUserId String   @map("provider_user_id") // Chat ID do Telegram, ID do Discord, etc.
   createdAt      DateTime @default(now()) @map("created_at")
 

@@ -40,6 +40,7 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/Dashboard') ||
     request.nextUrl.pathname.startsWith('/Categories') ||
     request.nextUrl.pathname.startsWith('/Transactions') ||
+    request.nextUrl.pathname.startsWith('/Recurring') ||
     request.nextUrl.pathname.startsWith('/Chat') ||
     request.nextUrl.pathname.startsWith('/import');
 

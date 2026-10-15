@@ -13,6 +13,7 @@ import {
   Tags,
   Menu,
   X,
+  Repeat,
 } from 'lucide-react';
 import { logout } from '@/app/auth/actions';
 import { useUser } from '../_Context/UserContext';
@@ -48,6 +49,7 @@ export default function Sidebar() {
       href: '/Transactions',
     },
     { icon: Tags, label: 'Categorias', id: 'categories', href: '/Categories' },
+    { icon: Repeat, label: 'Recorrentes', id: 'recurring', href: '/Recurring' },
     { icon: Target, label: 'Metas', id: 'goals', href: '/Goals' },
     {
       icon: MessageSquare,

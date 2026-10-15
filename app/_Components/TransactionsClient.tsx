@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { TransactionRowActions } from './TransactionRowActions';
 import TransactionDialog from '../_Components/TransactionDialog';
+import TransactionStatus from './TransactionStatus';
 import type { TransactionItem } from '@/app/_actions/transactions';
 
 type PageData = {
@@ -38,6 +39,7 @@ export default function TransactionsClient({ data }: { data: PageData }) {
   const categoryFilter = searchParams.get('category') ?? 'all';
   const monthFilter = searchParams.get('month') ?? 'all';
   const typeFilter = searchParams.get('type') ?? 'all';
+  const statusFilter = searchParams.get('status') ?? 'all';
   const sortFilter = searchParams.get('sort') ?? 'date_desc';
   const urlSearch = searchParams.get('q') ?? '';
 
@@ -91,6 +93,7 @@ export default function TransactionsClient({ data }: { data: PageData }) {
     categoryFilter !== 'all' ||
     monthFilter !== 'all' ||
     typeFilter !== 'all' ||
+    statusFilter !== 'all' ||
     !!searchParams.get('min') ||
     !!searchParams.get('max');
 
@@ -225,6 +228,26 @@ export default function TransactionsClient({ data }: { data: PageData }) {
             ))}
           </div>
 
+          <div className='flex gap-2'>
+            {[
+              { value: 'all', label: 'Qualquer status' },
+              { value: 'pending', label: 'Pendentes' },
+              { value: 'paid', label: 'Pagas' },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => updateParams({ status: opt.value })}
+                className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-tighter border transition-all ${
+                  statusFilter === opt.value
+                    ? 'bg-amber-500 text-white border-amber-500'
+                    : 'bg-background border-border-custom text-zinc-500 hover:border-amber-500/50'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
           <div className='flex gap-2 items-center'>
             <input
               type='number'
@@ -344,9 +367,17 @@ export default function TransactionsClient({ data }: { data: PageData }) {
                           <ArrowUpRight className='w-4 h-4 text-rose-600' />
                         )}
                       </div>
-                      <span className='font-bold text-foreground'>
-                        {tx.description}
-                      </span>
+                      <div className='flex flex-col gap-1'>
+                        <span className='font-bold text-foreground'>
+                          {tx.description}
+                        </span>
+                        <TransactionStatus
+                          id={tx.id}
+                          isPaid={tx.isPaid}
+                          isRecurring={!!tx.recurringRuleId}
+                          type={tx.type}
+                        />
+                      </div>
                     </div>
                   </td>
                   <td className='px-6 py-4 uppercase border-b border-border-custom'>
@@ -409,6 +440,14 @@ export default function TransactionsClient({ data }: { data: PageData }) {
                     <p className='text-[10px] font-bold text-zinc-500 uppercase'>
                       {new Date(tx.date).toLocaleDateString('pt-BR')}
                     </p>
+                    <div className='mt-1'>
+                      <TransactionStatus
+                        id={tx.id}
+                        isPaid={tx.isPaid}
+                        isRecurring={!!tx.recurringRuleId}
+                        type={tx.type}
+                      />
+                    </div>
                   </div>
                 </div>
                 <TransactionRowActions
