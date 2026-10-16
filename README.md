@@ -52,8 +52,9 @@ N8N_INTERNAL_SECRET="segredo_das_integracoes_n8n"</code>
 </pre>
 
 <p>4. Sincronizar Banco e Rodar:</p>
+<p>Mudanças no <code>schema.prisma</code> devem virar uma nova migration em <code>prisma/migrations</code> (não use <code>db push</code> no banco real).</p>
 <pre>
-<code>npx prisma db push
+<code>npx prisma migrate deploy
 npm run dev</code>
 </pre>
 

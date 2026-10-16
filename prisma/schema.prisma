@@ -69,6 +69,7 @@ model Transaction {
 
   @@unique([recurringRuleId, referenceDate]) // uma ocorrência por regra/mês (nulls não conflitam)
   @@index([referenceDate]) //Index para buscaas rápidas no dashboard
+  @@index([userId, referenceDate]) // toda consulta filtra pelo usuário antes do mês
 }
 
 // Regra de lançamento mensal (aluguel, assinaturas, salário...)
