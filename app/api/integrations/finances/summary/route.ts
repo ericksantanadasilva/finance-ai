@@ -64,19 +64,18 @@ export async function GET(request: Request) {
     }
 
     // 3. Agregação direta no Postgres para máxima performance
-    // Utiliza case-insensitive/ambas variações para cobrir 'expense'/'EXPENSE' e 'income'/'INCOME'
     const [expenseAgg, incomeAgg, count] = await Promise.all([
       prisma.transaction.aggregate({
         where: {
           ...where,
-          type: { in: ['expense', 'EXPENSE'] },
+          type: 'expense',
         },
         _sum: { amount: true },
       }),
       prisma.transaction.aggregate({
         where: {
           ...where,
-          type: { in: ['income', 'INCOME'] },
+          type: 'income',
         },
         _sum: { amount: true },
       }),

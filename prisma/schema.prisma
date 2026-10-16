@@ -9,6 +9,11 @@ datasource db {
   // directUrl = env("DIRECT_URL")
 }
 
+enum TransactionType {
+  income
+  expense
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -28,7 +33,7 @@ model Category {
   id        String   @id @default(cuid())
   name      String
   color     String   @default("bg-zinc-500")
-  type      String // "income" or "expense" (minusculo)
+  type      TransactionType
   budget    Decimal? @db.Decimal(10, 2) // limite mensal de gastos (null = sem limite)
   userId    String
   createdAt DateTime @default(now())
@@ -48,7 +53,7 @@ model Transaction {
 
   referenceDate DateTime @default(now())
 
-  type        String // "income" or "expense" (minusculo)
+  type        TransactionType
   isRecurring Boolean @default(false)
   isPaid      Boolean @default(true)
 
@@ -77,7 +82,7 @@ model RecurringRule {
   id                 String   @id @default(cuid())
   description        String
   amount             Decimal  @db.Decimal(10, 2)
-  type               String // "income" or "expense"
+  type               TransactionType
   dayOfMonth         Int // 1-31; em meses curtos usa o último dia
   startMonth         String // "YYYY-MM" primeiro mês a gerar
   // Último mês já gerado ("YYYY-MM"). Impede recriar uma ocorrência que o usuário apagou.
