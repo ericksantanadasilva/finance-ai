@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { getSessionUser, requireUser } from '@/lib/auth';
 import { ensureDbUser } from '@/lib/ensure-user';
 import { parseDateOnly } from '@/app/utils/dates';
 
@@ -10,10 +10,7 @@ import { parseDateOnly } from '@/app/utils/dates';
  * BUSCAR TODAS AS METAS DO USUÁRIO
  */
 export async function getGoals() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser();
 
   if (!user) return [];
 
@@ -32,12 +29,7 @@ export async function createGoal(data: {
   currentAmount: number;
   deadline?: string;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) throw new Error('Não autorizado');
+  const user = await requireUser();
   await ensureDbUser(user);
 
   let parsedDeadline: Date | null = null;
@@ -75,12 +67,7 @@ export async function updateGoal(
   },
 ) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) throw new Error('Não autorizado');
+    const user = await requireUser();
 
     let parsedDeadline: Date | null = null;
     if (data.deadline) {
@@ -118,12 +105,7 @@ export async function updateGoal(
  */
 export async function updateGoalAmount(id: string, amountToAdd: number) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) throw new Error('Não autorizado');
+    const user = await requireUser();
 
     const value = Number(amountToAdd);
     if (isNaN(value)) throw new Error('Valor inválido');
@@ -154,12 +136,7 @@ export async function updateGoalAmount(id: string, amountToAdd: number) {
  * DELETAR META
  */
 export async function deleteGoal(id: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) throw new Error('Não autorizado');
+  const user = await requireUser();
 
   await prisma.goal.delete({
     where: {

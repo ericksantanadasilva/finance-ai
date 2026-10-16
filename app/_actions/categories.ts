@@ -2,15 +2,12 @@
 
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { getSessionUser, requireUser } from '@/lib/auth';
 import { ensureDbUser } from '@/lib/ensure-user';
 import { APP_TIME_ZONE, currentMonthISO } from '@/app/utils/dates';
 
 export async function getCategories() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser();
 
   if (!user) return [];
 
@@ -45,10 +42,7 @@ function monthRange(month?: string) {
  * (referenceDate, o mesmo critério do restante do app).
  */
 export async function getCategoriesWithBudget(month?: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser();
 
   if (!user) return [];
 
@@ -85,12 +79,7 @@ export async function getCategoriesWithBudget(month?: string) {
 }
 
 export async function setCategoryBudget(id: string, budget: number | null) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) throw new Error('Não autorizado');
+  const user = await requireUser();
 
   if (budget !== null && (isNaN(budget) || budget < 0)) {
     throw new Error('Limite inválido');
@@ -120,10 +109,7 @@ export async function getBudgetStatus(
   categoryName: string,
   month?: string,
 ): Promise<BudgetStatus | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) return null;
 
   const category = await prisma.category.findUnique({
@@ -156,12 +142,7 @@ export async function createCategory(
   color: string,
   budget?: number | null,
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) throw new Error('Não autorizado');
+  const user = await requireUser();
   await ensureDbUser(user);
 
   await prisma.category.create({
@@ -180,12 +161,7 @@ export async function createCategory(
 }
 
 export async function deleteCategory(id: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) throw new Error('Não autorizado');
+  const user = await requireUser();
 
   // Onde: garantimos que o usuário só pode deletar o que pertence a ele
   await prisma.category.delete({

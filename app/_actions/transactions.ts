@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { getSessionUser, requireUser } from '@/lib/auth';
 import type { Prisma } from '@/prisma/generated/client';
 import { getBudgetStatus } from './categories';
 import { ensureDbUser } from '@/lib/ensure-user';
@@ -18,11 +18,7 @@ const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
 };
 
 export async function createTransaction(data: any, referenceMounth: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Não autorizado');
+  const user = await requireUser();
 
   try {
     await ensureDbUser(user);
@@ -82,10 +78,7 @@ export async function createTransaction(data: any, referenceMounth: string) {
 }
 
 export async function getTransactions(limit?: number) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) return [];
 
   try {
@@ -129,10 +122,7 @@ export async function getTransactions(limit?: number) {
  * cada linha tem o mesmo formato de uma transação (referenceDate, type, amount, category).
  */
 export async function getDashboardTotals() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) return [];
 
   try {
@@ -217,10 +207,7 @@ export async function getTransactionsPage(filters: TransactionFilters = {}) {
     months: [] as string[],
   };
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) return empty;
 
   try {
@@ -336,11 +323,7 @@ export async function getTransactionsPage(filters: TransactionFilters = {}) {
 }
 
 export async function setTransactionPaid(id: string, isPaid: boolean) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Não autorizado');
+  const user = await requireUser();
   try {
     // updateMany garante que só altera transações do próprio usuário
     const result = await prisma.transaction.updateMany({
@@ -358,11 +341,7 @@ export async function setTransactionPaid(id: string, isPaid: boolean) {
 }
 
 export async function deleteTransaction(id: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Não autorizado');
+  const user = await requireUser();
   try {
     await prisma.transaction.delete({ where: { id, userId: user.id } });
     revalidatePath('/Dashboard');
@@ -378,11 +357,7 @@ export async function updateTransaction(
   data: any,
   referenceMounth: string,
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Não autorizado');
+  const user = await requireUser();
 
   try {
     const category = await prisma.category.upsert({

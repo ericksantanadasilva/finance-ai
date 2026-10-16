@@ -4,17 +4,14 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getTransactions } from './transactions';
 import { getCategories } from './categories';
 import { getGoals } from './goals';
-import { createClient } from '@/lib/supabase/server';
+import { getSessionUser } from '@/lib/auth';
 import { APP_TIME_ZONE, currentMonthISO } from '@/app/utils/dates';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function sendMessage(message: string, history: any[] = []) {
   // Server Actions são endpoints públicos: sem sessão, não gasta a cota do Gemini
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) {
     return {
       reply: 'Sua sessão expirou. Faça login novamente.',

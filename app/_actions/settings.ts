@@ -1,7 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { createClient } from '@/lib/supabase/server';
+import { getSessionUser, requireUser } from '@/lib/auth';
 import { ensureDbUser } from '@/lib/ensure-user';
 import { revalidatePath } from 'next/cache';
 
@@ -10,10 +10,7 @@ import { revalidatePath } from 'next/cache';
  * Agora busca na tabela PUBLIC.USER usando o ID da sessão
  */
 export async function getUserProfile() {
-  const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
+  const authUser = await getSessionUser();
 
   if (!authUser) return null;
 
@@ -38,12 +35,7 @@ export async function getUserProfile() {
  * 2. ATUALIZAR NOME
  */
 export async function updateProfile(data: { name: string }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) throw new Error('Não autorizado');
+  const user = await requireUser();
 
   try {
     await ensureDbUser(user);

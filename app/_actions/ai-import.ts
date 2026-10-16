@@ -3,7 +3,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { getSessionUser } from '@/lib/auth';
 import { ensureDbUser } from '@/lib/ensure-user';
 import { APP_TIME_ZONE, parseDateOnly, todayISO } from '@/app/utils/dates';
 
@@ -11,10 +11,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function processFileWithAI(base64Data: string, mimeType: string) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getSessionUser();
     if (!user) return null;
 
     const categories = await prisma.category.findMany({
@@ -85,10 +82,7 @@ export async function saveTransactions(
   transactions: any[],
   referenceMonth: string,
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser();
 
   if (!user) {
     throw new Error('Usuário não autenticado');

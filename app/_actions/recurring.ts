@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { getSessionUser, requireUser } from '@/lib/auth';
 import { ensureDbUser } from '@/lib/ensure-user';
 import { APP_TIME_ZONE, currentMonthISO } from '@/app/utils/dates';
 
@@ -19,15 +19,6 @@ function shiftMonth(month: string, delta: number) {
   const [y, m] = month.split('-').map(Number);
   const d = new Date(y, m - 1 + delta, 1);
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
-}
-
-async function requireUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Não autorizado');
-  return user;
 }
 
 export type RecurringRuleItem = {
@@ -105,10 +96,7 @@ async function generateForUser(userId: string) {
 /** Usada pelas páginas para garantir que as recorrentes do mês existem. */
 export async function generateDueRecurring() {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getSessionUser();
     if (!user) return 0;
     return await generateForUser(user.id);
   } catch (error) {
@@ -118,10 +106,7 @@ export async function generateDueRecurring() {
 }
 
 export async function getRecurringRules(): Promise<RecurringRuleItem[]> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) return [];
 
   const rules = await prisma.recurringRule.findMany({
