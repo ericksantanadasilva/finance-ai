@@ -1,39 +1,8 @@
-import { createServerClient } from '@supabase/ssr';
+import { getToken } from 'next-auth/jwt';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
-          );
-          response = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options),
-          );
-        },
-      },
-    },
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const token = await getToken({ req: request });
 
   // 1. Definir rotas protegidas (Dashboard, Categorias, Chat, etc)
   const isProtectedRoute =
@@ -47,31 +16,27 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/import');
 
   // 2. Se for rota protegida e NÃO tiver usuário, manda pro Login
-  if (isProtectedRoute && !user) {
+  if (isProtectedRoute && !token) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  // 3. Se o usuário estiver logado e tentar ir pro Login/Register, manda pro Dashboard
-  if (
-    user &&
-    (request.nextUrl.pathname === '/' ||
-      request.nextUrl.pathname === '/register')
-  ) {
+  // 3. Se o usuário estiver logado e tentar ir pro Login, manda pro Dashboard
+  if (token && request.nextUrl.pathname === '/') {
     return NextResponse.redirect(new URL('/Dashboard', request.url));
   }
 
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
+     * - api (inclui /api/auth do next-auth)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - auth/callback (important for social login)
      */
-    '/((?!api|_next/static|_next/image|assets|favicon.ico|sw.js|auth/callback).*)',
+    '/((?!api|_next/static|_next/image|assets|favicon.ico|sw.js).*)',
   ],
 };

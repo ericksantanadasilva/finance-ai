@@ -19,6 +19,8 @@ model User {
   email     String   @unique
   name      String?
   imageUrl  String?
+  passwordHash String? // bcrypt; null em contas que só entram pelo Google
+  googleId  String?  @unique // "sub" da conta Google vinculada
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -114,7 +116,7 @@ model Goal {
 
 model ExternalIdentity {
   id             String   @id @default(uuid())
-  userId         String   @map("user_id") // UUID do usuário no sistema/Supabase
+  userId         String   @map("user_id") // id do User
   provider       String // 'telegram', 'discord', 'whatsapp', 'web'
   providerUserId String   @map("provider_user_id") // Chat ID do Telegram, ID do Discord, etc.
   createdAt      DateTime @default(now()) @map("created_at")

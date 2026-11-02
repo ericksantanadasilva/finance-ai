@@ -4,7 +4,6 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { getSessionUser } from '@/lib/auth';
-import { ensureDbUser } from '@/lib/ensure-user';
 import { APP_TIME_ZONE, parseDateOnly, todayISO } from '@/app/utils/dates';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
@@ -90,7 +89,6 @@ export async function saveTransactions(
 
   try {
     const userId = user.id;
-    await ensureDbUser(user);
 
     const [year, month] = referenceMonth.split('-').map(Number);
     const referenceDate = new Date(year, month - 1, 1, 12, 0, 0);

@@ -2,48 +2,35 @@
 
 import { use, useState } from 'react';
 import { Wallet, ArrowRight, Loader2 } from 'lucide-react';
-import { createBrowserClient } from '@supabase/ssr';
-import { loginWithEmail } from './auth/actions';
-
-const NOTICES: Record<string, string> = {
-  confirm_email: 'Conta criada! Verifique seu e-mail para confirmar o cadastro.',
-};
+import { signIn } from 'next-auth/react';
 
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ message?: string; error?: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const params = use(searchParams);
-  const notice = params.message ? NOTICES[params.message] : undefined;
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(
     params.error ? 'Não foi possível entrar com o Google. Tente novamente.' : null,
   );
 
-  // Cliente para o Login Social (Client Side)
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
-  const handleGoogleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-  };
+  const handleGoogleLogin = () => signIn('google', { callbackUrl: '/Dashboard' });
 
   async function handleSubmit(formData: FormData) {
     setIsPending(true);
     setError(null);
-    const result = await loginWithEmail(formData);
-    if (result?.error) {
-      setError(result.error);
-      setIsPending(false);
+    const result = await signIn('credentials', {
+      email: formData.get('email'),
+      password: formData.get('password'),
+      redirect: false,
+    });
+    if (result?.ok) {
+      window.location.assign('/Dashboard');
+      return;
     }
+    setError('E-mail ou senha inválidos.');
+    setIsPending(false);
   }
 
   return (
@@ -102,12 +89,6 @@ export default function LoginPage({
           </div>
         </div>
 
-        {notice && (
-          <div className='bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs p-3 rounded-lg mb-4'>
-            {notice}
-          </div>
-        )}
-
         {error && (
           <div className='bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs p-3 rounded-lg mb-4'>
             {error}
@@ -156,10 +137,7 @@ export default function LoginPage({
         </form>
 
         <p className='mt-6 text-center text-xs text-zinc-500'>
-          Não tem uma conta?{' '}
-          <a href='/register' className='text-emerald-500 hover:underline'>
-            Crie agora
-          </a>
+          Não tem uma conta? Entre com o Google para criar.
         </p>
       </div>
     </div>

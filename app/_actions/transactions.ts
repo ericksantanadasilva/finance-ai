@@ -5,7 +5,6 @@ import { revalidatePath } from 'next/cache';
 import { getSessionUser, requireUser } from '@/lib/auth';
 import type { Prisma } from '@/prisma/generated/client';
 import { getBudgetStatus } from './categories';
-import { ensureDbUser } from '@/lib/ensure-user';
 import { parseDateOnly } from '@/app/utils/dates';
 
 const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
@@ -21,8 +20,6 @@ export async function createTransaction(data: any, referenceMounth: string) {
   const user = await requireUser();
 
   try {
-    await ensureDbUser(user);
-
     const category = await prisma.category.upsert({
       where: { name_userId: { name: data.category, userId: user.id } },
       update: {},

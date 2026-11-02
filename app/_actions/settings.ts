@@ -2,7 +2,6 @@
 
 import { prisma } from '@/lib/prisma';
 import { getSessionUser, requireUser } from '@/lib/auth';
-import { ensureDbUser } from '@/lib/ensure-user';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -26,7 +25,7 @@ export async function getUserProfile() {
 
   return {
     name: dbUser?.name || 'Usuário',
-    email: dbUser?.email || authUser.email,
+    email: dbUser?.email || authUser.email || undefined,
     image: dbUser?.imageUrl || null,
   };
 }
@@ -38,7 +37,6 @@ export async function updateProfile(data: { name: string }) {
   const user = await requireUser();
 
   try {
-    await ensureDbUser(user);
     await prisma.user.update({
       where: { id: user.id },
       data: { name: data.name },

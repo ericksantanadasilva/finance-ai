@@ -3,7 +3,6 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { getSessionUser, requireUser } from '@/lib/auth';
-import { ensureDbUser } from '@/lib/ensure-user';
 import { parseDateOnly } from '@/app/utils/dates';
 
 /**
@@ -30,7 +29,6 @@ export async function createGoal(data: {
   deadline?: string;
 }) {
   const user = await requireUser();
-  await ensureDbUser(user);
 
   let parsedDeadline: Date | null = null;
   if (data.deadline) {

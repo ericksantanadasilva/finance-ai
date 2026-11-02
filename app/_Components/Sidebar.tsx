@@ -15,7 +15,7 @@ import {
   X,
   Repeat,
 } from 'lucide-react';
-import { logout } from '@/app/auth/actions';
+import { signOut } from 'next-auth/react';
 import { useUser } from '../_Context/UserContext';
 import { getAvatarData } from '../utils/utils';
 
@@ -32,7 +32,7 @@ export default function Sidebar() {
   }, [pathname]);
 
   const handleLogout = async () => {
-    await logout();
+    await signOut({ callbackUrl: '/' });
   };
 
   const menuItems = [

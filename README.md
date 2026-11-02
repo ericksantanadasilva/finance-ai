@@ -22,8 +22,9 @@
   <li><b>Framework:</b> Next.js 16 (App Router)</li>
   <li><b>Linguagem:</b> TypeScript</li>
   <li><b>Estilização:</b> Tailwind CSS v4</li>
-  <li><b>Banco de Dados:</b> PostgreSQL (Supabase)</li>
+  <li><b>Banco de Dados:</b> PostgreSQL</li>
   <li><b>ORM:</b> Prisma</li>
+  <li><b>Autenticação:</b> NextAuth (Google e e-mail/senha)</li>
 </ul>
 
 <hr />
@@ -44,9 +45,10 @@ cd finance-ai</code>
 <p>3. Configurar Variáveis de Ambiente (.env):</p>
 <pre>
 <code>DATABASE_URL="sua_url_do_prisma"
-DIRECT_URL="sua_url_direta_supabase"
-NEXT_PUBLIC_SUPABASE_URL="sua_url_api_supabase"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="sua_chave_anon_supabase"
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="gere_com_openssl_rand_base64_32"
+GOOGLE_CLIENT_ID="seu_client_id"
+GOOGLE_CLIENT_SECRET="seu_client_secret"
 GEMINI_API_KEY="sua_chave_da_ia"
 N8N_INTERNAL_SECRET="segredo_das_integracoes_n8n"</code>
 </pre>

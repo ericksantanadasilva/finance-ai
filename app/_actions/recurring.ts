@@ -3,7 +3,6 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { getSessionUser, requireUser } from '@/lib/auth';
-import { ensureDbUser } from '@/lib/ensure-user';
 import { APP_TIME_ZONE, currentMonthISO } from '@/app/utils/dates';
 
 const MONTH_RE = /^\d{4}-\d{2}$/;
@@ -150,8 +149,6 @@ export async function createRecurringRule(input: {
     return { success: false, error: 'Tipo inválido.' };
 
   try {
-    await ensureDbUser(user);
-
     let categoryId: string | null = null;
     if (input.category?.trim()) {
       const category = await prisma.category.upsert({

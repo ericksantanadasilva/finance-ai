@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { getSessionUser } from '@/lib/auth';
 
 /**
  * Valida a chave de API fornecida no header `x-api-key` para integrações externas (ex: n8n).
@@ -21,62 +20,11 @@ export type AuthSessionResult =
   | { user: { id: string; email?: string | null }; errorResponse: null }
   | { user: null; errorResponse: NextResponse };
 
-/**
- * Valida a sessão do usuário autenticado no Supabase.
- * Suporta tanto sessões baseadas em cookies (Web App) quanto tokens JWT no header Authorization Bearer (Mobile / Expo).
- */
-export async function validateUserSession(
-  request?: Request,
-): Promise<AuthSessionResult> {
-  // 1. Verificação via Bearer Token no cabeçalho Authorization (útil para Mobile / React Native / chamadas API)
-  if (request) {
-    const authHeader = request.headers.get('authorization');
-    if (authHeader?.startsWith('Bearer ')) {
-      const token = authHeader.replace('Bearer ', '').trim();
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+/** Valida a sessão do usuário autenticado (cookie do next-auth). */
+export async function validateUserSession(): Promise<AuthSessionResult> {
+  const user = await getSessionUser();
 
-      if (supabaseUrl && supabaseAnonKey && token) {
-        const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey);
-        const {
-          data: { user },
-          error,
-        } = await supabase.auth.getUser(token);
-
-        if (!error && user) {
-          return {
-            user: { id: user.id, email: user.email },
-            errorResponse: null,
-          };
-        }
-      }
-    }
-  }
-
-  // 2. Verificação padrão via Cookies da sessão (Web App Next.js)
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-
-    if (error || !user) {
-      return {
-        user: null,
-        errorResponse: NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 },
-        ),
-      };
-    }
-
-    return {
-      user: { id: user.id, email: user.email },
-      errorResponse: null,
-    };
-  } catch (err) {
-    console.error('Erro na validação de sessão Supabase:', err);
+  if (!user) {
     return {
       user: null,
       errorResponse: NextResponse.json(
@@ -85,4 +33,6 @@ export async function validateUserSession(
       ),
     };
   }
+
+  return { user: { id: user.id, email: user.email }, errorResponse: null };
 }

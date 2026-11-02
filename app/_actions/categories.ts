@@ -3,7 +3,6 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { getSessionUser, requireUser } from '@/lib/auth';
-import { ensureDbUser } from '@/lib/ensure-user';
 import { APP_TIME_ZONE, currentMonthISO } from '@/app/utils/dates';
 
 export async function getCategories() {
@@ -143,7 +142,6 @@ export async function createCategory(
   budget?: number | null,
 ) {
   const user = await requireUser();
-  await ensureDbUser(user);
 
   await prisma.category.create({
     data: {
@@ -151,7 +149,7 @@ export async function createCategory(
       color,
       type: 'expense',
       budget: budget && budget > 0 ? budget : null,
-      userId: user.id, // Vincula a nova categoria ao ID real do Supabase
+      userId: user.id,
     },
   });
 

@@ -15,9 +15,9 @@ function generateShortToken(length = 6): string {
   return result;
 }
 
-export async function POST(request: Request) {
-  // 1. Validação da sessão de usuário ativo via Supabase (suporta Cookie no Web e Bearer no Mobile)
-  const { user, errorResponse } = await validateUserSession(request);
+export async function POST() {
+  // 1. Validação da sessão de usuário ativo
+  const { user, errorResponse } = await validateUserSession();
   if (errorResponse) {
     return errorResponse;
   }
