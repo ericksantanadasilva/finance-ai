@@ -26,19 +26,25 @@ type PageData = {
   page: number;
   pageSize: number;
   totalPages: number;
-  totals: { income: number; expense: number };
+  totals: { income: number; expense: number; carryOver: number };
   categories: string[];
   months: string[];
 };
 
-export default function TransactionsClient({ data }: { data: PageData }) {
+export default function TransactionsClient({
+  data,
+  currentMonth,
+}: {
+  data: PageData;
+  currentMonth: string;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
   const categoryFilter = searchParams.get('category') ?? 'all';
-  const monthFilter = searchParams.get('month') ?? 'all';
+  const monthFilter = searchParams.get('month') ?? currentMonth;
   const typeFilter = searchParams.get('type') ?? 'all';
   const statusFilter = searchParams.get('status') ?? 'all';
   const sortFilter = searchParams.get('sort') ?? 'date_desc';
@@ -52,15 +58,25 @@ export default function TransactionsClient({ data }: { data: PageData }) {
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
 
   const categories = data.categories;
-  const availableMonths = data.months;
+  // O mês atual aparece no select mesmo antes do primeiro lançamento dele
+  const availableMonths = Array.from(new Set([currentMonth, ...data.months]))
+    .sort()
+    .reverse();
   const filteredTransactions = data.items;
+
+  // Sobra positiva conta como receita; se os meses anteriores fecharam negativos, como despesa
+  const carryOver = data.totals.carryOver;
+  const incomeTotal = data.totals.income + Math.max(carryOver, 0);
+  const expenseTotal = data.totals.expense + Math.max(-carryOver, 0);
 
   // Atualiza a URL (fonte da verdade dos filtros). Qualquer filtro volta para a página 1.
   const updateParams = (patch: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
     Object.entries(patch).forEach(([key, value]) => {
-      if (value === null || value === '' || value === 'all') params.delete(key);
-      else params.set(key, value);
+      // Mês fica na URL mesmo em "all", porque sem ele a tela abre no mês atual
+      if (key !== 'month' && (value === null || value === '' || value === 'all'))
+        params.delete(key);
+      else if (value) params.set(key, value);
     });
     if (!('page' in patch)) params.delete('page');
     const qs = params.toString();
@@ -92,7 +108,7 @@ export default function TransactionsClient({ data }: { data: PageData }) {
   const hasActiveFilters =
     !!urlSearch ||
     categoryFilter !== 'all' ||
-    monthFilter !== 'all' ||
+    monthFilter !== currentMonth ||
     typeFilter !== 'all' ||
     statusFilter !== 'all' ||
     !!searchParams.get('min') ||
@@ -305,23 +321,33 @@ export default function TransactionsClient({ data }: { data: PageData }) {
             Receitas
           </p>
           <p className='text-sm sm:text-lg font-black text-emerald-600'>
-            {formatMoney(data.totals.income)}
+            {formatMoney(incomeTotal)}
           </p>
+          {carryOver > 0 && (
+            <p className='text-[10px] font-bold text-zinc-500 mt-1'>
+              {formatMoney(carryOver)} do mês anterior
+            </p>
+          )}
         </div>
         <div className='bg-surface border border-border-custom rounded-2xl p-4'>
           <p className='text-[10px] font-black uppercase tracking-widest text-zinc-500'>
             Despesas
           </p>
           <p className='text-sm sm:text-lg font-black text-rose-600'>
-            {formatMoney(data.totals.expense)}
+            {formatMoney(expenseTotal)}
           </p>
+          {carryOver < 0 && (
+            <p className='text-[10px] font-bold text-zinc-500 mt-1'>
+              {formatMoney(-carryOver)} do mês anterior
+            </p>
+          )}
         </div>
         <div className='bg-surface border border-border-custom rounded-2xl p-4'>
           <p className='text-[10px] font-black uppercase tracking-widest text-zinc-500'>
             Saldo
           </p>
           <p className='text-sm sm:text-lg font-black text-foreground'>
-            {formatMoney(data.totals.income - data.totals.expense)}
+            {formatMoney(incomeTotal - expenseTotal)}
           </p>
         </div>
       </div>

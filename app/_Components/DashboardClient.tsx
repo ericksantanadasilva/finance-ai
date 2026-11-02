@@ -142,7 +142,16 @@ export default function DashboardClient({
   const totalExpense = currentMonthTransactions
     .filter((t) => t.type === 'expense')
     .reduce((acc, t) => acc + t.amount, 0);
-  const balance = totalIncome - totalExpense;
+
+  // Sobra acumulada de todos os meses anteriores ao atual (competência futura não entra)
+  const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const previousBalance = transactions
+    .filter((t) => new Date(t.referenceDate) < startOfCurrentMonth)
+    .reduce(
+      (acc, t) => acc + (t.type === 'income' ? t.amount : -t.amount),
+      0,
+    );
+  const balance = previousBalance + totalIncome - totalExpense;
 
   // Define qual mês enviar para o Dialog (se estiver em 'all', envia o mês atual)
   const referenceForDialog =
@@ -188,11 +197,14 @@ export default function DashboardClient({
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
         <div className='bg-surface border border-border-custom p-6 rounded-2xl relative overflow-hidden shadow-sm'>
           <p className='text-zinc-500 dark:text-zinc-400 text-[10px] uppercase font-black tracking-[0.15em] mb-1'>
-            Saldo Mensal
+            Saldo Atual
           </p>
           <h3 className='text-2xl sm:text-3xl font-black text-foreground tracking-tight'>
             {formatMoney(balance)}
           </h3>
+          <p className='text-zinc-500 dark:text-zinc-400 text-[11px] font-bold mt-1'>
+            Meses anteriores: {formatMoney(previousBalance)}
+          </p>
           <Wallet className='absolute -right-2 -bottom-2 w-16 h-16 text-zinc-900/5 dark:text-white/5' />
         </div>
         <div className='bg-surface border border-border-custom p-6 rounded-2xl flex justify-between items-center shadow-sm'>

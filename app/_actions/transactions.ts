@@ -202,7 +202,7 @@ export async function getTransactionsPage(filters: TransactionFilters = {}) {
     page: 1,
     pageSize: 20,
     totalPages: 1,
-    totals: { income: 0, expense: 0 },
+    totals: { income: 0, expense: 0, carryOver: 0 },
     categories: [] as string[],
     months: [] as string[],
   };
@@ -231,10 +231,12 @@ export async function getTransactionsPage(filters: TransactionFilters = {}) {
     if (filters.status === 'paid') where.isPaid = true;
     if (filters.status === 'pending') where.isPaid = false;
 
+    let monthStart: Date | null = null;
     if (filters.month && /^\d{4}-\d{2}$/.test(filters.month)) {
       const [year, month] = filters.month.split('-').map(Number);
+      monthStart = new Date(year, month - 1, 1);
       where.referenceDate = {
-        gte: new Date(year, month - 1, 1),
+        gte: monthStart,
         lt: new Date(year, month, 1),
       };
     }
@@ -250,7 +252,11 @@ export async function getTransactionsPage(filters: TransactionFilters = {}) {
 
     const orderBy = SORT_MAP[filters.sort ?? 'date_desc'] ?? SORT_MAP.date_desc;
 
-    const [total, totalsByType, categories, months] = await Promise.all([
+    // Sobra dos meses anteriores: só faz sentido vendo o mês inteiro, sem outros filtros
+    const carryOverStart =
+      Object.keys(where).length === 2 && monthStart ? monthStart : null;
+
+    const [total, totalsByType, categories, months, previous] = await Promise.all([
       prisma.transaction.count({ where }),
       prisma.transaction.groupBy({
         by: ['type'],
@@ -268,6 +274,13 @@ export async function getTransactionsPage(filters: TransactionFilters = {}) {
         distinct: ['referenceDate'],
         orderBy: { referenceDate: 'desc' },
       }),
+      carryOverStart
+        ? prisma.transaction.groupBy({
+            by: ['type'],
+            where: { userId: user.id, referenceDate: { lt: carryOverStart } },
+            _sum: { amount: true },
+          })
+        : [],
     ]);
 
     const totalPages = Math.max(Math.ceil(total / pageSize), 1);
@@ -294,6 +307,13 @@ export async function getTransactionsPage(filters: TransactionFilters = {}) {
     const sumOf = (type: string) =>
       Number(totalsByType.find((t) => t.type === type)?._sum.amount ?? 0);
 
+    const carryOver = previous.reduce(
+      (acc, p) =>
+        acc +
+        (p.type === 'income' ? 1 : -1) * Number(p._sum.amount ?? 0),
+      0,
+    );
+
     return {
       items: rows.map((t) => ({
         ...t,
@@ -305,7 +325,7 @@ export async function getTransactionsPage(filters: TransactionFilters = {}) {
       page,
       pageSize,
       totalPages,
-      totals: { income: sumOf('income'), expense: sumOf('expense') },
+      totals: { income: sumOf('income'), expense: sumOf('expense'), carryOver },
       categories: categories.map((c) => c.name),
       months: Array.from(
         new Set(
