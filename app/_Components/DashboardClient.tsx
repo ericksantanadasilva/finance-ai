@@ -280,7 +280,7 @@ export default function DashboardClient({
                 cursor={{ fill: 'currentColor', opacity: 0.05 }}
                 contentStyle={{
                   backgroundColor: 'var(--surface)',
-                  border: '1px solid var(--border-color)',
+                  border: '1px solid var(--border-custom)',
                   borderRadius: '12px',
                 }}
                 formatter={(v: any) => formatMoney(v)}
