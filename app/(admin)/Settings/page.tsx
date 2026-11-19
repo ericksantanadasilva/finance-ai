@@ -58,7 +58,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className='min-h-screen bg-background text-foreground font-sans p-4 sm:p-8 transition-all duration-300 lg:ml-64'>
+    <div className='min-h-screen bg-background text-foreground font-sans p-4 sm:p-8 transition-all duration-300'>
       <div className='max-w-2xl mx-auto lg:mx-0 pt-10 lg:pt-0'>
         <h1 className='text-xl sm:text-2xl font-bold mb-2'>Configurações</h1>
         <p className='text-muted-foreground text-xs sm:text-sm mb-8 font-medium'>
