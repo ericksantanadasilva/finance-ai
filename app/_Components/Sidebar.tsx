@@ -1,6 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useSyncExternalStore,
+} from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -21,6 +26,15 @@ import { getAvatarData } from '../utils/utils';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
+// Mesmo breakpoint do lg:, a partir do qual a sidebar fica fixa e não é gaveta
+const DESKTOP_QUERY = '(min-width: 1024px)';
+
+function subscribeToDesktop(onChange: () => void) {
+  const media = window.matchMedia(DESKTOP_QUERY);
+  media.addEventListener('change', onChange);
+  return () => media.removeEventListener('change', onChange);
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
   // Configurações fica no rodapé, fora do menuItems, então o ativo é checado à parte
@@ -34,6 +48,70 @@ export default function Sidebar() {
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
+
+  const asideRef = useRef<HTMLElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  // No servidor assume desktop (sidebar visível); no cliente lê a largura real
+  const isDesktop = useSyncExternalStore(
+    subscribeToDesktop,
+    () => window.matchMedia(DESKTOP_QUERY).matches,
+    () => true,
+  );
+  // Se a tela crescer para desktop com a gaveta aberta, ela deixa de ser modal
+  const drawerOpen = isOpen && !isDesktop;
+
+  // Gaveta aberta no mobile: trava a rolagem, prende o foco e fecha com Esc
+  useEffect(() => {
+    if (!drawerOpen) return;
+
+    const aside = asideRef.current;
+    const trigger = triggerRef.current;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const getFocusable = () =>
+      Array.from(
+        aside?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled])',
+        ) ?? [],
+      );
+
+    getFocusable()[0]?.focus();
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+        return;
+      }
+      if (e.key !== 'Tab') return;
+
+      const items = getFocusable();
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+
+      if (!aside?.contains(active)) {
+        e.preventDefault();
+        first.focus();
+      } else if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      // Devolve o foco para o botão que abriu a gaveta
+      trigger?.focus();
+    };
+  }, [drawerOpen]);
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: '/' });
@@ -68,17 +146,18 @@ export default function Sidebar() {
     <>
       {/* MOBILE TRIGGER */}
       <Button
+        ref={triggerRef}
         size='icon'
         onClick={() => setIsOpen(true)}
         aria-label='Abrir menu'
-        aria-expanded={isOpen}
+        aria-expanded={drawerOpen}
         className='lg:hidden fixed top-4 left-4 z-50'
       >
         <Menu className='w-5 h-5' />
       </Button>
 
       {/* OVERLAY */}
-      {isOpen && (
+      {drawerOpen && (
         <div
           aria-hidden='true'
           className='fixed inset-0 bg-overlay z-40 lg:hidden animate-in fade-in duration-300'
@@ -87,6 +166,9 @@ export default function Sidebar() {
       )}
 
       <aside
+        ref={asideRef}
+        // Gaveta fechada no mobile fica fora da tela: inert evita que o Tab entre nela
+        inert={!isDesktop && !isOpen}
         className={`
           fixed left-0 top-0 h-screen flex flex-col z-50 transition-all duration-300 w-64
           bg-surface border-r-2 border-ink
