@@ -18,6 +18,8 @@ import {
 import { signOut } from 'next-auth/react';
 import { useUser } from '../_Context/UserContext';
 import { getAvatarData } from '../utils/utils';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -63,17 +65,21 @@ export default function Sidebar() {
   return (
     <>
       {/* MOBILE TRIGGER */}
-      <button
+      <Button
+        size='icon'
         onClick={() => setIsOpen(true)}
-        className='lg:hidden fixed top-4 left-4 z-50 p-2.5 bg-surface border border-border-custom rounded-xl text-foreground shadow-lg'
+        aria-label='Abrir menu'
+        aria-expanded={isOpen}
+        className='lg:hidden fixed top-4 left-4 z-50'
       >
         <Menu className='w-5 h-5' />
-      </button>
+      </Button>
 
       {/* OVERLAY */}
       {isOpen && (
         <div
-          className='fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-300'
+          aria-hidden='true'
+          className='fixed inset-0 bg-overlay z-40 lg:hidden animate-in fade-in duration-300'
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -81,45 +87,55 @@ export default function Sidebar() {
       <aside
         className={`
           fixed left-0 top-0 h-screen flex flex-col z-50 transition-all duration-300 w-64
-          bg-surface border-r border-border-custom
-          ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'}
+          bg-surface border-r-2 border-ink
+          ${isOpen ? 'translate-x-0 shadow-hard' : '-translate-x-full lg:translate-x-0'}
         `}
       >
         {/* LOGO DO APP */}
         <div className='h-16 flex items-center justify-between px-6 border-b border-border-custom'>
           <div className='flex items-center gap-3'>
-            <div className='w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-600/20'>
-              <span className='font-black text-white text-lg'>F</span>
+            <div className='w-8 h-8 bg-highlight text-highlight-foreground border-2 border-ink rounded-lg flex items-center justify-center shadow-hard-sm'>
+              <span className='font-black text-lg'>F</span>
             </div>
-            <span className='font-bold text-foreground text-lg tracking-tight'>
+            <span className='font-display font-bold text-foreground text-lg'>
               Finance.ai
             </span>
           </div>
-          <button
+          <Button
+            variant='ghost'
+            size='icon'
             onClick={() => setIsOpen(false)}
-            className='lg:hidden text-zinc-400 p-1'
+            aria-label='Fechar menu'
+            className='lg:hidden text-muted-foreground'
           >
             <X className='w-5 h-5' />
-          </button>
+          </Button>
         </div>
 
         {/* LINKS DE NAVEGAÇÃO */}
-        <nav className='flex-1 px-4 py-6 space-y-1.5 overflow-y-auto custom-scrollbar'>
+        <nav className='flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar'>
           {menuItems.map((item) => {
             const isActive = pathname === item.href;
+            // Item ativo vira "adesivo" (contorno + sombra); o da IA usa o roxo
+            const activeVariant = item.isSpecial ? 'ai' : 'default';
+            const idleColor = item.isSpecial
+              ? 'text-ai hover:bg-ai/10'
+              : 'text-muted-foreground hover:text-foreground';
+
             return (
               <Link
                 key={item.id}
                 href={item.href}
-                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-bold transition-all border ${
-                  isActive
-                    ? 'bg-background text-emerald-600 dark:text-emerald-500 border-border-custom shadow-sm'
-                    : 'text-zinc-500 dark:text-zinc-400 hover:text-foreground hover:bg-background border-transparent'
-                } ${item.isSpecial && !isActive ? 'text-purple-600 dark:text-purple-400 hover:bg-purple-500/10' : ''}`}
+                aria-current={isActive ? 'page' : undefined}
+                className={cn(
+                  buttonVariants({
+                    variant: isActive ? activeVariant : 'ghost',
+                  }),
+                  'w-full justify-start gap-3 px-3',
+                  !isActive && idleColor,
+                )}
               >
-                <item.icon
-                  className={`w-4 h-4 ${isActive && !item.isSpecial ? 'text-emerald-600 dark:text-emerald-500' : item.isSpecial ? 'text-purple-600 dark:text-purple-400' : ''}`}
-                />
+                <item.icon className='w-4 h-4' />
                 {item.label}
               </Link>
             );
@@ -130,36 +146,39 @@ export default function Sidebar() {
         <div className='p-4 border-t border-border-custom space-y-1 bg-surface'>
           <Link
             href='/Settings'
-            className='w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold text-zinc-500 dark:text-zinc-400 hover:text-foreground hover:bg-background transition-all'
+            className={cn(
+              buttonVariants({ variant: 'ghost', size: 'sm' }),
+              'w-full justify-start gap-3 px-3 h-10 text-sm text-muted-foreground hover:text-foreground',
+            )}
           >
             <Settings className='w-4 h-4' />
             Configurações
           </Link>
 
-          <button
+          <Button
+            variant='ghost'
+            size='sm'
             onClick={handleLogout}
-            className='w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold text-rose-500 hover:bg-rose-500/10 transition-all'
+            className='w-full justify-start gap-3 px-3 h-10 text-sm text-expense hover:bg-expense/10'
           >
             <LogOut className='w-4 h-4' />
             Sair
-          </button>
+          </Button>
 
           {/* PERFIL COM LOGO DE INICIAIS DINÂMICA */}
-          <div className='mt-4 flex items-center gap-3 px-3 py-3 bg-background rounded-xl border border-border-custom shadow-sm group'>
-            {/* AVATAR COM DEGRADÊ DO UTILS */}
+          <div className='mt-4 flex items-center gap-3 px-3 py-3 bg-background rounded-xl border-2 border-ink group'>
+            {/* AVATAR COM A COR SÓLIDA DO UTILS */}
             <div
               className={`w-9 h-9 rounded-xl ${theme} border-2 border-ink flex items-center justify-center shrink-0 transition-transform group-hover:scale-105`}
             >
-              <span className='font-black text-[10px] tracking-tighter'>
-                {initials}
-              </span>
+              <span className='font-black text-xs'>{initials}</span>
             </div>
 
             <div className='flex-1 min-w-0'>
-              <p className='text-xs font-black text-foreground truncate uppercase tracking-tighter'>
+              <p className='text-sm font-bold text-foreground truncate'>
                 {user?.name || 'Carregando...'}
               </p>
-              <p className='text-[9px] font-bold text-zinc-500 truncate'>
+              <p className='text-xs text-muted-foreground truncate'>
                 {user?.email}
               </p>
             </div>

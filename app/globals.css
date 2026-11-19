@@ -48,6 +48,9 @@
   --danger: var(--expense);
   --danger-foreground: var(--expense-foreground);
   --danger-border: var(--ink);
+
+  /* Fundo escurecido atrás de menus e diálogos */
+  --overlay: rgb(17 17 17 / 0.5);
 }
 
 .dark {
@@ -81,6 +84,8 @@
   --danger: var(--surface);
   --danger-foreground: var(--expense);
   --danger-border: var(--expense);
+
+  --overlay: rgb(0 0 0 / 0.7);
 }
 
 /*
@@ -138,6 +143,7 @@
   --color-warning-foreground: var(--warning-foreground);
   --color-danger: var(--danger);
   --color-danger-foreground: var(--danger-foreground);
+  --color-overlay: var(--overlay);
 
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
