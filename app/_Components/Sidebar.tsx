@@ -148,9 +148,9 @@ export default function Sidebar() {
           <div className='mt-4 flex items-center gap-3 px-3 py-3 bg-background rounded-xl border border-border-custom shadow-sm group'>
             {/* AVATAR COM DEGRADÊ DO UTILS */}
             <div
-              className={`w-9 h-9 rounded-xl bg-gradient-to-br ${theme} flex items-center justify-center shadow-lg shadow-black/5 shrink-0 transition-transform group-hover:scale-105`}
+              className={`w-9 h-9 rounded-xl ${theme} border-2 border-ink flex items-center justify-center shrink-0 transition-transform group-hover:scale-105`}
             >
-              <span className='text-white font-black text-[10px] tracking-tighter'>
+              <span className='font-black text-[10px] tracking-tighter'>
                 {initials}
               </span>
             </div>

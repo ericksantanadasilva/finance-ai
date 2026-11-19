@@ -10,6 +10,8 @@
  * Pares "-foreground" são a cor de texto legível sobre aquele fundo.
  */
 :root {
+  /* Controles nativos (lista do select, calendário) acompanham o modo */
+  color-scheme: light;
   --radius: 0.5rem;
 
   /* Superfícies e texto */
@@ -44,6 +46,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: #111111;
   --surface: #1c1c1c;
   --surface-muted: #262626;
