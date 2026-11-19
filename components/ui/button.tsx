@@ -19,6 +19,15 @@ const buttonVariants = cva(
           pressable,
           'bg-danger text-danger-foreground [--ink:var(--danger-border)]',
         ),
+        // Contornadas na cor de entrada/saída (ex.: seletor de tipo do lançamento)
+        income: cn(
+          pressable,
+          'bg-surface text-income [--ink:var(--income)]',
+        ),
+        expense: cn(
+          pressable,
+          'bg-surface text-expense [--ink:var(--expense)]',
+        ),
         ghost:
           'border-transparent bg-transparent text-foreground hover:bg-surface-muted',
       },
