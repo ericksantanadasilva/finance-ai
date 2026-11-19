@@ -43,6 +43,11 @@
   --expense-foreground: #ffffff;
   --warning: #b45309;
   --warning-foreground: #ffffff;
+
+  /* Botão de perigo: preenchido no claro, contornado no escuro */
+  --danger: var(--expense);
+  --danger-foreground: var(--expense-foreground);
+  --danger-border: var(--ink);
 }
 
 .dark {
@@ -71,6 +76,11 @@
   --expense-foreground: #111111;
   --warning: #fbbf24;
   --warning-foreground: #111111;
+
+  /* Rosa chapado pesa demais no escuro: superfície com texto e contorno em --expense */
+  --danger: var(--surface);
+  --danger-foreground: var(--expense);
+  --danger-border: var(--expense);
 }
 
 /*
@@ -126,6 +136,8 @@
   --color-expense-foreground: var(--expense-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
 
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);

@@ -14,7 +14,11 @@ const buttonVariants = cva(
         default: cn(pressable, 'bg-surface text-foreground'),
         primary: cn(pressable, 'bg-primary text-primary-foreground'),
         ai: cn(pressable, 'bg-ai text-ai-foreground'),
-        danger: cn(pressable, 'bg-expense text-expense-foreground'),
+        // Redefine --ink só neste botão: contorno e sombra passam a usar --danger-border
+        danger: cn(
+          pressable,
+          'bg-danger text-danger-foreground [--ink:var(--danger-border)]',
+        ),
         ghost:
           'border-transparent bg-transparent text-foreground hover:bg-surface-muted',
       },
