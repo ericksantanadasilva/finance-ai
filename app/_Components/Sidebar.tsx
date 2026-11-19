@@ -23,6 +23,8 @@ import { cn } from '@/lib/utils';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  // Configurações fica no rodapé, fora do menuItems, então o ativo é checado à parte
+  const isSettingsActive = pathname === '/Settings';
   const { user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -143,12 +145,18 @@ export default function Sidebar() {
         </nav>
 
         {/* FOOTER DA SIDEBAR */}
-        <div className='p-4 border-t border-border-custom space-y-1 bg-surface'>
+        <div className='p-4 border-t border-border-custom space-y-2 bg-surface'>
           <Link
             href='/Settings'
+            aria-current={isSettingsActive ? 'page' : undefined}
             className={cn(
-              buttonVariants({ variant: 'ghost', size: 'sm' }),
-              'w-full justify-start gap-3 px-3 h-10 text-sm text-muted-foreground hover:text-foreground',
+              buttonVariants({
+                variant: isSettingsActive ? 'default' : 'ghost',
+                size: 'sm',
+              }),
+              'w-full justify-start gap-3 px-3 h-10 text-sm',
+              !isSettingsActive &&
+                'text-muted-foreground hover:text-foreground',
             )}
           >
             <Settings className='w-4 h-4' />
