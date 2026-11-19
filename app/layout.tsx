@@ -1,18 +1,21 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Space_Grotesk, Space_Mono } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from './_Components/ThemeProvider';
 import { Toaster } from '@/components/ui/sonner';
 import { UserProvider } from './_Context/UserContext';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+// Textos e números
+const spaceGrotesk = Space_Grotesk({
+  variable: '--font-space-grotesk',
   subsets: ['latin'],
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+// Títulos (monoespaçada)
+const spaceMono = Space_Mono({
+  variable: '--font-space-mono',
   subsets: ['latin'],
+  weight: ['400', '700'],
 });
 
 export const metadata: Metadata = {
@@ -28,7 +31,7 @@ export default function RootLayout({
   return (
     <html lang='pt-BR' suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground transition-colors duration-300`}
+        className={`${spaceGrotesk.variable} ${spaceMono.variable} antialiased bg-background text-foreground transition-colors duration-300`}
       >
         <ThemeProvider
           attribute='class'
