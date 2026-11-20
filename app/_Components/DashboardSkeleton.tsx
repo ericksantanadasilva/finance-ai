@@ -1,11 +1,10 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { SkeletonText } from '@/components/ui/skeleton';
+import { StatCardSkeleton } from './StatCard';
 
 // Espelha a estrutura do DashboardClient (mesmos componentes, paddings, gaps,
 // breakpoints e classes de texto), para cada card ter a altura do card carregado.
 // Se o layout do DashboardClient mudar, este arquivo precisa acompanhar.
-const statValueClass =
-  'text-3xl lg:text-2xl xl:text-3xl font-bold tabular-nums tracking-tight wrap-break-word';
 
 export default function DashboardSkeleton() {
   return (
@@ -29,24 +28,9 @@ export default function DashboardSkeleton() {
 
       {/* CARDS */}
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
-        {[true, false, false].map((hasNote, i) => (
-          <Card key={i}>
-            <CardHeader>
-              <SkeletonText className='font-display font-bold' chars={10} />
-              <div className='size-4 rounded-md bg-border-custom'></div>
-            </CardHeader>
-            <CardContent>
-              <SkeletonText className={statValueClass} chars={9} />
-              {hasNote && (
-                <SkeletonText
-                  className='text-xs font-medium mt-1'
-                  chars={30}
-                  tone='soft'
-                />
-              )}
-            </CardContent>
-          </Card>
-        ))}
+        <StatCardSkeleton hasNote />
+        <StatCardSkeleton />
+        <StatCardSkeleton />
       </div>
 
       {/* GRÁFICOS */}

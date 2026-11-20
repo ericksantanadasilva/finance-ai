@@ -38,12 +38,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-
-// Valor grande dos cards de resumo. No lg os 3 cards dividem a largura com a
-// sidebar, então o número diminui um pouco para caber valores de 6 dígitos.
-const statValueClass =
-  'text-3xl lg:text-2xl xl:text-3xl font-bold tabular-nums tracking-tight wrap-break-word';
+import { StatCard } from './StatCard';
 
 export default function DashboardClient({
   initialTransactions,
@@ -216,40 +211,24 @@ export default function DashboardClient({
 
       {/* CARDS: faixa com o rótulo e o valor grande embaixo */}
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
-        <Card>
-          <CardHeader>
-            <h2 className='font-bold'>Saldo Atual</h2>
-            <Wallet className='w-4 h-4' aria-hidden='true' />
-          </CardHeader>
-          <CardContent>
-            <p className={statValueClass}>{formatMoney(balance)}</p>
-            <p className='text-muted-foreground text-xs font-medium mt-1'>
-              Meses anteriores: {formatMoney(previousBalance)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <h2 className='font-bold'>Receitas</h2>
-            <ArrowUpCircle className='w-4 h-4' aria-hidden='true' />
-          </CardHeader>
-          <CardContent>
-            <p className={cn(statValueClass, 'text-income')}>
-              {formatMoney(totalIncome)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <h2 className='font-bold'>Despesas</h2>
-            <ArrowDownCircle className='w-4 h-4' aria-hidden='true' />
-          </CardHeader>
-          <CardContent>
-            <p className={cn(statValueClass, 'text-expense')}>
-              {formatMoney(totalExpense)}
-            </p>
-          </CardContent>
-        </Card>
+        <StatCard
+          label='Saldo Atual'
+          icon={Wallet}
+          value={formatMoney(balance)}
+          note={`Meses anteriores: ${formatMoney(previousBalance)}`}
+        />
+        <StatCard
+          label='Receitas'
+          icon={ArrowUpCircle}
+          value={formatMoney(totalIncome)}
+          tone='income'
+        />
+        <StatCard
+          label='Despesas'
+          icon={ArrowDownCircle}
+          value={formatMoney(totalExpense)}
+          tone='expense'
+        />
       </div>
 
       {/* GRÁFICOS */}

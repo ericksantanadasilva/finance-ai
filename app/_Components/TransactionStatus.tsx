@@ -43,7 +43,7 @@ export default function TransactionStatus({
       {isRecurring && (
         <span
           title='Lançamento recorrente'
-          className='inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-tighter bg-purple-500/10 text-purple-500 border border-purple-500/20'
+          className='inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium lowercase bg-surface-muted text-muted-foreground border border-border-custom'
         >
           <Repeat className='w-3 h-3' /> Recorrente
         </span>
@@ -53,7 +53,7 @@ export default function TransactionStatus({
           onClick={() => change(true)}
           disabled={pending}
           title={type === 'income' ? 'Marcar como recebido' : 'Marcar como pago'}
-          className='inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-tighter bg-amber-500/10 text-amber-500 border border-amber-500/30 hover:bg-amber-500/20 transition-colors disabled:opacity-50'
+          className='inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold lowercase bg-surface text-warning border-2 border-warning hover:bg-warning/10 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
         >
           {pending ? (
             <Loader2 className='w-3 h-3 animate-spin' />
