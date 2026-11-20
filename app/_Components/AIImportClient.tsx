@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useRouter } from 'next/navigation';
 import {
@@ -150,6 +150,22 @@ export default function AIImportClient() {
     }
   };
 
+  // Meses do seletor de referência: 12 meses atrás até 6 à frente, no mesmo
+  // formato 'aaaa-mm' do antigo <input type="month">. A data é montada no fuso
+  // local, sem toISOString, para o mês não "voltar um" por causa do UTC.
+  const monthOptions = useMemo(() => {
+    const now = new Date();
+    return Array.from({ length: 19 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() + i - 12, 1);
+      const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = d.toLocaleDateString('pt-BR', {
+        month: 'long',
+        year: 'numeric',
+      });
+      return { value, label };
+    });
+  }, []);
+
   // Rótulo dos campos de cada item: visível na lista empilhada; quando o
   // painel é largo (linha de tabela), o cabeçalho de colunas faz esse papel
   const fieldLabel = 'text-xs text-muted-foreground @3xl:sr-only';
@@ -160,8 +176,8 @@ export default function AIImportClient() {
       <div
         className={`grid grid-cols-1 gap-6 ${results.length > 0 ? 'lg:grid-cols-2' : ''}`}
       >
-        {/* CARD DE UPLOAD */}
-        <Card className='p-5 sm:p-6 space-y-4'>
+        {/* CARD DE UPLOAD (min-w-0: a coluna da grade pode encolher) */}
+        <Card className='min-w-0 p-5 sm:p-6 space-y-4'>
           {/* role="button": a área é focável e abre o seletor com Enter ou
               Espaço (o react-dropzone cuida do teclado) */}
           <div
@@ -236,23 +252,29 @@ export default function AIImportClient() {
 
         {/* SEÇÃO DO MÊS DE REFERÊNCIA */}
         {results.length > 0 && (
-          <Card className='p-5 sm:p-6 space-y-4 animate-in fade-in zoom-in'>
+          <Card className='min-w-0 p-5 sm:p-6 space-y-4 animate-in fade-in zoom-in'>
             <div className='flex items-center gap-2'>
               <CalendarDays className='w-4 h-4' aria-hidden='true' />
               <h3 className='text-sm font-bold lowercase'>
                 <label htmlFor='import-month'>Mês de Referência</label>
               </h3>
             </div>
-            <div className='space-y-1 text-xs text-muted-foreground font-medium'>
+            <div className='space-y-1 text-xs text-muted-foreground font-medium wrap-break-word'>
               <p>Para qual fatura/mês são esses gastos?</p>
               <p>As transações serão agrupadas no mês de referência escolhido.</p>
             </div>
-            <Input
-              id='import-month'
-              type='month'
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-            />
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger id='import-month'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             {/* Diz quais itens faltam antes de liberar o confirmar */}
             {missingCategory.length > 0 && (
