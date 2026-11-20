@@ -1,9 +1,9 @@
 'use server';
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { getTransactions } from './transactions';
-import { getCategories } from './categories';
-import { getGoals } from './goals';
+import { getRecentTransactions } from '@/lib/finance/transactions';
+import { getCategories } from '@/lib/finance/categories';
+import { getGoals } from '@/lib/finance/goals';
 import { getSessionUser } from '@/lib/auth';
 import { APP_TIME_ZONE, currentMonthISO } from '@/app/utils/dates';
 
@@ -21,9 +21,13 @@ export async function sendMessage(message: string, history: any[] = []) {
   }
 
   const [transactions, categories, goals] = await Promise.all([
-    getTransactions(20),
-    getCategories(),
-    getGoals(),
+    // Sem as transações recentes o chat ainda funciona (só perde contexto)
+    getRecentTransactions(user.id, 20).catch((error) => {
+      console.error('Erro ao buscar transações:', error);
+      return [];
+    }),
+    getCategories(user.id),
+    getGoals(user.id),
   ]);
 
   // Últimas 10 mensagens como memória da conversa (somente texto)
