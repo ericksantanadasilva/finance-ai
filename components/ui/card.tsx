@@ -12,7 +12,7 @@ function Card({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-// Faixa de contraste no topo dos cards de destaque (preta no claro, clara no escuro).
+// Faixa no topo dos cards: um tom acima da superfície, separada pela borda ink.
 function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
