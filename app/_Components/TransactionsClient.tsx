@@ -22,7 +22,7 @@ import {
 import { TransactionRowActions } from './TransactionRowActions';
 import TransactionDialog from '../_Components/TransactionDialog';
 import TransactionStatus from './TransactionStatus';
-import type { TransactionItem } from '@/app/_actions/transactions';
+import type { TransactionItem } from '@/lib/finance/transactions';
 import { currentMonthISO, formatDateOnly } from '@/app/utils/dates';
 import {
   Select,

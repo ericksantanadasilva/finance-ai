@@ -1,7 +1,5 @@
-import {
-  getTransactionsPage,
-  type TransactionFilters,
-} from '@/app/_actions/transactions';
+import { getTransactionsPage } from '@/app/_actions/transactions';
+import type { TransactionFilters } from '@/lib/finance/transactions';
 import { generateDueRecurring } from '@/app/_actions/recurring';
 import TransactionsClient from '@/app/_Components/TransactionsClient';
 import TransactionsSkeleton from '@/app/_Components/TransactionSkeleton';

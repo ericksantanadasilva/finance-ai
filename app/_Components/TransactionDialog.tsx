@@ -10,7 +10,8 @@ import {
   Clock,
 } from 'lucide-react';
 import { createTransaction, updateTransaction } from '../_actions/transactions';
-import { getCategories, type BudgetStatus } from '../_actions/categories';
+import { getCategories } from '../_actions/categories';
+import type { BudgetStatus } from '@/lib/finance/categories';
 import { toast } from 'sonner';
 import { todayISO } from '@/app/utils/dates';
 import { Button } from '@/components/ui/button';
