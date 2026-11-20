@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import BrandLogo from './_Components/BrandLogo';
 
 // Mensagem do login por e-mail/senha: só ela marca os campos como inválidos
 // (o erro do Google, vindo da URL, não tem relação com os campos)
@@ -60,14 +61,9 @@ export default function LoginPage({
 
       <Card className='w-full max-w-md shadow-hard-lg relative z-10 p-6 sm:p-8'>
         <div className='text-center mb-8'>
-          {/* Logo: o mesmo quadrado magenta da sidebar */}
+          {/* Logo: a mesma da sidebar (adesivo, acompanha o tema) */}
           <div className='inline-flex items-center gap-2 mb-6'>
-            <span
-              aria-hidden='true'
-              className='size-10 bg-highlight text-highlight-foreground border-2 border-ink rounded-lg flex items-center justify-center shadow-hard-sm'
-            >
-              <span className='font-black text-xl'>F</span>
-            </span>
+            <BrandLogo size='md' />
             <span className='font-display font-bold text-xl'>Finance.ai</span>
           </div>
           <h1 className='text-xl sm:text-2xl font-bold lowercase mb-2'>

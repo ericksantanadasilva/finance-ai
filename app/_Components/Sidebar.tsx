@@ -26,6 +26,7 @@ import { getAvatarData } from '../utils/utils';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
+import BrandLogo from './BrandLogo';
 
 // Mesmo breakpoint do lg:, a partir do qual a sidebar fica fixa e não é gaveta
 const DESKTOP_QUERY = '(min-width: 1024px)';
@@ -134,9 +135,7 @@ export default function Sidebar() {
         {/* LOGO DO APP */}
         <div className='h-16 flex items-center justify-between px-6 border-b border-border-custom'>
           <div className='flex items-center gap-3'>
-            <div className='w-8 h-8 bg-highlight text-highlight-foreground border-2 border-ink rounded-lg flex items-center justify-center shadow-hard-sm'>
-              <span className='font-black text-lg'>F</span>
-            </div>
+            <BrandLogo />
             <span className='font-display font-bold text-foreground text-lg'>
               Finance.ai
             </span>

@@ -21,6 +21,27 @@ const spaceMono = Space_Mono({
 export const metadata: Metadata = {
   title: 'Finance.ai | Seu Assistente Financeiro',
   description: 'Gestão financeira inteligente com IA',
+  // Favicon por tema do sistema: a convenção de arquivo (app/icon.png) não
+  // aceita media query, por isso o favicon vem daqui. A escura fica por último:
+  // navegadores que ignoram o media (ex.: Safari) usam ela, que aparece bem
+  // nos dois temas. O ícone da Apple é o arquivo app/apple-icon.png (servido
+  // em /apple-icon.png); ele precisa ser listado aqui porque, com `icons`
+  // definido, o Next não gera a tag dele sozinho.
+  icons: {
+    apple: [{ url: '/apple-icon.png', type: 'image/png' }],
+    icon: [
+      {
+        url: '/brand/logo_fn_branco.png',
+        type: 'image/png',
+        media: '(prefers-color-scheme: light)',
+      },
+      {
+        url: '/brand/logo_fn_preto.png',
+        type: 'image/png',
+        media: '(prefers-color-scheme: dark)',
+      },
+    ],
+  },
 };
 
 export default function RootLayout({
