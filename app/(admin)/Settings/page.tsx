@@ -124,11 +124,19 @@ export default function SettingsPage() {
 
         {/* SEÇÃO 2: APARÊNCIA */}
         <section className='mb-10'>
-          <h2 className='text-sm font-bold lowercase mb-4 flex items-center gap-2'>
+          <h2
+            id='settings-theme-title'
+            className='text-sm font-bold lowercase mb-4 flex items-center gap-2'
+          >
             <Smartphone className='w-4 h-4' /> Estilo do App
           </h2>
 
-          <div className='grid grid-cols-2 gap-4'>
+          {/* Grupo com nome: o leitor de tela diz que os botões escolhem o estilo */}
+          <div
+            role='group'
+            aria-labelledby='settings-theme-title'
+            className='grid grid-cols-2 gap-4'
+          >
             <Button
               size='lg'
               variant={theme === 'light' ? 'default' : 'outline'}
