@@ -51,6 +51,10 @@ export function useModalBehavior<T extends HTMLElement>({
     }
 
     function handleKeyDown(e: KeyboardEvent) {
+      // Um componente aberto por cima (ex.: a lista do Select, num portal)
+      // já tratou a tecla: o Esc fecha só ele e o Tab não é puxado de volta.
+      if (e.defaultPrevented) return;
+
       // 3. Esc fecha
       if (e.key === 'Escape') {
         handleClose();
