@@ -32,6 +32,10 @@ export default function AIAgentChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [viewportHeight, setViewportHeight] = useState('100dvh');
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Campo de mensagem: o foco volta para ele depois de enviar e depois de
+  // confirmar/cancelar um cartão de ação (os botões do cartão somem)
+  const inputRef = useRef<HTMLInputElement>(null);
+  const focusInput = () => inputRef.current?.focus();
 
   useEffect(() => {
     const preventDefault = (e: TouchEvent) => {
@@ -173,12 +177,14 @@ export default function AIAgentChat() {
         i === index ? { ...msg, action: null, content: newContent } : msg,
       ),
     );
+    focusInput();
   };
 
   const handleCancel = (index: number) => {
     setMessages((prev) =>
       prev.map((msg, i) => (i === index ? { ...msg, action: null } : msg)),
     );
+    focusInput();
   };
 
   const handleSend = async () => {
@@ -209,6 +215,7 @@ export default function AIAgentChat() {
       ]);
     } finally {
       setIsLoading(false);
+      focusInput();
     }
   };
 
@@ -228,8 +235,12 @@ export default function AIAgentChat() {
       </div>
 
       {/* ÁREA DE MENSAGENS */}
+      {/* role="log": leitores de tela anunciam as mensagens novas */}
       <div
         ref={scrollRef}
+        role='log'
+        aria-live='polite'
+        aria-label='Conversa com o assistente'
         className='flex-1 w-full max-w-3xl overflow-y-auto p-4 space-y-6 scrollbar-hide custom-scrollbar'
       >
         {messages.map((msg, index) => (
@@ -239,6 +250,7 @@ export default function AIAgentChat() {
           >
             {/* AVATAR */}
             <div
+              aria-hidden='true'
               className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border shadow-sm ${msg.role === 'bot' ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20' : 'bg-surface border-border-custom'}`}
             >
               {msg.role === 'bot' ? (
@@ -255,6 +267,10 @@ export default function AIAgentChat() {
               <div
                 className={`${msg.role === 'user' ? 'bg-emerald-600 text-white rounded-2xl rounded-tr-none font-medium' : 'bg-surface border border-border-custom text-foreground rounded-2xl rounded-tl-none font-medium'} p-4 text-sm shadow-sm leading-relaxed`}
               >
+                {/* Diz quem fala para o leitor de tela (o avatar é só visual) */}
+                <span className='sr-only'>
+                  {msg.role === 'user' ? 'Você: ' : 'Assistente: '}
+                </span>
                 {msg.content}
               </div>
 
@@ -312,6 +328,7 @@ export default function AIAgentChat() {
                     <div className='flex gap-2'>
                       <button
                         onClick={() => handleCancel(index)}
+                        aria-label='Cancelar ação'
                         className='p-2.5 text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all'
                       >
                         <X className='w-5 h-5' />
@@ -347,6 +364,8 @@ export default function AIAgentChat() {
       <div className='w-full max-w-3xl p-4 bg-transparent pb-safe shrink-0'>
         <div className='relative flex items-center group'>
           <input
+            ref={inputRef}
+            aria-label='Mensagem para o assistente'
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
@@ -357,6 +376,7 @@ export default function AIAgentChat() {
           <button
             onClick={handleSend}
             disabled={isLoading || !input.trim()}
+            aria-label='Enviar mensagem'
             className='absolute right-2 p-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl shadow-lg shadow-emerald-500/20 transition-all active:scale-90 flex items-center justify-center'
           >
             {isLoading ? (
