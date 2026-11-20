@@ -6,6 +6,7 @@ import {
   Bot,
   User,
   Check,
+  CheckCircle2,
   X,
   Target,
   Loader2,
@@ -97,7 +98,7 @@ export default function AIAgentChat() {
 
         updateMessageAfterAction(
           index,
-          `✅ Registrado para ${monthName}: ${data.description}`,
+          `Registrado para ${monthName}: ${data.description}`,
         );
 
         if (res.budgetAlert) {
@@ -126,7 +127,7 @@ export default function AIAgentChat() {
       if (res.success) {
         updateMessageAfterAction(
           index,
-          `🚀 R$ ${deposit.toLocaleString('pt-BR')} somados à meta: ${data.name}!`,
+          `R$ ${deposit.toLocaleString('pt-BR')} somados à meta: ${data.name}!`,
         );
       }
     } catch (error) {
@@ -168,7 +169,7 @@ export default function AIAgentChat() {
         }
         updateMessageAfterAction(
           index,
-          `🎯 Meta "${data.name}" criada ${deadlineText}!`,
+          `Meta "${data.name}" criada ${deadlineText}!`,
         );
       }
     } catch (error) {
@@ -176,10 +177,13 @@ export default function AIAgentChat() {
     }
   };
 
+  // isDone mostra o ícone de concluído no balão (só visual, como isError)
   const updateMessageAfterAction = (index: number, newContent: string) => {
     setMessages((prev) =>
       prev.map((msg, i) =>
-        i === index ? { ...msg, action: null, content: newContent } : msg,
+        i === index
+          ? { ...msg, action: null, content: newContent, isDone: true }
+          : msg,
       ),
     );
     focusInput();
@@ -312,6 +316,12 @@ export default function AIAgentChat() {
                   {msg.isError && (
                     <AlertTriangle
                       className='inline w-4 h-4 mr-1.5 -mt-0.5 text-expense'
+                      aria-hidden='true'
+                    />
+                  )}
+                  {msg.isDone && (
+                    <CheckCircle2
+                      className='inline w-4 h-4 mr-1.5 -mt-0.5 text-income'
                       aria-hidden='true'
                     />
                   )}
