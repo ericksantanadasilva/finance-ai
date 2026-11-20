@@ -7,14 +7,13 @@ import {
   Trash2,
   Edit2,
   PlusCircle,
-  Loader2,
   Calendar,
   CheckCircle2,
 } from 'lucide-react';
 import GoalDialog from '@/app/_Components/GoalDialog';
 import UpdateGoalDialog from '@/app/_Components/UpdateGoalDialog';
 import ConfirmDialog from '@/app/_Components/ConfirmDialog'; // Importe o ConfirmDialog
-import { deleteGoal, updateGoalAmount } from '@/app/_actions/goals';
+import { deleteGoal } from '@/app/_actions/goals';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -64,25 +63,6 @@ export default function GoalsClient({
     } finally {
       setIsDeleting(false);
       setGoalToDelete(null);
-    }
-  };
-
-  const handleConfirmQuickDeposit = async (amountToAdd: number) => {
-    if (!quickDepositGoal) return;
-
-    try {
-      const newAmount = Number(quickDepositGoal.currentAmount) + amountToAdd;
-      const res = await updateGoalAmount(quickDepositGoal.id, newAmount);
-
-      if (res.success) {
-        toast.success(
-          `R$ ${amountToAdd.toLocaleString('pt-BR')} somados à meta ${quickDepositGoal.name}!`,
-        );
-      } else {
-        toast.error('Erro ao atualizar o saldo da meta.');
-      }
-    } catch (error) {
-      toast.error('Ocorreu um erro inesperado.');
     }
   };
 
