@@ -5,10 +5,21 @@ export type ParseResult<T> =
   | { data: T; errorResponse: null }
   | { data: null; errorResponse: NextResponse };
 
-/**
- * Lê o body JSON e valida com o schema. Em caso de falha devolve um 400 com
- * os campos inválidos (`issues`), no mesmo formato de erro das outras rotas.
- */
+/** 400 com os campos inválidos (`issues`), no mesmo formato de erro das outras rotas. */
+function invalidResponse(message: string, error: z.ZodError) {
+  return NextResponse.json(
+    {
+      error: message,
+      issues: error.issues.map((issue) => ({
+        path: issue.path.join('.'),
+        message: issue.message,
+      })),
+    },
+    { status: 400 },
+  );
+}
+
+/** Lê o body JSON e valida com o schema. */
 export async function parseJsonBody<S extends z.ZodType>(
   request: Request,
   schema: S,
@@ -19,18 +30,30 @@ export async function parseJsonBody<S extends z.ZodType>(
   if (!result.success) {
     return {
       data: null,
-      errorResponse: NextResponse.json(
-        {
-          error: 'Invalid request body',
-          issues: result.error.issues.map((issue) => ({
-            path: issue.path.join('.'),
-            message: issue.message,
-          })),
-        },
-        { status: 400 },
-      ),
+      errorResponse: invalidResponse('Invalid request body', result.error),
     };
   }
+  return { data: result.data, errorResponse: null };
+}
 
+/**
+ * Valida a query string com o schema. Parâmetros vazios (`?q=`) são ignorados,
+ * para que `z.coerce.number()` não transforme "" em 0.
+ */
+export function parseSearchParams<S extends z.ZodType>(
+  request: Request,
+  schema: S,
+): ParseResult<z.infer<S>> {
+  const params = Object.fromEntries(
+    [...new URL(request.url).searchParams].filter(([, value]) => value !== ''),
+  );
+  const result = schema.safeParse(params);
+
+  if (!result.success) {
+    return {
+      data: null,
+      errorResponse: invalidResponse('Invalid query parameters', result.error),
+    };
+  }
   return { data: result.data, errorResponse: null };
 }
