@@ -123,8 +123,14 @@ export default function AIImportClient() {
     setResults(results.filter((_, i) => i !== index));
   };
 
+  // Itens sem categoria: o save cria a categoria pelo nome, e um nome vazio
+  // viraria uma categoria sem nome no banco. Por isso o confirmar espera.
+  const missingCategory = results
+    .map((item, idx) => ({ item, number: idx + 1 }))
+    .filter(({ item }) => !String(item.category ?? '').trim());
+
   const handleSaveAll = async () => {
-    if (results.length === 0) return;
+    if (results.length === 0 || missingCategory.length > 0) return;
     setSaving(true);
     try {
       const res = await saveTransactions(results, selectedMonth);
@@ -248,10 +254,39 @@ export default function AIImportClient() {
               onChange={(e) => setSelectedMonth(e.target.value)}
             />
 
+            {/* Diz quais itens faltam antes de liberar o confirmar */}
+            {missingCategory.length > 0 && (
+              <div
+                id='import-missing-category'
+                className='flex items-start gap-2 rounded-xl border-2 border-expense bg-surface p-3 text-sm font-medium'
+              >
+                <AlertTriangle
+                  className='w-4 h-4 shrink-0 mt-0.5 text-expense'
+                  aria-hidden='true'
+                />
+                <div className='min-w-0'>
+                  <p>Defina a categoria antes de salvar:</p>
+                  <ul className='mt-1 list-disc pl-4 text-muted-foreground'>
+                    {missingCategory.map(({ item, number }) => (
+                      <li key={number} className='wrap-break-word'>
+                        item {number}
+                        {item.description ? ` (${item.description})` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+
             <Button
               size='lg'
               onClick={handleSaveAll}
-              disabled={saving}
+              disabled={saving || missingCategory.length > 0}
+              aria-describedby={
+                missingCategory.length > 0
+                  ? 'import-missing-category'
+                  : undefined
+              }
               className='w-full'
             >
               {saving ? (
@@ -363,6 +398,8 @@ export default function AIImportClient() {
                       <SelectTrigger
                         id={`import-category-${idx}`}
                         size='sm'
+                        // Sem categoria: contorno de erro (fieldVariants)
+                        aria-invalid={!String(item.category ?? '').trim()}
                         className='h-9'
                       >
                         <SelectValue placeholder='Selecione...' />
