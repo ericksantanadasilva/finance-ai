@@ -148,7 +148,8 @@ export default function GoalDialog({
 
             <div className='flex flex-col gap-2'>
               <Label htmlFor='goal-current' className='text-income'>
-                Guardado (R$)
+                {/* normal-case: o Label força minúsculas, mas "R$" não muda */}
+                Guardado (<span className='normal-case'>R$</span>)
               </Label>
               <div className='relative'>
                 <DollarSign className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-income' />
