@@ -69,7 +69,8 @@ export default function RootLayout({
           */}
           <UserProvider>{children}</UserProvider>
 
-          <Toaster position='top-center' richColors closeButton />
+          {/* Sem richColors: as cores e o contorno vêm dos tokens (components/ui/sonner) */}
+          <Toaster position='top-center' closeButton />
         </ThemeProvider>
       </body>
     </html>

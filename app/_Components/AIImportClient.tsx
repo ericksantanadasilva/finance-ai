@@ -45,7 +45,8 @@ export default function AIImportClient() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   // Último erro (arquivo inválido ou falha da IA), mostrado junto da área de
-  // envio até um novo arquivo ser escolhido. Os toasts continuam iguais.
+  // envio até um novo arquivo ser escolhido. Fica só a faixa, sem toast junto,
+  // para o mesmo erro não aparecer duas vezes.
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [selectedMonth, setSelectedMonth] = useState(
@@ -78,9 +79,7 @@ export default function AIImportClient() {
     multiple: false,
     maxSize: MAX_IMPORT_FILE_BYTES,
     onDropRejected: () => {
-      const message = 'Arquivo inválido. Envie PDF, JPG ou PNG de até 700 KB.';
-      toast.error(message);
-      setErrorMessage(message);
+      setErrorMessage('Arquivo inválido. Envie PDF, JPG ou PNG de até 700 KB.');
     },
   });
 
@@ -101,12 +100,8 @@ export default function AIImportClient() {
       const base64 = await fileToBase64(files[0]);
       const data = await processFileWithAI(base64, files[0].type);
       if (data) setResults(data);
-      else {
-        toast.error('Não foi possível processar o arquivo.');
-        setErrorMessage('Não foi possível processar o arquivo.');
-      }
+      else setErrorMessage('Não foi possível processar o arquivo.');
     } catch (error) {
-      toast.error('Erro ao ler o arquivo.');
       setErrorMessage('Erro ao ler o arquivo.');
     } finally {
       setLoading(false);
@@ -215,8 +210,12 @@ export default function AIImportClient() {
           </div>
 
           {/* ERRO: mesmo estilo do erro do Assistente */}
+          {/* role="alert": sem o toast, é a faixa que anuncia o erro */}
           {errorMessage && (
-            <div className='flex items-start gap-2 rounded-xl border-2 border-expense bg-surface p-3 text-sm font-medium'>
+            <div
+              role='alert'
+              className='flex items-start gap-2 rounded-xl border-2 border-expense bg-surface p-3 text-sm font-medium'
+            >
               <AlertTriangle
                 className='w-4 h-4 shrink-0 mt-0.5 text-expense'
                 aria-hidden='true'
