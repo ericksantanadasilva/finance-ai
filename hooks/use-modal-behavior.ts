@@ -54,6 +54,15 @@ export function useModalBehavior<T extends HTMLElement>({
       // Um componente aberto por cima (ex.: a lista do Select, num portal)
       // já tratou a tecla: o Esc fecha só ele e o Tab não é puxado de volta.
       if (e.defaultPrevented) return;
+      // A tecla veio de uma camada aberta por cima, num portal fora do
+      // container (ex.: o calendário do DatePicker, que não bloqueia o Tab):
+      // ela cuida do próprio teclado, então o modal não interfere.
+      if (
+        e.target instanceof Element &&
+        !container?.contains(e.target) &&
+        e.target.closest('[data-radix-popper-content-wrapper]')
+      )
+        return;
 
       // 3. Esc fecha
       if (e.key === 'Escape') {
