@@ -1,8 +1,12 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useRef, useState } from 'react';
 import { Wallet, ArrowRight, Loader2 } from 'lucide-react';
 import { signIn } from 'next-auth/react';
+
+// Mensagem do login por e-mail/senha: só ela marca os campos como inválidos
+// (o erro do Google, vindo da URL, não tem relação com os campos)
+const CREDENTIALS_ERROR = 'E-mail ou senha inválidos.';
 
 export default function LoginPage({
   searchParams,
@@ -14,6 +18,10 @@ export default function LoginPage({
   const [error, setError] = useState<string | null>(
     params.error ? 'Não foi possível entrar com o Google. Tente novamente.' : null,
   );
+
+  // Depois de um login que falha, o foco volta para o e-mail para corrigir
+  const emailRef = useRef<HTMLInputElement>(null);
+  const fieldsInvalid = error === CREDENTIALS_ERROR;
 
   const handleGoogleLogin = () => signIn('google', { callbackUrl: '/Dashboard' });
 
@@ -29,8 +37,9 @@ export default function LoginPage({
       window.location.assign('/Dashboard');
       return;
     }
-    setError('E-mail ou senha inválidos.');
+    setError(CREDENTIALS_ERROR);
     setIsPending(false);
+    emailRef.current?.focus();
   }
 
   return (
@@ -40,7 +49,7 @@ export default function LoginPage({
       <div className='w-full max-w-md bg-zinc-900/50 border border-zinc-800 backdrop-blur-xl rounded-2xl p-8 relative z-10 shadow-2xl'>
         <div className='text-center mb-8'>
           <div className='inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-500 mb-4'>
-            <Wallet className='w-6 h-6' />
+            <Wallet className='w-6 h-6' aria-hidden='true' />
           </div>
           <h1 className='text-2xl font-bold text-white mb-2'>
             Bem-vindo ao Finance.ai
@@ -53,10 +62,11 @@ export default function LoginPage({
         {/* Social Login */}
         <div className='space-y-3 mb-6'>
           <button
+            type='button'
             onClick={handleGoogleLogin}
             className='w-full bg-white text-black hover:bg-zinc-200 font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all'
           >
-            <svg className='w-5 h-5' viewBox='0 0 24 24'>
+            <svg className='w-5 h-5' viewBox='0 0 24 24' aria-hidden='true'>
               <path
                 fill='currentColor'
                 d='M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z'
@@ -89,8 +99,13 @@ export default function LoginPage({
           </div>
         </div>
 
+        {/* role="alert": o leitor de tela anuncia o erro assim que aparece */}
         {error && (
-          <div className='bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs p-3 rounded-lg mb-4'>
+          <div
+            id='login-error'
+            role='alert'
+            className='bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs p-3 rounded-lg mb-4'
+          >
             {error}
           </div>
         )}
@@ -98,25 +113,40 @@ export default function LoginPage({
         {/* Form chamando a Server Action */}
         <form action={handleSubmit} className='space-y-4'>
           <div>
-            <label className='block text-xs font-medium text-zinc-400 mb-1.5'>
+            <label
+              htmlFor='login-email'
+              className='block text-xs font-medium text-zinc-400 mb-1.5'
+            >
               Email
             </label>
             <input
+              ref={emailRef}
+              id='login-email'
               name='email'
               type='email'
+              autoComplete='email'
               required
+              aria-invalid={fieldsInvalid}
+              aria-describedby={fieldsInvalid ? 'login-error' : undefined}
               className='w-full bg-zinc-950/50 border border-zinc-800 focus:border-emerald-500 rounded-lg px-4 py-2.5 text-sm text-white outline-none transition-all placeholder:text-zinc-700'
               placeholder='seu@email.com'
             />
           </div>
           <div>
-            <label className='block text-xs font-medium text-zinc-400 mb-1.5'>
+            <label
+              htmlFor='login-password'
+              className='block text-xs font-medium text-zinc-400 mb-1.5'
+            >
               Senha
             </label>
             <input
+              id='login-password'
               name='password'
               type='password'
+              autoComplete='current-password'
               required
+              aria-invalid={fieldsInvalid}
+              aria-describedby={fieldsInvalid ? 'login-error' : undefined}
               className='w-full bg-zinc-950/50 border border-zinc-800 focus:border-emerald-500 rounded-lg px-4 py-2.5 text-sm text-white outline-none transition-all placeholder:text-zinc-700'
               placeholder='••••••••'
             />
@@ -127,10 +157,15 @@ export default function LoginPage({
             className='w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg transition-all shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-2'
           >
             {isPending ? (
-              <Loader2 className='w-4 h-4 animate-spin' />
+              <>
+                <Loader2 className='w-4 h-4 animate-spin' aria-hidden='true' />
+                {/* Sem isso o botão fica sem nome enquanto carrega */}
+                <span className='sr-only'>Entrando...</span>
+              </>
             ) : (
               <>
-                Acessar Painel <ArrowRight className='w-4 h-4' />
+                Acessar Painel{' '}
+                <ArrowRight className='w-4 h-4' aria-hidden='true' />
               </>
             )}
           </button>
