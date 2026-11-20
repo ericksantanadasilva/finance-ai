@@ -15,6 +15,9 @@ interface ConfirmDialogProps {
   description: string;
   isLoading?: boolean;
   variant?: 'danger' | 'warning';
+  // Para onde o foco volta ao fechar. Use quando quem abriu o diálogo some
+  // da tela (ex.: um item de menu); sem ele, volta ao elemento focado na abertura.
+  returnFocusRef?: React.RefObject<HTMLElement | null>;
 }
 
 export default function ConfirmDialog({
@@ -25,10 +28,15 @@ export default function ConfirmDialog({
   description,
   isLoading = false,
   variant = 'danger',
+  returnFocusRef,
 }: ConfirmDialogProps) {
   const titleId = useId();
   const descriptionId = useId();
-  const panelRef = useModalBehavior<HTMLDivElement>({ isOpen, onClose });
+  const panelRef = useModalBehavior<HTMLDivElement>({
+    isOpen,
+    onClose,
+    returnFocusRef,
+  });
 
   if (!isOpen) return null;
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { MoreHorizontal, Trash2, Edit2, Loader2 } from 'lucide-react';
 import { deleteTransaction } from '@/app/_actions/transactions';
 import { useRouter } from 'next/navigation';
@@ -21,6 +21,8 @@ export function TransactionRowActions({
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  // Botão "…": é para ele que o foco volta quando o diálogo de exclusão fecha
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
 
   const handleDelete = async () => {
@@ -48,6 +50,7 @@ export function TransactionRowActions({
       className={`relative flex items-center justify-center ${isOpen ? 'z-50' : 'z-auto'}`}
     >
       <button
+        ref={triggerRef}
         onClick={() => setIsOpen(!isOpen)}
         disabled={isDeleting}
         className='text-zinc-500 hover:text-foreground p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all active:scale-90 disabled:opacity-50'
@@ -90,7 +93,12 @@ export function TransactionRowActions({
               <div className='h-px bg-border-custom mx-2' />
 
               <button
-                onClick={() => setIsConfirmOpen(true)}
+                onClick={() => {
+                  // Fecha o menu: o foco volta para o "…" (returnFocusRef),
+                  // e não para este item, que deixa de existir
+                  setIsOpen(false);
+                  setIsConfirmOpen(true);
+                }}
                 className='w-full flex items-center gap-2.5 px-3 py-2.5 text-[11px] font-black uppercase tracking-tight text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors group'
               >
                 <Trash2 className='w-3.5 h-3.5 text-rose-400 group-hover:text-rose-500 transition-colors' />
@@ -108,6 +116,7 @@ export function TransactionRowActions({
         isLoading={isDeleting}
         title='Excluir Transação'
         description='Tem certeza que deseja remover esta transação? Essa ação não poderá ser desfeita.'
+        returnFocusRef={triggerRef}
       />
     </div>
   );
