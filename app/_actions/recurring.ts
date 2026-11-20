@@ -10,9 +10,12 @@ import type {
 
 /** Usada pelas páginas para garantir que as recorrentes do mês existem. */
 export async function generateDueRecurring() {
+  // Fora do try: o Next sinaliza o uso de cookies/headers lançando um erro
+  // interno, que não deve ser capturado (marca a rota como dinâmica).
+  const user = await getSessionUser();
+  if (!user) return 0;
+
   try {
-    const user = await getSessionUser();
-    if (!user) return 0;
     return await recurringService.generateForUser(user.id);
   } catch (error) {
     console.error('Erro ao gerar recorrentes:', error);
