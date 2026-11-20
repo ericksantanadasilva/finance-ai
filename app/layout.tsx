@@ -29,10 +29,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='pt-BR' suppressHydrationWarning>
-      <body
-        className={`${spaceGrotesk.variable} ${spaceMono.variable} antialiased bg-background text-foreground transition-colors duration-300`}
-      >
+    // As variáveis das fontes ficam no <html> porque o Tailwind as lê no :root
+    // (--default-font-family, --font-display); no <body> elas não existiam lá.
+    <html
+      lang='pt-BR'
+      className={`${spaceGrotesk.variable} ${spaceMono.variable}`}
+      suppressHydrationWarning
+    >
+      <body className='antialiased bg-background text-foreground transition-colors duration-300'>
         <ThemeProvider
           attribute='class'
           defaultTheme='light'
