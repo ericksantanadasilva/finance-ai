@@ -408,6 +408,7 @@ type ChatAction = {
     amount?: number;
     targetAmount?: number;
     type?: string;
+    deadline?: string; // YYYY-MM-DD (só em CREATE_GOAL)
   };
 };
 
@@ -466,6 +467,16 @@ function ActionCard({
                   'pt-BR',
                   { month: 'short' },
                 )}
+              </span>
+            )}
+
+            {/* Prazo da meta: mostrado antes de confirmar, para conferir a data */}
+            {action.action === 'CREATE_GOAL' && (
+              <span className='inline-flex items-center gap-1 lowercase'>
+                <Calendar className='w-3.5 h-3.5' aria-hidden='true' />
+                {data.deadline
+                  ? `até ${data.deadline.split('-').reverse().join('/')}`
+                  : 'sem prazo'}
               </span>
             )}
           </div>
