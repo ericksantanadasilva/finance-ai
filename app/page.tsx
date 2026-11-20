@@ -1,8 +1,12 @@
 'use client';
 
 import { use, useRef, useState } from 'react';
-import { Wallet, ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2, AlertTriangle } from 'lucide-react';
 import { signIn } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 // Mensagem do login por e-mail/senha: só ela marca os campos como inválidos
 // (o erro do Google, vindo da URL, não tem relação com os campos)
@@ -43,28 +47,44 @@ export default function LoginPage({
   }
 
   return (
-    <div className='min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4 relative overflow-hidden'>
-      <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px]'></div>
+    <div className='min-h-dvh bg-background text-foreground flex flex-col items-center justify-center p-4 relative overflow-hidden transition-colors duration-300'>
+      {/* FORMAS DO FUNDO: decorativas, atrás do card e sem receber clique */}
+      <Blob
+        className='-top-28 -left-28 size-80 sm:size-112 rotate-12'
+        color='var(--highlight)'
+      />
+      <Blob
+        className='-bottom-32 -right-28 size-88 sm:size-120 -rotate-20'
+        color='var(--ai)'
+      />
 
-      <div className='w-full max-w-md bg-zinc-900/50 border border-zinc-800 backdrop-blur-xl rounded-2xl p-8 relative z-10 shadow-2xl'>
+      <Card className='w-full max-w-md shadow-hard-lg relative z-10 p-6 sm:p-8'>
         <div className='text-center mb-8'>
-          <div className='inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-500 mb-4'>
-            <Wallet className='w-6 h-6' aria-hidden='true' />
+          {/* Logo: o mesmo quadrado magenta da sidebar */}
+          <div className='inline-flex items-center gap-2 mb-6'>
+            <span
+              aria-hidden='true'
+              className='size-10 bg-highlight text-highlight-foreground border-2 border-ink rounded-lg flex items-center justify-center shadow-hard-sm'
+            >
+              <span className='font-black text-xl'>F</span>
+            </span>
+            <span className='font-display font-bold text-xl'>Finance.ai</span>
           </div>
-          <h1 className='text-2xl font-bold text-white mb-2'>
+          <h1 className='text-xl sm:text-2xl font-bold lowercase mb-2'>
             Bem-vindo ao Finance.ai
           </h1>
-          <p className='text-zinc-400 text-sm'>
+          <p className='text-muted-foreground text-sm font-medium'>
             Organize suas finanças com o poder da IA.
           </p>
         </div>
 
-        {/* Social Login */}
+        {/* Social Login (secundário: outline) */}
         <div className='space-y-3 mb-6'>
-          <button
-            type='button'
+          <Button
+            variant='outline'
+            size='lg'
             onClick={handleGoogleLogin}
-            className='w-full bg-white text-black hover:bg-zinc-200 font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all'
+            className='w-full text-foreground hover:border-ink'
           >
             <svg className='w-5 h-5' viewBox='0 0 24 24' aria-hidden='true'>
               <path
@@ -85,41 +105,42 @@ export default function LoginPage({
               />
             </svg>
             Entrar com Google
-          </button>
+          </Button>
         </div>
 
         <div className='relative mb-6'>
           <div className='absolute inset-0 flex items-center'>
-            <div className='w-full border-t border-zinc-800'></div>
+            <div className='w-full border-t border-border-custom'></div>
           </div>
-          <div className='relative flex justify-center text-xs uppercase'>
-            <span className='bg-zinc-900 px-2 text-zinc-500'>
+          <div className='relative flex justify-center text-xs font-medium lowercase'>
+            <span className='bg-surface px-2 text-muted-foreground'>
               Ou continue com email
             </span>
           </div>
         </div>
 
-        {/* role="alert": o leitor de tela anuncia o erro assim que aparece */}
+        {/* role="alert": o leitor de tela anuncia o erro assim que aparece.
+            Visual: o mesmo estilo de erro do app (contorno expense + ícone) */}
         {error && (
           <div
             id='login-error'
             role='alert'
-            className='bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs p-3 rounded-lg mb-4'
+            className='flex items-start gap-2 rounded-xl border-2 border-expense bg-surface p-3 text-sm font-medium mb-4'
           >
+            <AlertTriangle
+              className='w-4 h-4 shrink-0 mt-0.5 text-expense'
+              aria-hidden='true'
+            />
             {error}
           </div>
         )}
 
         {/* Form chamando a Server Action */}
         <form action={handleSubmit} className='space-y-4'>
-          <div>
-            <label
-              htmlFor='login-email'
-              className='block text-xs font-medium text-zinc-400 mb-1.5'
-            >
-              Email
-            </label>
-            <input
+          <div className='flex flex-col gap-2'>
+            <Label htmlFor='login-email'>Email</Label>
+            {/* aria-invalid: contorno de erro do fieldVariants */}
+            <Input
               ref={emailRef}
               id='login-email'
               name='email'
@@ -128,18 +149,12 @@ export default function LoginPage({
               required
               aria-invalid={fieldsInvalid}
               aria-describedby={fieldsInvalid ? 'login-error' : undefined}
-              className='w-full bg-zinc-950/50 border border-zinc-800 focus:border-emerald-500 rounded-lg px-4 py-2.5 text-sm text-white outline-none transition-all placeholder:text-zinc-700'
               placeholder='seu@email.com'
             />
           </div>
-          <div>
-            <label
-              htmlFor='login-password'
-              className='block text-xs font-medium text-zinc-400 mb-1.5'
-            >
-              Senha
-            </label>
-            <input
+          <div className='flex flex-col gap-2'>
+            <Label htmlFor='login-password'>Senha</Label>
+            <Input
               id='login-password'
               name='password'
               type='password'
@@ -147,14 +162,14 @@ export default function LoginPage({
               required
               aria-invalid={fieldsInvalid}
               aria-describedby={fieldsInvalid ? 'login-error' : undefined}
-              className='w-full bg-zinc-950/50 border border-zinc-800 focus:border-emerald-500 rounded-lg px-4 py-2.5 text-sm text-white outline-none transition-all placeholder:text-zinc-700'
               placeholder='••••••••'
             />
           </div>
-          <button
+          <Button
             disabled={isPending}
             type='submit'
-            className='w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg transition-all shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-2'
+            size='lg'
+            className='w-full'
           >
             {isPending ? (
               <>
@@ -168,13 +183,32 @@ export default function LoginPage({
                 <ArrowRight className='w-4 h-4' aria-hidden='true' />
               </>
             )}
-          </button>
+          </Button>
         </form>
 
-        <p className='mt-6 text-center text-xs text-zinc-500'>
+        <p className='mt-6 text-center text-xs font-medium text-muted-foreground'>
           Não tem uma conta? Entre com o Google para criar.
         </p>
-      </div>
+      </Card>
     </div>
+  );
+}
+
+// Forma orgânica do fundo (referência): preenchida com um token de destaque e
+// contornada com ink, como os adesivos. Só decoração.
+function Blob({ className, color }: { className: string; color: string }) {
+  return (
+    <svg
+      viewBox='0 0 200 200'
+      aria-hidden='true'
+      className={`pointer-events-none absolute ${className}`}
+    >
+      <path
+        transform='translate(100 100)'
+        d='M44.7,-58.6C57.1,-46.7,65.9,-31.8,69.6,-15.6C73.3,0.6,71.9,18.1,63.9,31.7C55.9,45.3,41.3,55,25.4,61.8C9.5,68.6,-7.7,72.5,-23.6,68.4C-39.5,64.3,-54.1,52.2,-63.2,36.9C-72.3,21.6,-75.9,3.1,-71.7,-13.2C-67.5,-29.5,-55.5,-43.6,-41.6,-55.3C-27.7,-67,-13.9,-76.3,1.3,-77.9C16.5,-79.5,32.3,-70.5,44.7,-58.6Z'
+        style={{ fill: color, stroke: 'var(--ink)', strokeWidth: 3 }}
+        vectorEffect='non-scaling-stroke'
+      />
+    </svg>
   );
 }
