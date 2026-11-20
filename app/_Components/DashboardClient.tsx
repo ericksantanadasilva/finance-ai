@@ -24,6 +24,13 @@ import {
   Pie,
 } from 'recharts';
 import { currentMonthISO } from '@/app/utils/dates';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function DashboardClient({
   initialTransactions,
@@ -238,15 +245,23 @@ export default function DashboardClient({
             <h3 className='font-black text-foreground text-xs sm:text-sm uppercase tracking-widest'>
               Fluxo Mensal
             </h3>
-            <select
-              value={range}
-              onChange={(e) => setRange(Number(e.target.value))}
-              className='bg-background border border-border-custom text-[10px] sm:text-xs text-zinc-500 rounded-lg px-2 py-1.5 outline-none font-bold uppercase'
+            <Select
+              value={String(range)}
+              onValueChange={(v) => setRange(Number(v))}
             >
-              <option value={3}>3 meses</option>
-              <option value={6}>6 meses</option>
-              <option value={12}>1 ano</option>
-            </select>
+              <SelectTrigger
+                size='sm'
+                aria-label='Período do gráfico'
+                className='w-auto font-bold'
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='3'>3 meses</SelectItem>
+                <SelectItem value='6'>6 meses</SelectItem>
+                <SelectItem value='12'>1 ano</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <ResponsiveContainer width='100%' height='85%'>
             <BarChart data={chartData}>
@@ -297,21 +312,29 @@ export default function DashboardClient({
             <h3 className='font-black text-foreground text-xs sm:text-sm uppercase tracking-widest'>
               Categorias
             </h3>
-            <select
+            <Select
               value={categoryTimeRange}
-              onChange={(e) => setCategoryTimeRange(e.target.value)}
-              className='bg-background border border-border-custom text-[10px] text-zinc-500 rounded-lg px-2 py-1 outline-none font-bold uppercase cursor-pointer max-w-[150px]'
+              onValueChange={setCategoryTimeRange}
             >
-              <option value='all'>Todos os meses</option>
-              {availableMonths.map((m) => (
-                <option key={m} value={m}>
-                  {new Date(m + '-02').toLocaleDateString('pt-BR', {
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger
+                size='sm'
+                aria-label='Mês das categorias'
+                className='w-auto max-w-37.5 font-bold'
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>Todos os meses</SelectItem>
+                {availableMonths.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {new Date(m + '-02').toLocaleDateString('pt-BR', {
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <p className='text-[10px] text-zinc-500 mb-6 uppercase tracking-[0.2em] font-bold'>
             Análise de Gastos

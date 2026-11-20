@@ -19,7 +19,13 @@ import { Card, CardHeader } from '@/components/ui/card';
 import { DialogCloseButton, DialogOverlay } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 interface TransactionDialogProps {
@@ -222,15 +228,19 @@ export default function TransactionDialog({
               <Label htmlFor='tx-reference'>Mês de Competência</Label>
             </div>
             <Select
-              id='tx-reference'
               value={selectedReference}
-              onChange={(e) => setSelectedReference(e.target.value)}
+              onValueChange={setSelectedReference}
             >
-              {referenceOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
+              <SelectTrigger id='tx-reference'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {referenceOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
             <p className='text-xs text-muted-foreground font-medium'>
               * Este é o mês onde este valor será somado nos gráficos.
@@ -258,21 +268,18 @@ export default function TransactionDialog({
               <div className='flex flex-col gap-2'>
                 <Label htmlFor='tx-category'>Categoria</Label>
                 <div className='relative'>
-                  <Tag className='absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground' />
-                  <Select
-                    id='tx-category'
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className='pl-12 pr-4 text-xs appearance-none'
-                  >
-                    <option value='' disabled>
-                      Selecionar...
-                    </option>
-                    {allCategories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
+                  <Tag className='pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground' />
+                  <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger id='tx-category' className='pl-12 pr-4 text-xs'>
+                      <SelectValue placeholder='Selecionar...' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allCategories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
               </div>

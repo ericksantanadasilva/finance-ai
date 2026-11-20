@@ -19,6 +19,13 @@ import TransactionDialog from '../_Components/TransactionDialog';
 import TransactionStatus from './TransactionStatus';
 import type { TransactionItem } from '@/app/_actions/transactions';
 import { currentMonthISO, formatDateOnly } from '@/app/utils/dates';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 type PageData = {
   items: TransactionItem[];
@@ -186,40 +193,54 @@ export default function TransactionsClient({
 
           <div className='flex flex-wrap sm:flex-nowrap gap-4'>
             <div className='relative min-w-[160px] flex-1 sm:flex-none'>
-              <Filter className='absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400' />
-              <select
+              <Filter className='pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400' />
+              <Select
                 value={categoryFilter}
-                onChange={(e) => updateParams({ category: e.target.value })}
-                className='w-full bg-background border border-border-custom rounded-xl pl-10 pr-4 py-3 text-[11px] font-black uppercase tracking-tighter outline-none cursor-pointer appearance-none'
+                onValueChange={(v) => updateParams({ category: v })}
               >
-                <option value='all'>Todas Categorias</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger
+                  aria-label='Filtrar por categoria'
+                  className='pl-10 text-xs font-bold'
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='all'>Todas Categorias</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className='relative min-w-[160px] flex-1 sm:flex-none'>
-              <CalendarDays className='absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400' />
-              <select
+              <CalendarDays className='pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400' />
+              <Select
                 value={monthFilter}
-                onChange={(e) => updateParams({ month: e.target.value })}
-                className='w-full bg-background border border-border-custom rounded-xl pl-10 pr-4 py-3 text-[11px] font-black uppercase tracking-tighter outline-none cursor-pointer appearance-none'
+                onValueChange={(v) => updateParams({ month: v })}
               >
-                <option value='all'>Todos os Meses</option>
-                {availableMonths.map((m) => (
-                  <option key={m} value={m}>
-                    {new Date(m + '-02')
-                      .toLocaleDateString('pt-BR', {
-                        month: 'short',
-                        year: 'numeric',
-                      })
-                      .toUpperCase()}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger
+                  aria-label='Filtrar por mês'
+                  className='pl-10 text-xs font-bold'
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='all'>Todos os Meses</SelectItem>
+                  {availableMonths.map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {new Date(m + '-02')
+                        .toLocaleDateString('pt-BR', {
+                          month: 'short',
+                          year: 'numeric',
+                        })
+                        .toUpperCase()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
@@ -290,17 +311,25 @@ export default function TransactionsClient({
           </div>
 
           <div className='relative min-w-[180px] lg:ml-auto'>
-            <ArrowUpDown className='absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400' />
-            <select
+            <ArrowUpDown className='pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400' />
+            <Select
               value={sortFilter}
-              onChange={(e) => updateParams({ sort: e.target.value })}
-              className='w-full bg-background border border-border-custom rounded-xl pl-10 pr-4 py-2.5 text-[11px] font-black uppercase tracking-tighter outline-none cursor-pointer appearance-none'
+              onValueChange={(v) => updateParams({ sort: v })}
             >
-              <option value='date_desc'>Mais recentes</option>
-              <option value='date_asc'>Mais antigas</option>
-              <option value='amount_desc'>Maior valor</option>
-              <option value='amount_asc'>Menor valor</option>
-            </select>
+              <SelectTrigger
+                size='sm'
+                aria-label='Ordenar'
+                className='h-9 pl-10 font-bold'
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='date_desc'>Mais recentes</SelectItem>
+                <SelectItem value='date_asc'>Mais antigas</SelectItem>
+                <SelectItem value='amount_desc'>Maior valor</SelectItem>
+                <SelectItem value='amount_asc'>Menor valor</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {hasActiveFilters && (

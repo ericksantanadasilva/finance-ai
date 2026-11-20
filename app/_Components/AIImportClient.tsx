@@ -14,6 +14,13 @@ import {
 import { processFileWithAI, saveTransactions } from '@/app/_actions/ai-import';
 import { getCategories } from '@/app/_actions/categories';
 import { currentMonthISO } from '@/app/utils/dates';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toast } from 'sonner';
 
 // Server Actions aceitam no máximo 1 MB por requisição e o base64 aumenta o arquivo em ~33%
@@ -256,20 +263,27 @@ export default function AIImportClient() {
                       <label className='text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase mb-1 block'>
                         Categoria
                       </label>
-                      <select
-                        className='w-full bg-background text-xs border-b border-border-custom outline-none h-7'
+                      <Select
                         value={item.category}
-                        onChange={(e) =>
-                          handleUpdateItem(idx, 'category', e.target.value)
+                        onValueChange={(v) =>
+                          handleUpdateItem(idx, 'category', v)
                         }
                       >
-                        <option value=''>Selecione...</option>
-                        {categories.map((cat) => (
-                          <option key={cat.id} value={cat.name}>
-                            {cat.name}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger
+                          size='sm'
+                          aria-label='Categoria'
+                          className='h-7'
+                        >
+                          <SelectValue placeholder='Selecione...' />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.name}>
+                              {cat.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <label className='text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase mb-1 block'>
@@ -288,16 +302,22 @@ export default function AIImportClient() {
                       <label className='text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase mb-1 block'>
                         Tipo
                       </label>
-                      <select
-                        className='w-full bg-background text-[10px] border-b border-border-custom outline-none'
+                      <Select
                         value={item.type}
-                        onChange={(e) =>
-                          handleUpdateItem(idx, 'type', e.target.value)
-                        }
+                        onValueChange={(v) => handleUpdateItem(idx, 'type', v)}
                       >
-                        <option value='expense'>Saída</option>
-                        <option value='income'>Entrada</option>
-                      </select>
+                        <SelectTrigger
+                          size='sm'
+                          aria-label='Tipo'
+                          className='h-7 text-[10px]'
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value='expense'>Saída</SelectItem>
+                          <SelectItem value='income'>Entrada</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>

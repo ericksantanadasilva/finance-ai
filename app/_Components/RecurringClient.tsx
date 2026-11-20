@@ -27,6 +27,13 @@ import {
   type RecurringRuleItem,
 } from '@/app/_actions/recurring';
 import ConfirmDialog from '@/app/_Components/ConfirmDialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const formatMoney = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
@@ -371,17 +378,18 @@ export default function RecurringClient({
                     Começa em
                   </label>
                 </div>
-                <select
-                  value={startMonth}
-                  onChange={(e) => setStartMonth(e.target.value)}
-                  className='w-full bg-surface border border-border-custom rounded-lg px-3 py-2 text-xs font-bold outline-none cursor-pointer'
-                >
-                  {startMonthOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <Select value={startMonth} onValueChange={setStartMonth}>
+                  <SelectTrigger aria-label='Começa em' className='font-bold'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {startMonthOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <p className='text-[9px] text-zinc-500 font-medium'>
                   * Meses anteriores ao atual entram como pagos; o mês atual
                   fica pendente até você marcar como pago.
@@ -413,21 +421,22 @@ export default function RecurringClient({
                       Categoria
                     </label>
                     <div className='relative'>
-                      <Tag className='absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400' />
-                      <select
-                        value={category}
-                        onChange={(e) => setCategory(e.target.value)}
-                        className='w-full bg-background border border-border-custom rounded-xl pl-12 pr-4 py-3.5 text-xs font-bold outline-none appearance-none'
-                      >
-                        <option value='' disabled>
-                          Selecionar...
-                        </option>
-                        {allCategories.map((cat) => (
-                          <option key={cat} value={cat}>
-                            {cat}
-                          </option>
-                        ))}
-                      </select>
+                      <Tag className='pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400' />
+                      <Select value={category} onValueChange={setCategory}>
+                        <SelectTrigger
+                          aria-label='Categoria'
+                          className='pl-12 pr-4 text-xs font-bold'
+                        >
+                          <SelectValue placeholder='Selecionar...' />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {allCategories.map((cat) => (
+                            <SelectItem key={cat} value={cat}>
+                              {cat}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
