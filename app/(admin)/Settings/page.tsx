@@ -131,7 +131,7 @@ export default function SettingsPage() {
           <div className='grid grid-cols-2 gap-4'>
             <Button
               size='lg'
-              variant={theme === 'light' ? 'primary' : 'default'}
+              variant={theme === 'light' ? 'default' : 'outline'}
               aria-pressed={theme === 'light'}
               onClick={() => setTheme('light')}
             >
@@ -141,7 +141,7 @@ export default function SettingsPage() {
 
             <Button
               size='lg'
-              variant={theme === 'dark' ? 'primary' : 'default'}
+              variant={theme === 'dark' ? 'default' : 'outline'}
               aria-pressed={theme === 'dark'}
               onClick={() => setTheme('dark')}
             >
@@ -175,7 +175,6 @@ export default function SettingsPage() {
         {/* BOTÃO SALVAR */}
         <div className='fixed bottom-6 right-6 left-6 sm:relative sm:bottom-0 sm:right-0 sm:left-0 mt-8 flex justify-end'>
           <Button
-            variant='primary'
             size='lg'
             onClick={handleSave}
             disabled={isPending}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition, useEffect } from 'react';
+import React, { useState, useTransition, useEffect, useId } from 'react';
 import { Target, DollarSign, Calendar, Loader2 } from 'lucide-react';
 import { createGoal, updateGoal } from '../_actions/goals'; // Importada a função updateGoal
 import { toast } from 'sonner';
@@ -9,6 +9,7 @@ import { Card, CardHeader } from '@/components/ui/card';
 import { DialogCloseButton, DialogOverlay } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 interface GoalDialogProps {
   isOpen: boolean;
@@ -54,6 +55,9 @@ export default function GoalDialog({
     }
   }, [editData, isOpen]);
 
+  const titleId = useId();
+  const panelRef = useModalBehavior<HTMLDivElement>({ isOpen, onClose });
+
   if (!isOpen) return null;
 
   async function handleSubmit() {
@@ -93,10 +97,19 @@ export default function GoalDialog({
 
   return (
     <DialogOverlay className='z-60 animate-in fade-in duration-300'>
-      <Card className='w-full max-w-md shadow-hard-lg relative animate-in zoom-in duration-200'>
+      <Card
+        ref={panelRef}
+        role='dialog'
+        aria-modal='true'
+        aria-labelledby={titleId}
+        className='w-full max-w-md shadow-hard-lg relative animate-in zoom-in duration-200'
+      >
         {/* HEADER */}
         <CardHeader className='px-6 py-4'>
-          <h2 className='text-base font-bold flex items-center gap-2'>
+          <h2
+            id={titleId}
+            className='text-base font-bold flex items-center gap-2'
+          >
             <Target className='w-5 h-5' />
             {editData ? 'Editar Meta' : 'Nova Meta'}
           </h2>
@@ -166,11 +179,10 @@ export default function GoalDialog({
 
         {/* FOOTER */}
         <div className='p-6 border-t border-border-custom flex gap-3'>
-          <Button onClick={onClose} className='flex-1 px-4'>
+          <Button variant='outline' onClick={onClose} className='flex-1 px-4'>
             CANCELAR
           </Button>
           <Button
-            variant='primary'
             onClick={handleSubmit}
             disabled={isPending}
             className='flex-1 px-4'

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition, useEffect } from 'react';
+import React, { useState, useTransition, useEffect, useId } from 'react';
 import {
   Calendar,
   Tag,
@@ -20,6 +20,7 @@ import { DialogCloseButton, DialogOverlay } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 interface TransactionDialogProps {
   isOpen: boolean;
@@ -35,6 +36,8 @@ export default function TransactionDialog({
   referenceMonth,
 }: TransactionDialogProps) {
   const [isPending, startTransition] = useTransition();
+  const titleId = useId();
+  const panelRef = useModalBehavior<HTMLDivElement>({ isOpen, onClose });
 
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amount, setAmount] = useState('');
@@ -150,10 +153,16 @@ export default function TransactionDialog({
 
   return (
     <DialogOverlay>
-      <Card className='w-full max-w-md shadow-hard-lg flex flex-col max-h-[90vh]'>
+      <Card
+        ref={panelRef}
+        role='dialog'
+        aria-modal='true'
+        aria-labelledby={titleId}
+        className='w-full max-w-md shadow-hard-lg flex flex-col max-h-[90vh]'
+      >
         {/* HEADER */}
         <CardHeader className='px-6 py-4'>
-          <h2 className='text-base font-bold'>
+          <h2 id={titleId} className='text-base font-bold'>
             {editData ? 'Editar Lançamento' : 'Novo Lançamento'}
           </h2>
           <DialogCloseButton onClick={onClose} />
@@ -287,11 +296,15 @@ export default function TransactionDialog({
 
           {/* ACTIONS */}
           <div className='pt-4 flex gap-3'>
-            <Button size='lg' onClick={onClose} className='flex-1 px-4'>
+            <Button
+              variant='outline'
+              size='lg'
+              onClick={onClose}
+              className='flex-1 px-4'
+            >
               CANCELAR
             </Button>
             <Button
-              variant='primary'
               size='lg'
               onClick={handleSubmit}
               disabled={isPending}

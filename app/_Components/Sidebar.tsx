@@ -25,6 +25,7 @@ import { useUser } from '../_Context/UserContext';
 import { getAvatarData } from '../utils/utils';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 // Mesmo breakpoint do lg:, a partir do qual a sidebar fica fixa e não é gaveta
 const DESKTOP_QUERY = '(min-width: 1024px)';
@@ -49,7 +50,6 @@ export default function Sidebar() {
     setIsOpen(false);
   }, [pathname]);
 
-  const asideRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   // No servidor assume desktop (sidebar visível); no cliente lê a largura real
@@ -61,57 +61,13 @@ export default function Sidebar() {
   // Se a tela crescer para desktop com a gaveta aberta, ela deixa de ser modal
   const drawerOpen = isOpen && !isDesktop;
 
-  // Gaveta aberta no mobile: trava a rolagem, prende o foco e fecha com Esc
-  useEffect(() => {
-    if (!drawerOpen) return;
-
-    const aside = asideRef.current;
-    const trigger = triggerRef.current;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    const getFocusable = () =>
-      Array.from(
-        aside?.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled])',
-        ) ?? [],
-      );
-
-    getFocusable()[0]?.focus();
-
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        setIsOpen(false);
-        return;
-      }
-      if (e.key !== 'Tab') return;
-
-      const items = getFocusable();
-      if (items.length === 0) return;
-      const first = items[0];
-      const last = items[items.length - 1];
-      const active = document.activeElement;
-
-      if (!aside?.contains(active)) {
-        e.preventDefault();
-        first.focus();
-      } else if (e.shiftKey && active === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && active === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = previousOverflow;
-      // Devolve o foco para o botão que abriu a gaveta
-      trigger?.focus();
-    };
-  }, [drawerOpen]);
+  // Gaveta aberta no mobile: trava a rolagem, prende o foco e fecha com Esc;
+  // ao fechar, o foco volta para o botão de menu
+  const asideRef = useModalBehavior<HTMLElement>({
+    isOpen: drawerOpen,
+    onClose: () => setIsOpen(false),
+    returnFocusRef: triggerRef,
+  });
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: '/' });

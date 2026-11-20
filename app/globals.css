@@ -26,9 +26,10 @@
   /* Divisórias finas, para separar itens sem peso visual */
   --border-custom: #e4e4df;
 
-  /* Faixa de cabeçalho dos cards de destaque */
-  --band: #111111;
-  --band-foreground: #f7f7f5;
+  /* Faixa de cabeçalho dos cards: um tom acima da superfície, sem inverter
+     em nenhum modo (a separação vem da borda inferior ink do CardHeader) */
+  --band: var(--surface-muted);
+  --band-foreground: var(--foreground);
 
   /* Destaques (usar com moderação) */
   --highlight: #d1157f;
@@ -64,9 +65,6 @@
   /* Claro no escuro: a sombra continua visível sobre o fundo preto */
   --ink: #f7f7f5;
   --border-custom: #2e2e2e;
-
-  --band: #f7f7f5;
-  --band-foreground: #111111;
 
   --highlight: #ff5cb4;
   --highlight-foreground: #111111;

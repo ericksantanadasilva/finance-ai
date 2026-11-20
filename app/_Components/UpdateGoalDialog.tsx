@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition, useEffect } from 'react';
+import React, { useState, useTransition, useEffect, useId } from 'react';
 import { DollarSign, Loader2, Target, TrendingUp } from 'lucide-react';
 import { updateGoalAmount } from '../_actions/goals';
 import { toast } from 'sonner';
@@ -9,6 +9,7 @@ import { Card, CardHeader } from '@/components/ui/card';
 import { DialogCloseButton, DialogOverlay } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 interface UpdateGoalDialogProps {
   goal: { id: string; name: string } | null;
@@ -27,6 +28,12 @@ export default function UpdateGoalDialog({
   useEffect(() => {
     if (isOpen) setAmount('');
   }, [isOpen]);
+
+  const titleId = useId();
+  const panelRef = useModalBehavior<HTMLDivElement>({
+    isOpen: isOpen && !!goal,
+    onClose,
+  });
 
   if (!isOpen || !goal) return null;
 
@@ -60,12 +67,20 @@ export default function UpdateGoalDialog({
 
   return (
     <DialogOverlay className='animate-in fade-in duration-300'>
-      <Card className='w-full max-w-md shadow-hard-lg relative animate-in zoom-in duration-200 flex flex-col'>
+      <Card
+        ref={panelRef}
+        role='dialog'
+        aria-modal='true'
+        aria-labelledby={titleId}
+        className='w-full max-w-md shadow-hard-lg relative animate-in zoom-in duration-200 flex flex-col'
+      >
         {/* HEADER */}
         <CardHeader className='px-6 py-4'>
           <div className='flex items-center gap-3'>
             <Target className='w-5 h-5' />
-            <h2 className='text-base font-bold'>Aporte Rápido</h2>
+            <h2 id={titleId} className='text-base font-bold'>
+              Aporte Rápido
+            </h2>
           </div>
           <DialogCloseButton onClick={onClose} />
         </CardHeader>
@@ -105,11 +120,15 @@ export default function UpdateGoalDialog({
 
           {/* ACTIONS */}
           <div className='flex gap-3 pt-2'>
-            <Button size='lg' onClick={onClose} className='flex-1 px-4'>
+            <Button
+              variant='outline'
+              size='lg'
+              onClick={onClose}
+              className='flex-1 px-4'
+            >
               CANCELAR
             </Button>
             <Button
-              variant='primary'
               size='lg'
               onClick={handleConfirm}
               disabled={isPending || !amount}

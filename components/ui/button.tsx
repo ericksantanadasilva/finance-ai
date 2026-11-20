@@ -13,6 +13,10 @@ const buttonVariants = cva(
       variant: {
         default: cn(pressable, 'bg-surface text-foreground'),
         primary: cn(pressable, 'bg-primary text-primary-foreground'),
+        // Plano, sem sombra e com borda fina: ação secundária (ex.: cancelar)
+        // e opção não selecionada. A hierarquia vem da elevação.
+        outline:
+          'border-border-custom bg-transparent text-muted-foreground hover:bg-surface-muted hover:text-foreground',
         ai: cn(pressable, 'bg-ai text-ai-foreground'),
         // Redefine --ink só neste botão: contorno e sombra passam a usar --danger-border
         danger: cn(

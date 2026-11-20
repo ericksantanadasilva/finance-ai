@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useId } from 'react';
 import { AlertTriangle, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { DialogOverlay } from '@/components/ui/dialog';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -25,13 +26,24 @@ export default function ConfirmDialog({
   isLoading = false,
   variant = 'danger',
 }: ConfirmDialogProps) {
+  const titleId = useId();
+  const descriptionId = useId();
+  const panelRef = useModalBehavior<HTMLDivElement>({ isOpen, onClose });
+
   if (!isOpen) return null;
 
   const isDanger = variant === 'danger';
 
   return (
     <DialogOverlay className='z-110 animate-in fade-in duration-300'>
-      <Card className='w-full max-w-sm shadow-hard-lg relative animate-in zoom-in duration-200'>
+      <Card
+        ref={panelRef}
+        role='dialog'
+        aria-modal='true'
+        aria-labelledby={titleId}
+        aria-describedby={descriptionId}
+        className='w-full max-w-sm shadow-hard-lg relative animate-in zoom-in duration-200'
+      >
         {/* BOTÃO FECHAR */}
         <Button
           variant='ghost'
@@ -52,19 +64,29 @@ export default function ConfirmDialog({
           </div>
 
           <div className='space-y-2'>
-            <h3 className='text-base font-bold text-foreground'>{title}</h3>
-            <p className='text-sm text-muted-foreground font-medium leading-relaxed'>
+            <h3 id={titleId} className='text-base font-bold text-foreground'>
+              {title}
+            </h3>
+            <p
+              id={descriptionId}
+              className='text-sm text-muted-foreground font-medium leading-relaxed'
+            >
               {description}
             </p>
           </div>
 
           {/* BOTÕES DE AÇÃO */}
           <div className='flex gap-3 pt-2'>
-            <Button onClick={onClose} disabled={isLoading} className='flex-1'>
+            <Button
+              variant='outline'
+              onClick={onClose}
+              disabled={isLoading}
+              className='flex-1'
+            >
               CANCELAR
             </Button>
             <Button
-              variant={isDanger ? 'danger' : 'primary'}
+              variant={isDanger ? 'danger' : 'default'}
               onClick={onConfirm}
               disabled={isLoading}
               className='flex-1'
