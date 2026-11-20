@@ -116,7 +116,12 @@ export default function SettingsPage() {
                     id='settings-email'
                     type='email'
                     value={user?.email || ''}
-                    disabled
+                    // readOnly em vez de disabled: o campo continua focável e
+                    // legível por leitores de tela (e dá para copiar o e-mail).
+                    // As classes repetem o visual de campo bloqueado do
+                    // fieldVariants, que só vale para disabled.
+                    readOnly
+                    className='bg-surface-muted text-muted-foreground'
                   />
                 </div>
               </div>
