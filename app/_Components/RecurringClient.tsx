@@ -17,8 +17,8 @@ import { toast } from 'sonner';
 import {
   toggleRecurringRule,
   deleteRecurringRule,
-  type RecurringRuleItem,
 } from '@/app/_actions/recurring';
+import type { RecurringRuleItem } from '@/lib/finance/recurring';
 import ConfirmDialog from '@/app/_Components/ConfirmDialog';
 import RecurringDialog from './RecurringDialog';
 import CategoryBadge from './CategoryBadge';
