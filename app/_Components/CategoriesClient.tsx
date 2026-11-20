@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import {
   Plus,
   Trash2,
@@ -17,6 +17,7 @@ import {
 } from '../_actions/categories';
 import ConfirmDialog from '@/app/_Components/ConfirmDialog'; // Importando nosso dialog
 import { toast } from 'sonner';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 type CategoryWithBudget = {
   id: string;
@@ -113,6 +114,19 @@ export default function CategoriesClient({
       setLoading(false);
     }
   };
+
+  // Acessibilidade dos modais: Esc fecha, foco preso, rolagem travada e o
+  // foco volta para quem abriu
+  const createTitleId = useId();
+  const budgetTitleId = useId();
+  const createPanelRef = useModalBehavior<HTMLDivElement>({
+    isOpen,
+    onClose: () => setIsOpen(false),
+  });
+  const budgetPanelRef = useModalBehavior<HTMLDivElement>({
+    isOpen: !!budgetTarget,
+    onClose: () => setBudgetTarget(null),
+  });
 
   const handleConfirmDelete = async () => {
     if (!categoryToDelete) return;
@@ -272,16 +286,26 @@ export default function CategoriesClient({
       {/* MODAL DE CRIAÇÃO */}
       {isOpen && (
         <div className='fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300'>
-          <div className='bg-surface border border-border-custom w-full max-w-md rounded-2xl p-8 space-y-8 shadow-2xl relative animate-in zoom-in duration-200'>
+          <div
+            ref={createPanelRef}
+            role='dialog'
+            aria-modal='true'
+            aria-labelledby={createTitleId}
+            className='bg-surface border border-border-custom w-full max-w-md rounded-2xl p-8 space-y-8 shadow-2xl relative animate-in zoom-in duration-200'
+          >
             <div className='flex justify-between items-center'>
               <div className='flex items-center gap-2'>
                 <Tags className='w-5 h-5 text-emerald-500' />
-                <h3 className='text-lg font-black text-foreground uppercase tracking-tight'>
+                <h3
+                  id={createTitleId}
+                  className='text-lg font-black text-foreground uppercase tracking-tight'
+                >
                   Nova Categoria
                 </h3>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
+                aria-label='Fechar'
                 className='text-zinc-400 hover:text-foreground transition-colors p-1'
               >
                 <X className='w-5 h-5' />
@@ -290,10 +314,14 @@ export default function CategoriesClient({
 
             <div className='space-y-6'>
               <div className='space-y-2'>
-                <label className='text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]'>
+                <label
+                  htmlFor='category-name'
+                  className='text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]'
+                >
                   Nome da Categoria
                 </label>
                 <input
+                  id='category-name'
                   placeholder='Ex: ALIMENTAÇÃO, SAÚDE...'
                   autoComplete='off'
                   className='w-full bg-background border border-border-custom p-4 rounded-xl outline-none focus:border-emerald-500/50 transition-all text-foreground font-bold placeholder:text-zinc-400 placeholder:font-medium shadow-inner'
@@ -304,12 +332,16 @@ export default function CategoriesClient({
               </div>
 
               <div className='space-y-2'>
-                <label className='text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]'>
+                <label
+                  htmlFor='category-color'
+                  className='text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]'
+                >
                   Cor de Identificação
                 </label>
                 <div className='flex items-center gap-4 bg-background border border-border-custom p-3 rounded-xl shadow-inner'>
                   <div className='relative w-10 h-10 shrink-0'>
                     <input
+                      id='category-color'
                       type='color'
                       value={color}
                       onChange={(e) => setColor(e.target.value)}
@@ -327,10 +359,14 @@ export default function CategoriesClient({
               </div>
 
               <div className='space-y-2'>
-                <label className='text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]'>
+                <label
+                  htmlFor='category-budget'
+                  className='text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]'
+                >
                   Limite mensal (opcional)
                 </label>
                 <input
+                  id='category-budget'
                   type='number'
                   inputMode='decimal'
                   min='0'
@@ -369,9 +405,18 @@ export default function CategoriesClient({
       {/* MODAL DE LIMITE MENSAL */}
       {budgetTarget && (
         <div className='fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300'>
-          <div className='bg-surface border border-border-custom w-full max-w-md rounded-2xl p-8 space-y-6 shadow-2xl animate-in zoom-in duration-200'>
+          <div
+            ref={budgetPanelRef}
+            role='dialog'
+            aria-modal='true'
+            aria-labelledby={budgetTitleId}
+            className='bg-surface border border-border-custom w-full max-w-md rounded-2xl p-8 space-y-6 shadow-2xl animate-in zoom-in duration-200'
+          >
             <div className='flex justify-between items-center'>
-              <h3 className='text-lg font-black text-foreground uppercase tracking-tight'>
+              <h3
+                id={budgetTitleId}
+                className='text-lg font-black text-foreground uppercase tracking-tight'
+              >
                 Limite: {budgetTarget.name}
               </h3>
               <button
@@ -384,10 +429,14 @@ export default function CategoriesClient({
             </div>
 
             <div className='space-y-2'>
-              <label className='text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]'>
+              <label
+                htmlFor='category-budget-value'
+                className='text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]'
+              >
                 Quanto posso gastar por mês?
               </label>
               <input
+                id='category-budget-value'
                 type='number'
                 inputMode='decimal'
                 min='0'
