@@ -144,7 +144,7 @@ export default function GoalsClient({
             return (
               <Card
                 key={goal.id}
-                className='group flex flex-col animate-in fade-in slide-in-from-bottom-3 duration-500'
+                className='group flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-200'
               >
                 <CardHeader className='py-2'>
                   <h2 className='flex items-center gap-2 min-w-0 font-bold'>

@@ -252,7 +252,7 @@ export default function AIImportClient() {
 
         {/* SEÇÃO DO MÊS DE REFERÊNCIA */}
         {results.length > 0 && (
-          <Card className='min-w-0 p-5 sm:p-6 space-y-4 animate-in fade-in zoom-in'>
+          <Card className='min-w-0 p-5 sm:p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150'>
             <div className='flex items-center gap-2'>
               <CalendarDays className='w-4 h-4' aria-hidden='true' />
               <h3 className='text-sm font-bold lowercase'>

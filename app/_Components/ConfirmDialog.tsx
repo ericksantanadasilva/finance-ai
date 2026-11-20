@@ -43,14 +43,14 @@ export default function ConfirmDialog({
   const isDanger = variant === 'danger';
 
   return (
-    <DialogOverlay className='z-110 animate-in fade-in duration-300'>
+    <DialogOverlay className='z-110 animate-in fade-in duration-150'>
       <Card
         ref={panelRef}
         role='dialog'
         aria-modal='true'
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        className='w-full max-w-sm shadow-hard-lg relative animate-in zoom-in duration-200'
+        className='w-full max-w-sm shadow-hard-lg relative animate-in fade-in zoom-in-95 duration-150'
       >
         {/* BOTÃO FECHAR */}
         <Button

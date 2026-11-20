@@ -68,7 +68,7 @@ export default function SettingsPage() {
         </p>
 
         {/* SEÇÃO 1: PERFIL */}
-        <section className='mb-8 animate-in fade-in slide-in-from-bottom-3'>
+        <section className='mb-8 animate-in fade-in slide-in-from-bottom-2 duration-200'>
           <Card>
             <CardHeader>
               <h2 className='font-bold flex items-center gap-2'>

@@ -258,7 +258,7 @@ export default function AIAgentChat() {
           return (
             <div
               key={index}
-              className={`flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300 ${isUser ? 'flex-row-reverse' : ''}`}
+              className={`flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-200 ${isUser ? 'flex-row-reverse' : ''}`}
             >
               {/* AVATAR: assistente é um adesivo roxo; você, um quadrado plano */}
               <div

@@ -58,13 +58,13 @@ export default function CategoryBudgetDialog({
   };
 
   return (
-    <DialogOverlay className='animate-in fade-in duration-300'>
+    <DialogOverlay className='animate-in fade-in duration-150'>
       <Card
         ref={panelRef}
         role='dialog'
         aria-modal='true'
         aria-labelledby={titleId}
-        className='w-full max-w-md shadow-hard-lg relative animate-in zoom-in duration-200'
+        className='w-full max-w-md shadow-hard-lg relative animate-in fade-in zoom-in-95 duration-150'
       >
         {/* HEADER */}
         <CardHeader className='px-6 py-4'>

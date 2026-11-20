@@ -158,13 +158,13 @@ export default function TransactionDialog({
   if (!isOpen) return null;
 
   return (
-    <DialogOverlay>
+    <DialogOverlay className='animate-in fade-in duration-150'>
       <Card
         ref={panelRef}
         role='dialog'
         aria-modal='true'
         aria-labelledby={titleId}
-        className='w-full max-w-md shadow-hard-lg flex flex-col max-h-[90vh]'
+        className='w-full max-w-md shadow-hard-lg flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-150'
       >
         {/* HEADER */}
         <CardHeader className='px-6 py-4'>

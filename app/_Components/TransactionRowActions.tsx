@@ -83,7 +83,7 @@ export function TransactionRowActions({
             className={`
               absolute right-0 w-40 p-1
               bg-surface border-2 border-ink rounded-xl shadow-hard z-110
-              animate-in fade-in zoom-in duration-200
+              animate-in fade-in zoom-in-95 duration-150
               ${isLast ? 'bottom-full mb-2' : 'top-full mt-2'}
             `}
           >

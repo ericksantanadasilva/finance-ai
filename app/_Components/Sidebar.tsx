@@ -117,7 +117,7 @@ export default function Sidebar() {
       {drawerOpen && (
         <div
           aria-hidden='true'
-          className='fixed inset-0 bg-overlay z-40 lg:hidden animate-in fade-in duration-300'
+          className='fixed inset-0 bg-overlay z-40 lg:hidden animate-in fade-in duration-150'
           onClick={() => setIsOpen(false)}
         />
       )}

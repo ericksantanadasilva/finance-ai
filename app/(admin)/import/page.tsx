@@ -21,7 +21,7 @@ export default function AIImportPage() {
       </div>
 
       {/* CHAMADA DO CLIENTE */}
-      <div className='animate-in fade-in slide-in-from-bottom-4 duration-500'>
+      <div className='animate-in fade-in slide-in-from-bottom-2 duration-200'>
         <AIImportClient />
       </div>
     </div>

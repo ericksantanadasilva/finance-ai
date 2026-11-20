@@ -1,5 +1,9 @@
 @import 'tailwindcss';
 
+/* Animações de entrada/saída (animate-in, fade-in, zoom-in, slide-in-from-*).
+   O tailwindcss-animate já era dependência, mas não estava registrado no v4. */
+@plugin 'tailwindcss-animate';
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
@@ -198,6 +202,20 @@
   h1,
   h2 {
     font-family: var(--font-display);
+  }
+}
+
+/* Movimento reduzido: quem pediu ao sistema menos animação vê os elementos
+   direto no lugar. Vale para as entradas/saídas (animate-in/out) e para o
+   "afundar" dos botões adesivos; spinners e pulsos de carregamento continuam,
+   porque indicam que algo está acontecendo. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-in,
+  .animate-out {
+    animation: none !important;
+  }
+  * {
+    transition-duration: 0.01ms !important;
   }
 }
 
