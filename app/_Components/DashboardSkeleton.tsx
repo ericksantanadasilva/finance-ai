@@ -1,55 +1,92 @@
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { SkeletonText } from '@/components/ui/skeleton';
+import { StatCardSkeleton } from './StatCard';
+
+// Espelha a estrutura do DashboardClient (mesmos componentes, paddings, gaps,
+// breakpoints e classes de texto), para cada card ter a altura do card carregado.
+// Se o layout do DashboardClient mudar, este arquivo precisa acompanhar.
+
 export default function DashboardSkeleton() {
   return (
-    <div className='min-h-screen bg-background p-4 sm:p-8 space-y-8 animate-pulse transition-all duration-300'>
-      {/* Header Skeleton */}
+    <div className='min-h-screen bg-background p-4 sm:p-8 space-y-6 sm:space-y-8 animate-pulse transition-all duration-300'>
+      {/* HEADER */}
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-10 lg:pt-0'>
-        <div className='space-y-3'>
-          {/* Título e Subtítulo */}
-          <div className='h-8 w-48 bg-zinc-200 dark:bg-zinc-900 rounded-xl'></div>
-          <div className='h-4 w-64 bg-zinc-100 dark:bg-zinc-900/50 rounded-lg'></div>
+        <div>
+          <SkeletonText className='font-display text-xl sm:text-2xl font-bold' chars={11} />
+          <SkeletonText
+            className='text-xs sm:text-sm font-medium'
+            chars={38}
+            tone='soft'
+          />
         </div>
-        <div className='flex gap-2 w-full sm:w-auto'>
-          <div className='h-10 flex-1 sm:w-32 bg-zinc-200 dark:bg-zinc-900 rounded-xl'></div>
-          <div className='h-10 flex-1 sm:w-24 bg-zinc-200 dark:bg-zinc-900 rounded-xl'></div>
+        {/* Botões reais: size md (h-11), com contorno */}
+        <div className='flex gap-3 w-full sm:w-auto'>
+          <div className='h-11 flex-1 sm:flex-none sm:w-36 bg-border-custom rounded-xl'></div>
+          <div className='h-11 flex-1 sm:flex-none sm:w-24 bg-border-custom rounded-xl'></div>
         </div>
       </div>
 
-      {/* Cards Skeleton (Resumo Financeiro) */}
-      <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className='h-32 bg-surface border border-border-custom rounded-2xl shadow-sm dark:shadow-none'
-          >
-            <div className='p-6 space-y-4'>
-              <div className='h-3 w-24 bg-zinc-100 dark:bg-zinc-800 rounded-full'></div>
-              <div className='h-8 w-32 bg-zinc-200 dark:bg-zinc-800 rounded-lg'></div>
+      {/* CARDS */}
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
+        <StatCardSkeleton hasNote />
+        <StatCardSkeleton />
+        <StatCardSkeleton />
+      </div>
+
+      {/* GRÁFICOS */}
+      <div className='grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8'>
+        {/* Fluxo mensal: faixa com o select (size sm, h-8) e a área do gráfico */}
+        <Card className='lg:col-span-2 flex flex-col'>
+          <CardHeader>
+            <SkeletonText className='font-display font-bold' chars={12} />
+            <div className='h-8 w-24 bg-surface rounded-xl'></div>
+          </CardHeader>
+          <CardContent className='flex-1 flex flex-col p-4 sm:p-6'>
+            {/* Legenda (receitas / despesas) */}
+            <SkeletonText
+              className='text-xs font-medium mb-4'
+              chars={24}
+              tone='soft'
+            />
+            <div className='flex-1 min-h-72 sm:min-h-80 bg-surface-muted rounded-xl'></div>
+          </CardContent>
+        </Card>
+
+        {/* Categorias: mesma estrutura do card real, com as 4 categorias padrão */}
+        <Card className='flex flex-col min-h-100'>
+          <CardHeader>
+            <SkeletonText className='font-display font-bold' chars={10} />
+            <div className='h-8 w-32 bg-surface rounded-xl'></div>
+          </CardHeader>
+          <CardContent className='flex-1 flex flex-col p-4 sm:p-6'>
+            <SkeletonText
+              className='text-xs font-medium mb-4'
+              chars={16}
+              tone='soft'
+            />
+
+            {/* Rosca: diâmetro e espessura iguais aos do gráfico (raios 85 e 65) */}
+            <div className='h-48 sm:h-56 flex items-center justify-center'>
+              <div className='size-42.5 rounded-full border-20 border-surface-muted'></div>
             </div>
-          </div>
-        ))}
-      </div>
 
-      {/* Charts Skeleton (Gráficos) */}
-      <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
-        {/* Gráfico de Barras */}
-        <div className='lg:col-span-2 h-[450px] bg-surface border border-border-custom rounded-2xl p-6 space-y-6 shadow-sm dark:shadow-none'>
-          <div className='flex justify-between items-center'>
-            <div className='h-5 w-40 bg-zinc-200 dark:bg-zinc-800 rounded-lg'></div>
-            <div className='h-8 w-24 bg-zinc-100 dark:bg-zinc-800 rounded-lg'></div>
-          </div>
-          <div className='w-full h-full bg-zinc-50 dark:bg-zinc-900/30 rounded-xl border border-dashed border-border-custom'></div>
-        </div>
-
-        {/* Gráfico de Pizza / Categorias */}
-        <div className='h-[450px] bg-surface border border-border-custom rounded-2xl p-6 flex flex-col items-center justify-between shadow-sm dark:shadow-none'>
-          <div className='w-full h-5 bg-zinc-200 dark:bg-zinc-800 rounded-lg mb-8'></div>
-          <div className='h-48 w-48 rounded-full border-8 border-zinc-100 dark:border-zinc-900'></div>
-          <div className='w-full space-y-3 mt-8'>
-            <div className='h-4 w-full bg-zinc-100 dark:bg-zinc-900 rounded'></div>
-            <div className='h-4 w-full bg-zinc-100 dark:bg-zinc-900 rounded'></div>
-            <div className='h-4 w-2/3 bg-zinc-100 dark:bg-zinc-900 rounded'></div>
-          </div>
-        </div>
+            <div className='mt-6 space-y-3 flex-1'>
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className='flex justify-between items-center gap-3'>
+                  <div className='flex items-center gap-2'>
+                    <div className='size-3 rounded-full bg-border-custom'></div>
+                    <SkeletonText
+                      className='text-xs font-medium'
+                      chars={10}
+                      tone='soft'
+                    />
+                  </div>
+                  <SkeletonText className='text-xs font-bold' chars={8} />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

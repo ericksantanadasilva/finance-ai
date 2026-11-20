@@ -1,9 +1,7 @@
 'use client';
 
-import React, { useState, useTransition, useEffect } from 'react';
+import React, { useState, useTransition, useEffect, useId } from 'react';
 import {
-  X,
-  Calendar,
   Tag,
   FileText,
   ArrowUpCircle,
@@ -15,6 +13,20 @@ import { createTransaction, updateTransaction } from '../_actions/transactions';
 import { getCategories, type BudgetStatus } from '../_actions/categories';
 import { toast } from 'sonner';
 import { todayISO } from '@/app/utils/dates';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
+import { DialogCloseButton, DialogOverlay } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 interface TransactionDialogProps {
   isOpen: boolean;
@@ -30,6 +42,8 @@ export default function TransactionDialog({
   referenceMonth,
 }: TransactionDialogProps) {
   const [isPending, startTransition] = useTransition();
+  const titleId = useId();
+  const panelRef = useModalBehavior<HTMLDivElement>({ isOpen, onClose });
 
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amount, setAmount] = useState('');
@@ -144,177 +158,170 @@ export default function TransactionDialog({
   if (!isOpen) return null;
 
   return (
-    <div className='fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4'>
-      <div className='w-full max-w-md bg-surface border border-border-custom rounded-2xl shadow-2xl flex flex-col max-h-[90vh]'>
+    <DialogOverlay className='animate-in fade-in duration-150'>
+      <Card
+        ref={panelRef}
+        role='dialog'
+        aria-modal='true'
+        aria-labelledby={titleId}
+        className='w-full max-w-md shadow-hard-lg flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-150'
+      >
         {/* HEADER */}
-        <div className='flex justify-between items-center p-6 border-b border-border-custom'>
-          <h2 className='text-lg font-black text-foreground uppercase tracking-tight'>
+        <CardHeader className='px-6 py-4'>
+          <h2 id={titleId} className='text-base font-bold'>
             {editData ? 'Editar Lançamento' : 'Novo Lançamento'}
           </h2>
-          <button
-            onClick={onClose}
-            className='text-zinc-400 hover:text-foreground transition-colors'
-          >
-            <X className='w-5 h-5' />
-          </button>
-        </div>
+          <DialogCloseButton onClick={onClose} />
+        </CardHeader>
 
         <div className='p-6 overflow-y-auto custom-scrollbar space-y-6'>
-          {/* TIPO */}
-          <div className='grid grid-cols-2 gap-2 p-1.5 bg-background border border-border-custom rounded-xl'>
-            <button
-              type='button'
+          {/* TIPO: o selecionado vira "adesivo" na cor do tipo; a seta reforça entrada/saída */}
+          <div className='grid grid-cols-2 gap-3'>
+            <Button
+              variant={type === 'income' ? 'income' : 'ghost'}
+              aria-pressed={type === 'income'}
               onClick={() => setType('income')}
-              className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all ${
+              className={
                 type === 'income'
-                  ? 'bg-surface text-emerald-600 shadow-sm border border-border-custom'
-                  : 'text-zinc-500'
-              }`}
+                  ? ''
+                  : 'border-border-custom text-muted-foreground'
+              }
             >
               <ArrowUpCircle className='w-4 h-4' /> RECEITA
-            </button>
-            <button
-              type='button'
+            </Button>
+            <Button
+              variant={type === 'expense' ? 'expense' : 'ghost'}
+              aria-pressed={type === 'expense'}
               onClick={() => setType('expense')}
-              className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all ${
+              className={
                 type === 'expense'
-                  ? 'bg-surface text-rose-600 shadow-sm border border-border-custom'
-                  : 'text-zinc-500'
-              }`}
+                  ? ''
+                  : 'border-border-custom text-muted-foreground'
+              }
             >
               <ArrowDownCircle className='w-4 h-4' /> DESPESA
-            </button>
+            </Button>
           </div>
 
           {/* VALOR */}
-          <div className='space-y-2'>
-            <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
-              Valor
-            </label>
+          <div className='flex flex-col gap-2'>
+            <Label htmlFor='tx-amount'>Valor</Label>
             <div className='relative'>
-              <span className='absolute left-4 top-1/2 -translate-y-1/2 font-bold text-zinc-400'>
+              <span className='absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground'>
                 R$
               </span>
-              <input
+              <Input
+                id='tx-amount'
                 type='number'
                 step='0.01'
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                style={{ color: type === 'income' ? '#10b981' : '#e11d48' }}
-                className='w-full bg-background border border-border-custom rounded-xl pl-12 pr-4 py-4 text-2xl font-black outline-none focus:ring-2 focus:ring-emerald-500/10'
+                className={`h-16 pl-12 text-2xl font-black ${type === 'income' ? 'text-income' : 'text-expense'}`}
               />
             </div>
           </div>
 
           {/* SELETOR DE COMPETÊNCIA (O MÊS QUE APARECE NO DASHBOARD) */}
-          <div className='p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-xl space-y-3'>
-            <div className='flex items-center gap-2 text-emerald-600 dark:text-emerald-500'>
+          <div className='p-4 bg-surface-muted border-2 border-ink rounded-xl space-y-3'>
+            <div className='flex items-center gap-2'>
               <Clock className='w-4 h-4' />
-              <label className='text-[10px] font-black uppercase tracking-widest'>
-                Mês de Competência
-              </label>
+              <Label htmlFor='tx-reference'>Mês de Competência</Label>
             </div>
-            <select
+            <Select
               value={selectedReference}
-              onChange={(e) => setSelectedReference(e.target.value)}
-              className='w-full bg-surface border border-border-custom rounded-lg px-3 py-2 text-xs font-bold outline-none cursor-pointer'
+              onValueChange={setSelectedReference}
             >
-              {referenceOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <p className='text-[9px] text-zinc-500 font-medium'>
+              <SelectTrigger id='tx-reference'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {referenceOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className='text-xs text-muted-foreground font-medium'>
               * Este é o mês onde este valor será somado nos gráficos.
             </p>
           </div>
 
           <div className='space-y-4'>
             {/* DESCRIÇÃO */}
-            <div className='space-y-2'>
-              <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
-                Descrição
-              </label>
+            <div className='flex flex-col gap-2'>
+              <Label htmlFor='tx-description'>Descrição</Label>
               <div className='relative'>
-                <FileText className='absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400' />
-                <input
+                <FileText className='absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground' />
+                <Input
+                  id='tx-description'
                   type='text'
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className='w-full bg-background border border-border-custom rounded-xl pl-12 pr-4 py-3.5 text-sm font-bold outline-none'
+                  className='pl-12'
                 />
               </div>
             </div>
 
             <div className='grid grid-cols-2 gap-4'>
               {/* CATEGORIA */}
-              <div className='space-y-2'>
-                <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
-                  Categoria
-                </label>
+              <div className='flex flex-col gap-2'>
+                <Label htmlFor='tx-category'>Categoria</Label>
                 <div className='relative'>
-                  <Tag className='absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400' />
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className='w-full bg-background border border-border-custom rounded-xl pl-12 pr-4 py-3.5 text-xs font-bold outline-none appearance-none'
-                  >
-                    <option value='' disabled>
-                      Selecionar...
-                    </option>
-                    {allCategories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
+                  <Tag className='pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground' />
+                  <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger id='tx-category' className='pl-12 pr-4 text-xs'>
+                      <SelectValue placeholder='Selecionar...' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allCategories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
               {/* DATA REAL */}
-              <div className='space-y-2'>
-                <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
-                  Data da Compra
-                </label>
-                <div className='relative'>
-                  <Calendar className='absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400' />
-                  <input
-                    type='date'
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className='w-full bg-background border border-border-custom rounded-xl pl-12 pr-4 py-3.5 text-xs font-bold outline-none'
-                  />
-                </div>
+              <div className='flex flex-col gap-2'>
+                <Label htmlFor='tx-date'>Data da Compra</Label>
+                <DatePicker
+                  id='tx-date'
+                  value={date}
+                  onChange={setDate}
+                  className='text-xs'
+                />
               </div>
             </div>
           </div>
 
           {/* ACTIONS */}
           <div className='pt-4 flex gap-3'>
-            <button
-              type='button'
+            <Button
+              variant='outline'
+              size='lg'
               onClick={onClose}
-              className='flex-1 py-4 bg-background border border-border-custom rounded-xl text-xs font-bold text-zinc-500'
+              className='flex-1 px-4'
             >
               CANCELAR
-            </button>
-            <button
+            </Button>
+            <Button
+              size='lg'
               onClick={handleSubmit}
               disabled={isPending}
-              className={`flex-1 py-4 text-white rounded-xl text-xs font-black tracking-widest flex items-center justify-center gap-2 ${
-                type === 'income' ? 'bg-emerald-600' : 'bg-rose-600'
-              }`}
+              className='flex-1 px-4'
             >
               {isPending ? (
                 <Loader2 className='w-4 h-4 animate-spin' />
               ) : (
                 'SALVAR'
               )}
-            </button>
+            </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </Card>
+    </DialogOverlay>
   );
 }

@@ -1,9 +1,16 @@
 'use client';
 
-import React, { useState, useTransition, useEffect } from 'react';
-import { X, Target, DollarSign, Calendar, Loader2 } from 'lucide-react';
+import React, { useState, useTransition, useEffect, useId } from 'react';
+import { Target, DollarSign, Loader2 } from 'lucide-react';
 import { createGoal, updateGoal } from '../_actions/goals'; // Importada a função updateGoal
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
+import { DialogCloseButton, DialogOverlay } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 interface GoalDialogProps {
   isOpen: boolean;
@@ -30,7 +37,7 @@ export default function GoalDialog({
         setTargetAmount(editData.targetAmount.toString());
         setCurrentAmount(editData.currentAmount.toString());
 
-        // Ajuste na lógica de data para preencher o input type="date"
+        // Ajuste na lógica de data para preencher o campo de data (aaaa-mm-dd)
         if (editData.deadline) {
           // Se a data vier do banco como objeto Date ou string ISO
           const d = new Date(editData.deadline);
@@ -48,6 +55,9 @@ export default function GoalDialog({
       }
     }
   }, [editData, isOpen]);
+
+  const titleId = useId();
+  const panelRef = useModalBehavior<HTMLDivElement>({ isOpen, onClose });
 
   if (!isOpen) return null;
 
@@ -87,109 +97,104 @@ export default function GoalDialog({
   }
 
   return (
-    <div className='fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300'>
-      <div className='w-full max-w-md bg-surface border border-border-custom rounded-2xl shadow-2xl relative animate-in zoom-in duration-200 overflow-hidden'>
+    <DialogOverlay className='animate-in fade-in duration-150'>
+      <Card
+        ref={panelRef}
+        role='dialog'
+        aria-modal='true'
+        aria-labelledby={titleId}
+        className='w-full max-w-md shadow-hard-lg relative animate-in fade-in zoom-in-95 duration-150'
+      >
         {/* HEADER */}
-        <div className='flex justify-between items-center p-6 border-b border-border-custom'>
-          <h2 className='text-lg font-black text-foreground flex items-center gap-2 uppercase tracking-tight'>
-            <div className='p-2 bg-emerald-500/10 rounded-lg'>
-              <Target className='w-5 h-5 text-emerald-600 dark:text-emerald-500' />
-            </div>
+        <CardHeader className='px-6 py-4'>
+          <h2
+            id={titleId}
+            className='text-base font-bold flex items-center gap-2'
+          >
+            <Target className='w-5 h-5' />
             {editData ? 'Editar Meta' : 'Nova Meta'}
           </h2>
-          <button
-            onClick={onClose}
-            className='text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-colors p-1'
-          >
-            <X className='w-5 h-5' />
-          </button>
-        </div>
+          <DialogCloseButton onClick={onClose} />
+        </CardHeader>
 
         {/* FORMULÁRIO */}
         <div className='p-6 space-y-5'>
-          <div className='space-y-2'>
-            <label className='text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest'>
-              Nome do Objetivo
-            </label>
-            <input
+          <div className='flex flex-col gap-2'>
+            <Label htmlFor='goal-name'>Nome do Objetivo</Label>
+            <Input
+              id='goal-name'
               type='text'
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder='Ex: Viagem, Carro Novo...'
-              className='w-full bg-background border border-border-custom rounded-xl px-4 py-3 text-sm font-bold text-foreground focus:border-emerald-500 outline-none transition-all placeholder:text-zinc-500 shadow-sm'
             />
           </div>
 
           <div className='grid grid-cols-2 gap-4'>
-            <div className='space-y-2'>
-              <label className='text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest'>
-                Valor Alvo
-              </label>
+            <div className='flex flex-col gap-2'>
+              <Label htmlFor='goal-target'>Valor Alvo</Label>
               <div className='relative'>
-                <DollarSign className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400' />
-                <input
+                <DollarSign className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground' />
+                <Input
+                  id='goal-target'
                   type='number'
                   value={targetAmount}
                   onChange={(e) => setTargetAmount(e.target.value)}
                   placeholder='0,00'
-                  className='w-full bg-background border border-border-custom rounded-xl pl-10 pr-4 py-3 text-sm font-bold text-foreground focus:border-emerald-500 outline-none transition-all shadow-sm'
+                  className='pl-10'
                 />
               </div>
             </div>
 
-            <div className='space-y-2'>
-              <label className='text-[10px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest'>
-                Guardado (R$)
-              </label>
+            <div className='flex flex-col gap-2'>
+              <Label htmlFor='goal-current' className='text-income'>
+                {/* normal-case: o Label força minúsculas, mas "R$" não muda */}
+                Guardado (<span className='normal-case'>R$</span>)
+              </Label>
               <div className='relative'>
-                <DollarSign className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500/50' />
-                <input
+                <DollarSign className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-income' />
+                <Input
+                  id='goal-current'
                   type='number'
                   value={currentAmount}
                   onChange={(e) => setCurrentAmount(e.target.value)}
-                  className='w-full bg-background border border-emerald-500/20 rounded-xl pl-10 pr-4 py-3 text-sm font-bold text-foreground focus:border-emerald-500 outline-none transition-all shadow-sm'
+                  className='pl-10'
                 />
               </div>
             </div>
           </div>
 
-          <div className='space-y-2'>
-            <label className='text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest'>
-              Prazo Final (Opcional)
-            </label>
-            <div className='relative'>
-              <Calendar className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400' />
-              <input
-                type='date'
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
-                className='w-full bg-background border border-border-custom rounded-xl pl-10 pr-4 py-3 text-sm font-bold text-foreground focus:border-emerald-500 outline-none transition-all dark:[&::-webkit-calendar-picker-indicator]:invert shadow-sm'
-              />
-            </div>
+          <div className='flex flex-col gap-2'>
+            <Label htmlFor='goal-deadline'>Prazo Final (Opcional)</Label>
+            {/* Opcional: "limpar data" volta para sem prazo */}
+            <DatePicker
+              id='goal-deadline'
+              value={deadline}
+              onChange={setDeadline}
+              placeholder='Sem prazo'
+              clearable
+            />
           </div>
         </div>
 
         {/* FOOTER */}
-        <div className='p-6 border-t border-border-custom flex gap-3 bg-zinc-50/50 dark:bg-transparent'>
-          <button
-            onClick={onClose}
-            className='flex-1 px-4 py-3 bg-zinc-100 dark:bg-zinc-900 border border-border-custom rounded-xl text-xs font-black text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:text-white transition-all uppercase tracking-widest'
-          >
+        <div className='p-6 border-t border-border-custom flex gap-3'>
+          <Button variant='outline' onClick={onClose} className='flex-1 px-4'>
             CANCELAR
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleSubmit}
             disabled={isPending}
-            className='flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 uppercase tracking-widest'
+            className='flex-1 px-4'
           >
             {isPending ? (
               <Loader2 className='w-4 h-4 animate-spin' />
             ) : (
               'SALVAR META'
             )}
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+      </Card>
+    </DialogOverlay>
   );
 }

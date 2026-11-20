@@ -7,13 +7,11 @@ export const getAvatarData = (name: string = 'Usuário') => {
     .slice(0, 2)
     .toUpperCase();
 
+  // Cores sólidas dos tokens, cada uma com sua cor de texto legível
   const themes = [
-    'from-emerald-500 to-teal-600',
-    'from-blue-500 to-indigo-600',
-    'from-purple-500 to-pink-600',
-    'from-orange-500 to-rose-600',
-    'from-cyan-500 to-blue-600',
-    'from-yellow-500 to-orange-600',
+    'bg-highlight text-highlight-foreground',
+    'bg-ai text-ai-foreground',
+    'bg-band text-band-foreground',
   ];
 
   const charSum = name

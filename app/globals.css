@@ -1,31 +1,193 @@
 @import 'tailwindcss';
 
-@custom-variant dark (&:is(.dark *));
+/* Animações de entrada/saída (animate-in, fade-in, zoom-in, slide-in-from-*).
+   O tailwindcss-animate já era dependência, mas não estava registrado no v4. */
+@plugin 'tailwindcss-animate';
 
-@variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 
-/* 1. VARIÁVEIS DE TEMA COM ESPECIFICIDADE REFORÇADA */
+/*
+ * 1. TOKENS DO TEMA (neo-brutalista)
+ * Todas as cores do app saem daqui. Cada token tem um valor por modo;
+ * os componentes usam só as classes do Tailwind geradas a partir deles
+ * (bg-surface, border-ink, text-income...), sem prefixo dark:.
+ * Pares "-foreground" são a cor de texto legível sobre aquele fundo.
+ */
+:root {
+  /* Controles nativos (lista do select, calendário) acompanham o modo */
+  color-scheme: light;
+  --radius: 0.5rem;
+
+  /* Superfícies e texto */
+  --background: #f7f7f5;
+  --surface: #ffffff;
+  --surface-muted: #efefec;
+  --foreground: #111111;
+  --muted-foreground: #52525b;
+
+  /* Contorno pesado e sombra dura (o efeito "adesivo") */
+  --ink: #111111;
+  /* Divisórias finas, para separar itens sem peso visual */
+  --border-custom: #e4e4df;
+
+  /* Faixa de cabeçalho dos cards: um tom acima da superfície, sem inverter
+     em nenhum modo (a separação vem da borda inferior ink do CardHeader) */
+  --band: var(--surface-muted);
+  --band-foreground: var(--foreground);
+
+  /* Destaques (usar com moderação) */
+  --highlight: #d1157f;
+  --highlight-foreground: #ffffff;
+  --ai: #6c3cf0;
+  --ai-foreground: #ffffff;
+
+  /* Semânticas: entrada, saída e alerta */
+  --income: #047857;
+  --income-foreground: #ffffff;
+  --expense: #be123c;
+  --expense-foreground: #ffffff;
+  --warning: #b45309;
+  --warning-foreground: #ffffff;
+
+  /* Botão de perigo: preenchido no claro, contornado no escuro */
+  --danger: var(--expense);
+  --danger-foreground: var(--expense-foreground);
+  --danger-border: var(--ink);
+
+  /* Fundo escurecido atrás de menus e diálogos */
+  --overlay: rgb(17 17 17 / 0.5);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #111111;
+  --surface: #1c1c1c;
+  --surface-muted: #262626;
+  --foreground: #f7f7f5;
+  --muted-foreground: #a1a1aa;
+
+  /* Claro no escuro: a sombra continua visível sobre o fundo preto */
+  --ink: #f7f7f5;
+  --border-custom: #2e2e2e;
+
+  --highlight: #ff5cb4;
+  --highlight-foreground: #111111;
+  --ai: #a98bff;
+  --ai-foreground: #111111;
+
+  --income: #34d399;
+  --income-foreground: #111111;
+  --expense: #fb7185;
+  --expense-foreground: #111111;
+  --warning: #fbbf24;
+  --warning-foreground: #111111;
+
+  /* Rosa chapado pesa demais no escuro: superfície com texto e contorno em --expense */
+  --danger: var(--surface);
+  --danger-foreground: var(--expense);
+  --danger-border: var(--expense);
+
+  --overlay: rgb(0 0 0 / 0.7);
+}
+
+/*
+ * 2. ALIASES DO SHADCN
+ * Os nomes que o shadcn/sonner esperam apontam para os tokens acima,
+ * para não existirem duas paletas paralelas.
+ */
+:root {
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --primary: var(--foreground);
+  --primary-foreground: var(--background);
+  --secondary: var(--surface-muted);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--surface-muted);
+  --accent: var(--surface-muted);
+  --accent-foreground: var(--foreground);
+  --destructive: var(--expense);
+  --border: var(--border-custom);
+  --input: var(--ink);
+  --ring: var(--ai);
+  --chart-1: var(--income);
+  --chart-2: var(--expense);
+  --chart-3: var(--ai);
+  --chart-4: var(--highlight);
+  --chart-5: var(--warning);
+}
+
+/* 3. MAPEAMENTO PARA O SISTEMA DE CORES DO TAILWIND */
+@theme inline {
+  --font-sans: var(--font-space-grotesk);
+  --font-mono: var(--font-space-mono);
+  --font-display: var(--font-space-mono);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-ink: var(--ink);
+  --color-border-custom: var(--border-custom);
+  --color-band: var(--band);
+  --color-band-foreground: var(--band-foreground);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
+  --color-ai: var(--ai);
+  --color-ai-foreground: var(--ai-foreground);
+  --color-income: var(--income);
+  --color-income-foreground: var(--income-foreground);
+  --color-expense: var(--expense);
+  --color-expense-foreground: var(--expense-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-overlay: var(--overlay);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Sombra dura: deslocada e sem blur. Segue --ink, então inverte no escuro */
+  --shadow-hard-sm: 2px 2px 0 0 var(--ink);
+  --shadow-hard: 4px 4px 0 0 var(--ink);
+  --shadow-hard-lg: 6px 6px 0 0 var(--ink);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+}
+
+/* 4. BASE */
 @layer base {
-  :root {
-    --background: #f9fafb; /* gray-50 */
-    --foreground: #111827; /* gray-900 */
-    --surface: #ffffff;
-    --border-custom: #e5e7eb; /* gray-200 */
-
-    --primary: #3713ec;
-    --primary-light: #6d52f5;
-    --primary-dark: #2a0eb5;
+  * {
+    @apply border-border outline-ring/50;
   }
 
-  /* A classe .dark agora é o único gatilho para o modo escuro manual */
-  .dark {
-    --background: #09090b; /* zinc-950 */
-    --foreground: #f9fafb; /* zinc-50 */
-    --surface: #121214; /* zinc-900 */
-    --border-custom: #27272a; /* zinc-800 */
-  }
-
-  /* RESET DE FUNDO: O !important aqui mata o "fundo preto teimoso" */
   html,
   body {
     background-color: var(--background);
@@ -36,60 +198,28 @@
       border-color 0.3s ease;
   }
 
-  /* Padronização de bordas para evitar que fiquem pretas no modo claro */
-  * {
-    border-color: var(--border-custom);
+  /* Títulos de página e de seção em fonte monoespaçada */
+  h1,
+  h2 {
+    font-family: var(--font-display);
   }
 }
 
-/* 2. MAPEAMENTO PARA O SISTEMA DE CORES DO TAILWIND */
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-surface: var(--surface);
-  --color-border-custom: var(--border-custom);
-
-  --color-primary: var(--primary);
-  --color-primary-light: var(--primary-light);
-  --color-primary-dark: var(--primary-dark);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+/* Movimento reduzido: quem pediu ao sistema menos animação vê os elementos
+   direto no lugar. Vale para as entradas/saídas (animate-in/out) e para o
+   "afundar" dos botões adesivos; spinners e pulsos de carregamento continuam,
+   porque indicam que algo está acontecendo. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-in,
+  .animate-out {
+    animation: none !important;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+  }
 }
 
-/* 3. UTILITÁRIOS ADICIONAIS */
+/* 5. UTILITÁRIOS ADICIONAIS */
 @layer utilities {
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
@@ -100,83 +230,5 @@
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: var(--border-custom);
     border-radius: 10px;
-  }
-}
-
-:root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
   }
 }

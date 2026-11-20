@@ -12,6 +12,11 @@ import {
 } from 'lucide-react';
 import TransactionDialog from './TransactionDialog';
 import {
+  ChartLegend,
+  ChartTooltip,
+  stickerShape,
+} from './ChartParts';
+import {
   Bar,
   BarChart,
   CartesianGrid,
@@ -24,6 +29,17 @@ import {
   Pie,
 } from 'recharts';
 import { currentMonthISO } from '@/app/utils/dates';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { StatCard } from './StatCard';
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
 
 export default function DashboardClient({
   initialTransactions,
@@ -31,6 +47,12 @@ export default function DashboardClient({
   initialTransactions: any[];
 }) {
   const router = useRouter();
+  // Gráficos: animação curta (300 ms) e desligada com movimento reduzido
+  const reducedMotion = useReducedMotion();
+  const chartAnimation = {
+    isAnimationActive: !reducedMotion,
+    animationDuration: 300,
+  };
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [transactions, setTransactions] = useState(initialTransactions);
   const [range, setRange] = useState(6);
@@ -170,212 +192,231 @@ export default function DashboardClient({
       {/* HEADER */}
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-10 lg:pt-0'>
         <div>
-          <h1 className='text-xl sm:text-2xl font-black uppercase tracking-tight'>
+          <h1 className='text-xl sm:text-2xl font-bold lowercase'>
             Visão Geral
           </h1>
-          <p className='text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium'>
+          <p className='text-muted-foreground text-xs sm:text-sm font-medium'>
             Análise baseada no mês de competência.
           </p>
         </div>
-        <div className='flex gap-2 w-full sm:w-auto'>
-          <button
+        <div className='flex gap-3 w-full sm:w-auto'>
+          <Button
+            variant='ai'
             onClick={() => router.push('/import')}
-            className='flex-1 sm:flex-none flex items-center justify-center gap-2 bg-surface border border-border-custom px-4 py-2.5 rounded-xl text-xs font-black tracking-widest hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all shadow-sm uppercase'
+            className='flex-1 sm:flex-none'
           >
-            <Sparkles className='w-4 h-4 text-purple-500' /> Importar IA
-          </button>
-          <button
+            <Sparkles className='w-4 h-4' /> Importar IA
+          </Button>
+          <Button
             onClick={() => setIsModalOpen(true)}
-            className='flex-1 sm:flex-none flex items-center justify-center gap-2 bg-emerald-600 px-6 py-2.5 rounded-xl text-xs font-black tracking-widest text-white hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-500/20 uppercase'
+            className='flex-1 sm:flex-none'
           >
             <Plus className='w-4 h-4' /> Nova
-          </button>
+          </Button>
         </div>
       </div>
 
-      {/* CARDS */}
+      {/* CARDS: faixa com o rótulo e o valor grande embaixo */}
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
-        <div className='bg-surface border border-border-custom p-6 rounded-2xl relative overflow-hidden shadow-sm'>
-          <p className='text-zinc-500 dark:text-zinc-400 text-[10px] uppercase font-black tracking-[0.15em] mb-1'>
-            Saldo Atual
-          </p>
-          <h3 className='text-2xl sm:text-3xl font-black text-foreground tracking-tight'>
-            {formatMoney(balance)}
-          </h3>
-          <p className='text-zinc-500 dark:text-zinc-400 text-[11px] font-bold mt-1'>
-            Meses anteriores: {formatMoney(previousBalance)}
-          </p>
-          <Wallet className='absolute -right-2 -bottom-2 w-16 h-16 text-zinc-900/5 dark:text-white/5' />
-        </div>
-        <div className='bg-surface border border-border-custom p-6 rounded-2xl flex justify-between items-center shadow-sm'>
-          <div>
-            <p className='text-zinc-500 dark:text-zinc-400 text-[10px] uppercase font-black tracking-[0.15em] mb-1'>
-              Receitas
-            </p>
-            <h3 className='text-2xl font-black text-emerald-600 dark:text-emerald-500 tracking-tight'>
-              {formatMoney(totalIncome)}
-            </h3>
-          </div>
-          <ArrowUpCircle className='w-8 h-8 text-emerald-500 opacity-20' />
-        </div>
-        <div className='bg-surface border border-border-custom p-6 rounded-2xl flex justify-between items-center shadow-sm'>
-          <div>
-            <p className='text-zinc-500 dark:text-zinc-400 text-[10px] uppercase font-black tracking-[0.15em] mb-1'>
-              Despesas
-            </p>
-            <h3 className='text-2xl font-black text-rose-600 dark:text-rose-500 tracking-tight'>
-              {formatMoney(totalExpense)}
-            </h3>
-          </div>
-          <ArrowDownCircle className='w-8 h-8 text-rose-500 opacity-20' />
-        </div>
+        <StatCard
+          label='Saldo Atual'
+          icon={Wallet}
+          value={formatMoney(balance)}
+          note={`Meses anteriores: ${formatMoney(previousBalance)}`}
+        />
+        <StatCard
+          label='Receitas'
+          icon={ArrowUpCircle}
+          value={formatMoney(totalIncome)}
+          tone='income'
+        />
+        <StatCard
+          label='Despesas'
+          icon={ArrowDownCircle}
+          value={formatMoney(totalExpense)}
+          tone='expense'
+        />
       </div>
 
       {/* GRÁFICOS */}
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8'>
-        <div className='lg:col-span-2 bg-surface border border-border-custom p-4 sm:p-6 rounded-2xl min-h-[350px] sm:h-[450px] shadow-sm'>
-          <div className='flex items-center justify-between mb-8'>
-            <h3 className='font-black text-foreground text-xs sm:text-sm uppercase tracking-widest'>
-              Fluxo Mensal
-            </h3>
-            <select
-              value={range}
-              onChange={(e) => setRange(Number(e.target.value))}
-              className='bg-background border border-border-custom text-[10px] sm:text-xs text-zinc-500 rounded-lg px-2 py-1.5 outline-none font-bold uppercase'
+        <Card className='lg:col-span-2 flex flex-col'>
+          <CardHeader>
+            <h2 className='font-bold'>Fluxo Mensal</h2>
+            <Select
+              value={String(range)}
+              onValueChange={(v) => setRange(Number(v))}
             >
-              <option value={3}>3 meses</option>
-              <option value={6}>6 meses</option>
-              <option value={12}>1 ano</option>
-            </select>
-          </div>
-          <ResponsiveContainer width='100%' height='85%'>
-            <BarChart data={chartData}>
-              <CartesianGrid
-                strokeDasharray='3 3'
-                vertical={false}
-                stroke='currentColor'
-                className='text-zinc-200 dark:text-zinc-800'
-              />
-              <XAxis
-                dataKey='name'
-                axisLine={false}
-                tickLine={false}
-                tick={{
-                  fill: 'currentColor',
-                  fontSize: 10,
-                  fontWeight: 'bold',
-                }}
-                dy={10}
-              />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{
-                  fill: 'currentColor',
-                  fontSize: 10,
-                  fontWeight: 'bold',
-                }}
-              />
-              <Tooltip
-                cursor={{ fill: 'currentColor', opacity: 0.05 }}
-                contentStyle={{
-                  backgroundColor: 'var(--surface)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '12px',
-                }}
-                formatter={(v: any) => formatMoney(v)}
-              />
-              <Bar dataKey='receitas' fill='#10b981' radius={[4, 4, 0, 0]} />
-              <Bar dataKey='despesas' fill='#ef4444' radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+              <SelectTrigger
+                size='sm'
+                aria-label='Período do gráfico'
+                className='w-auto'
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='3'>3 meses</SelectItem>
+                <SelectItem value='6'>6 meses</SelectItem>
+                <SelectItem value='12'>1 ano</SelectItem>
+              </SelectContent>
+            </Select>
+          </CardHeader>
+          {/* O gráfico ocupa a área que sobra; o absolute dá a ele uma altura
+              definida, mesmo quando o card estica para acompanhar o vizinho */}
+          <CardContent className='flex-1 flex flex-col p-4 sm:p-6'>
+            <ChartLegend />
+            {/* Ticks herdam a cor (currentColor) e a fonte mono deste wrapper */}
+            <div className='relative flex-1 min-h-72 sm:min-h-80 text-muted-foreground [&_.recharts-cartesian-axis-tick-value]:font-mono [&_.recharts-cartesian-axis-tick-value]:lowercase'>
+              <div className='absolute inset-0'>
+                <ResponsiveContainer width='100%' height='100%'>
+                  <BarChart data={chartData} barGap={6}>
+                    <CartesianGrid
+                      vertical={false}
+                      stroke='currentColor'
+                      className='text-border-custom'
+                    />
+                    <XAxis
+                      dataKey='name'
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{
+                        fill: 'currentColor',
+                        fontSize: 11,
+                        fontWeight: 'bold',
+                      }}
+                      dy={10}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{
+                        fill: 'currentColor',
+                        fontSize: 11,
+                        fontWeight: 'bold',
+                      }}
+                    />
+                    <Tooltip
+                      cursor={{ fill: 'currentColor', opacity: 0.08 }}
+                      content={(props) => (
+                        <ChartTooltip {...props} formatValue={formatMoney} />
+                      )}
+                    />
+                    <Bar
+                      dataKey='receitas'
+                      maxBarSize={32}
+                      {...chartAnimation}
+                      shape={stickerShape('receitas')}
+                    />
+                    <Bar
+                      dataKey='despesas'
+                      maxBarSize={32}
+                      {...chartAnimation}
+                      shape={stickerShape('despesas')}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* CATEGORIAS */}
-        <div className='bg-surface border border-border-custom p-4 sm:p-6 rounded-2xl flex flex-col min-h-[400px] shadow-sm'>
-          <div className='flex items-center justify-between mb-1'>
-            <h3 className='font-black text-foreground text-xs sm:text-sm uppercase tracking-widest'>
-              Categorias
-            </h3>
-            <select
+        <Card className='flex flex-col min-h-100'>
+          <CardHeader>
+            <h2 className='font-bold'>Categorias</h2>
+            <Select
               value={categoryTimeRange}
-              onChange={(e) => setCategoryTimeRange(e.target.value)}
-              className='bg-background border border-border-custom text-[10px] text-zinc-500 rounded-lg px-2 py-1 outline-none font-bold uppercase cursor-pointer max-w-[150px]'
+              onValueChange={setCategoryTimeRange}
             >
-              <option value='all'>Todos os meses</option>
-              {availableMonths.map((m) => (
-                <option key={m} value={m}>
-                  {new Date(m + '-02').toLocaleDateString('pt-BR', {
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                </option>
-              ))}
-            </select>
-          </div>
-          <p className='text-[10px] text-zinc-500 mb-6 uppercase tracking-[0.2em] font-bold'>
-            Análise de Gastos
-          </p>
+              <SelectTrigger
+                size='sm'
+                aria-label='Mês das categorias'
+                className='w-auto max-w-40'
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>Todos os meses</SelectItem>
+                {availableMonths.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {new Date(m + '-02').toLocaleDateString('pt-BR', {
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardHeader>
 
-          <div className='h-48 sm:h-56 relative'>
-            <ResponsiveContainer width='100%' height='100%'>
-              <PieChart>
-                <Pie
-                  data={categoryData}
-                  innerRadius={65}
-                  outerRadius={85}
-                  paddingAngle={5}
-                  dataKey='value'
-                  stroke='none'
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell
-                      key={index}
-                      fill={entry.color}
-                      style={{ outline: 'none' }}
-                    />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-            <div className='absolute inset-0 flex flex-col items-center justify-center pointer-events-none'>
-              <PieIcon className='w-4 h-4 text-zinc-400 mb-1' />
-              <span className='text-foreground font-black text-[11px]'>
-                {formatMoney(totalCategoryExpense)}
-              </span>
+          <CardContent className='flex-1 flex flex-col p-4 sm:p-6'>
+            <p className='text-xs text-muted-foreground font-medium lowercase mb-4'>
+              Análise de Gastos
+            </p>
+
+            {/* Contorno ink nas fatias via CSS: vence o atributo stroke do SVG */}
+            <div className='h-48 sm:h-56 relative [&_.recharts-sector]:stroke-ink [&_.recharts-sector]:stroke-2'>
+              <ResponsiveContainer width='100%' height='100%'>
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    innerRadius={65}
+                    outerRadius={85}
+                    paddingAngle={2}
+                    dataKey='value'
+                    {...chartAnimation}
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell
+                        key={index}
+                        fill={entry.color}
+                        style={{ outline: 'none' }}
+                      />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+              <div className='absolute inset-0 flex flex-col items-center justify-center pointer-events-none'>
+                <PieIcon
+                  className='w-4 h-4 text-muted-foreground mb-1'
+                  aria-hidden='true'
+                />
+                <span className='text-sm font-bold tabular-nums'>
+                  {formatMoney(totalCategoryExpense)}
+                </span>
+              </div>
             </div>
-          </div>
 
-          <div className='mt-6 space-y-3 flex-1 overflow-y-auto pr-2 custom-scrollbar text-foreground'>
-            {categoryData.length > 0 ? (
-              categoryData.map((cat, i) => (
-                <div
-                  key={i}
-                  className='flex justify-between items-center group'
-                >
-                  <div className='flex items-center gap-2'>
-                    <div
-                      className='w-2 h-2 rounded-full'
-                      style={{ backgroundColor: cat.color }}
-                    />
-                    <span className='text-[11px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-tight truncate max-w-[120px]'>
-                      {cat.name}
+            {/* LEGENDA */}
+            <div className='mt-6 space-y-3 flex-1 overflow-y-auto pr-2 custom-scrollbar'>
+              {categoryData.length > 0 ? (
+                categoryData.map((cat, i) => (
+                  <div key={i} className='flex justify-between items-center gap-3'>
+                    <div className='flex items-center gap-2 min-w-0'>
+                      <span
+                        className='size-3 shrink-0 rounded-full border-2 border-ink'
+                        style={{ backgroundColor: cat.color }}
+                        aria-hidden='true'
+                      />
+                      <span className='text-xs font-medium text-muted-foreground truncate'>
+                        {cat.name}
+                      </span>
+                    </div>
+                    <span className='text-xs font-bold tabular-nums shrink-0'>
+                      {formatMoney(cat.value)}
                     </span>
                   </div>
-                  <span className='text-[11px] font-black'>
-                    {formatMoney(cat.value)}
-                  </span>
+                ))
+              ) : (
+                <div className='flex flex-col items-center justify-center h-full'>
+                  <p className='text-xs font-medium text-muted-foreground lowercase'>
+                    Sem dados
+                  </p>
                 </div>
-              ))
-            ) : (
-              <div className='flex flex-col items-center justify-center h-full text-zinc-500 gap-2 opacity-50'>
-                <p className='text-[10px] font-bold uppercase tracking-widest'>
-                  Sem dados
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -1,17 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { MoreHorizontal, Trash2, Edit2, Loader2 } from 'lucide-react';
 import { deleteTransaction } from '@/app/_actions/transactions';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import ConfirmDialog from '@/app/_Components/ConfirmDialog';
+import { Button } from '@/components/ui/button';
 
 interface RowActionsProps {
   transactionId: string;
   onEdit: () => void;
   isLast?: boolean;
 }
+
+const menuItemClass =
+  'w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium lowercase rounded-lg transition-colors hover:bg-surface-muted focus-visible:bg-surface-muted outline-none';
 
 export function TransactionRowActions({
   transactionId,
@@ -21,6 +25,8 @@ export function TransactionRowActions({
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  // Botão "…": é para ele que o foco volta quando o diálogo de exclusão fecha
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
 
   const handleDelete = async () => {
@@ -47,56 +53,65 @@ export function TransactionRowActions({
     <div
       className={`relative flex items-center justify-center ${isOpen ? 'z-50' : 'z-auto'}`}
     >
-      <button
+      <Button
+        ref={triggerRef}
+        variant='ghost'
+        size='icon'
         onClick={() => setIsOpen(!isOpen)}
         disabled={isDeleting}
-        className='text-zinc-500 hover:text-foreground p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all active:scale-90 disabled:opacity-50'
+        aria-label='Ações da transação'
+        aria-expanded={isOpen}
+        className='size-8 text-muted-foreground hover:text-foreground'
       >
         {isDeleting ? (
-          <Loader2 className='w-4 h-4 animate-spin text-primary' />
+          <Loader2 className='w-4 h-4 animate-spin' />
         ) : (
           <MoreHorizontal className='w-4 h-4' />
         )}
-      </button>
+      </Button>
 
       {isOpen && (
         <>
           {/* Overlay fixo para fechar e garantir que o clique fora funcione */}
           <div
-            className='fixed inset-0 z-[80] bg-transparent'
+            className='fixed inset-0 z-80 bg-transparent'
             onClick={() => setIsOpen(false)}
           />
 
+          {/* Menu "adesivo" */}
           <div
             className={`
-              absolute right-0 w-40 
-              bg-surface border border-border-custom rounded-2xl shadow-2xl z-[110] 
-              overflow-hidden animate-in fade-in zoom-in duration-200
+              absolute right-0 w-40 p-1
+              bg-surface border-2 border-ink rounded-xl shadow-hard z-110
+              animate-in fade-in zoom-in-95 duration-150
               ${isLast ? 'bottom-full mb-2' : 'top-full mt-2'}
             `}
           >
-            <div className='p-1.5 flex flex-col gap-1'>
-              <button
-                onClick={() => {
-                  onEdit();
-                  setIsOpen(false);
-                }}
-                className='w-full flex items-center gap-2.5 px-3 py-2.5 text-[11px] font-black uppercase tracking-tight text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors group'
-              >
-                <Edit2 className='w-3.5 h-3.5 text-zinc-400 group-hover:text-emerald-500 transition-colors' />
-                Editar
-              </button>
+            <button
+              onClick={() => {
+                onEdit();
+                setIsOpen(false);
+              }}
+              className={`${menuItemClass} text-foreground`}
+            >
+              <Edit2 className='w-4 h-4 text-muted-foreground' />
+              Editar
+            </button>
 
-              <div className='h-px bg-border-custom mx-2' />
+            <div className='h-px bg-border-custom mx-2 my-1' />
 
-              <button
-                onClick={() => setIsConfirmOpen(true)}
-                className='w-full flex items-center gap-2.5 px-3 py-2.5 text-[11px] font-black uppercase tracking-tight text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors group'
-              >
-                <Trash2 className='w-3.5 h-3.5 text-rose-400 group-hover:text-rose-500 transition-colors' />
-                Excluir
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                // Fecha o menu: o foco volta para o "…" (returnFocusRef),
+                // e não para este item, que deixa de existir
+                setIsOpen(false);
+                setIsConfirmOpen(true);
+              }}
+              className={`${menuItemClass} text-expense`}
+            >
+              <Trash2 className='w-4 h-4' />
+              Excluir
+            </button>
           </div>
         </>
       )}
@@ -108,6 +123,7 @@ export function TransactionRowActions({
         isLoading={isDeleting}
         title='Excluir Transação'
         description='Tem certeza que deseja remover esta transação? Essa ação não poderá ser desfeita.'
+        returnFocusRef={triggerRef}
       />
     </div>
   );

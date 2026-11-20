@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { generateDueRecurring, getRecurringRules } from '@/app/_actions/recurring';
 import { getCategories } from '@/app/_actions/categories';
 import RecurringClient from '@/app/_Components/RecurringClient';
-import CategoriesSkeleton from '@/app/_Components/categoriesSkeleton';
+import RecurringSkeleton from '@/app/_Components/RecurringSkeleton';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +24,7 @@ async function RecurringData() {
 
 export default function RecurringPage() {
   return (
-    <Suspense fallback={<CategoriesSkeleton />}>
+    <Suspense fallback={<RecurringSkeleton />}>
       <RecurringData />
     </Suspense>
   );
