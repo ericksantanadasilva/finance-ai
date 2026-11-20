@@ -28,7 +28,26 @@ model User {
   categories     Category[]
   goals          Goal[]
   recurringRules RecurringRule[]
+  mobileSessions MobileSession[]
   settings       Json?
+}
+
+// Sessão do app mobile: uma por aparelho. Guarda só o hash (SHA-256) do refresh
+// token; o token em si fica apenas no aparelho. Revogar = preencher revokedAt.
+model MobileSession {
+  id               String    @id @default(cuid())
+  refreshTokenHash String    @unique // trocado a cada refresh (rotação)
+  deviceName       String? // ex: "iPhone de Erick", informado pelo app
+  platform         String? // 'ios' | 'android'
+  createdAt        DateTime  @default(now())
+  lastUsedAt       DateTime  @default(now())
+  expiresAt        DateTime
+  revokedAt        DateTime?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Category {
