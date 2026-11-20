@@ -94,9 +94,9 @@ Erros: 400 (validação), 401 (token), 404 (não existe ou é de outro usuário)
 
 Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commit.
 
-- [ ] **1a** Extrair transações e categorias para `lib/finance` (sem mudar comportamento)
-- [ ] **1b** Extrair recorrências
-- [ ] **1c** Extrair metas e perfil; `chat.ts` passa a usar os services
+- [x] **1a** Extrair transações e categorias para `lib/finance` (sem mudar comportamento)
+- [x] **1b** Extrair recorrências
+- [x] **1c** Extrair metas e perfil; `chat.ts` passa a usar os services
 - [ ] **2a** Migration `MobileSession` (refresh tokens), **só depois do banco de dev**
 - [ ] **2b** Instalar `jose`; criar os helpers de token e o `requireMobileUser`; exportar `linkGoogleAccount`
 - [ ] **2c** Rotas `auth/google`, `auth/refresh`, `auth/logout`, `GET /me`; client IDs de Android e iOS
