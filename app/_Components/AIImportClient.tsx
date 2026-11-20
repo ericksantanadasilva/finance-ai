@@ -10,6 +10,8 @@ import {
   Trash2,
   Save,
   CalendarDays,
+  FileText,
+  AlertTriangle,
 } from 'lucide-react';
 import { processFileWithAI, saveTransactions } from '@/app/_actions/ai-import';
 import { getCategories } from '@/app/_actions/categories';
@@ -22,6 +24,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/date-picker';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+import TypeIcon from './TypeIcon';
 import { toast } from 'sonner';
 
 // Server Actions aceitam no máximo 1 MB por requisição e o base64 aumenta o arquivo em ~33%
@@ -36,6 +44,9 @@ export default function AIImportClient() {
   );
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Último erro (arquivo inválido ou falha da IA), mostrado junto da área de
+  // envio até um novo arquivo ser escolhido. Os toasts continuam iguais.
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [selectedMonth, setSelectedMonth] = useState(
     currentMonthISO(),
@@ -55,6 +66,7 @@ export default function AIImportClient() {
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setFiles(acceptedFiles);
+    setErrorMessage(null);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -65,8 +77,11 @@ export default function AIImportClient() {
     },
     multiple: false,
     maxSize: MAX_IMPORT_FILE_BYTES,
-    onDropRejected: () =>
-      toast.error('Arquivo inválido. Envie PDF, JPG ou PNG de até 700 KB.'),
+    onDropRejected: () => {
+      const message = 'Arquivo inválido. Envie PDF, JPG ou PNG de até 700 KB.';
+      toast.error(message);
+      setErrorMessage(message);
+    },
   });
 
   const fileToBase64 = (file: File): Promise<string> => {
@@ -81,13 +96,18 @@ export default function AIImportClient() {
   const handleProcess = async () => {
     if (files.length === 0) return;
     setLoading(true);
+    setErrorMessage(null);
     try {
       const base64 = await fileToBase64(files[0]);
       const data = await processFileWithAI(base64, files[0].type);
       if (data) setResults(data);
-      else toast.error('Não foi possível processar o arquivo.');
+      else {
+        toast.error('Não foi possível processar o arquivo.');
+        setErrorMessage('Não foi possível processar o arquivo.');
+      }
     } catch (error) {
       toast.error('Erro ao ler o arquivo.');
+      setErrorMessage('Erro ao ler o arquivo.');
     } finally {
       setLoading(false);
     }
@@ -124,245 +144,320 @@ export default function AIImportClient() {
     }
   };
 
+  // Rótulo dos campos de cada item: visível na lista empilhada; quando o
+  // painel é largo (linha de tabela), o cabeçalho de colunas faz esse papel
+  const fieldLabel = 'text-xs text-muted-foreground @3xl:sr-only';
+
   return (
-    <div className='min-h-screen bg-background text-foreground p-4 sm:p-8 transition-all duration-300'>
-      <div className='mb-8 pt-12 lg:pt-0'>
-        <h1 className='text-xl sm:text-2xl font-bold'>
-          Importação Inteligente
-        </h1>
-        <p className='text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm'>
-          As transações serão agrupadas no mês de referência escolhido.
-        </p>
-      </div>
-
-      <div className='grid grid-cols-1 xl:grid-cols-2 gap-6'>
-        <div className='space-y-4'>
-          {/* CARD DE UPLOAD */}
-          <div className='bg-surface border-border-custom border rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm dark:shadow-2xl'>
-            {/* role="button": a área é focável e abre o seletor com Enter ou
-                Espaço (o react-dropzone cuida do teclado) */}
-            <div
-              {...getRootProps({
-                role: 'button',
-                'aria-label': files[0]
-                  ? `Arquivo selecionado: ${files[0].name}. Trocar arquivo`
-                  : 'Selecionar PDF ou foto da fatura',
-              })}
-              className={`outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background border-2 border-dashed rounded-xl p-6 sm:p-10 cursor-pointer transition-all flex flex-col items-center justify-center ${
-                isDragActive
-                  ? 'border-purple-500 bg-purple-500/10'
-                  : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-zinc-50 dark:bg-zinc-950/20'
-              }`}
-            >
-              <input {...getInputProps()} />
-              <UploadCloud className='w-10 h-10 text-zinc-400 dark:text-zinc-600 mb-3' />
-              <p className='text-sm text-zinc-600 dark:text-zinc-300 text-center font-medium'>
-                {files[0]?.name || 'Selecione o PDF ou Foto da Fatura'}
-              </p>
-            </div>
-
-            <button
-              onClick={handleProcess}
-              disabled={loading || files.length === 0}
-              className='w-full bg-purple-600 py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-purple-500 disabled:opacity-50 text-white text-sm font-bold shadow-lg shadow-purple-500/20'
-            >
-              {loading ? (
-                <Loader2 className='animate-spin w-4 h-4' />
-              ) : (
-                <Sparkles className='w-4 h-4' />
-              )}
-              {loading ? 'Analisando documento...' : 'Processar com IA'}
-            </button>
+    <div className='space-y-6'>
+      {/* ENVIO + MÊS DE REFERÊNCIA (o mês só aparece quando há itens) */}
+      <div
+        className={`grid grid-cols-1 gap-6 ${results.length > 0 ? 'lg:grid-cols-2' : ''}`}
+      >
+        {/* CARD DE UPLOAD */}
+        <Card className='p-5 sm:p-6 space-y-4'>
+          {/* role="button": a área é focável e abre o seletor com Enter ou
+              Espaço (o react-dropzone cuida do teclado) */}
+          <div
+            {...getRootProps({
+              role: 'button',
+              'aria-label': files[0]
+                ? `Arquivo selecionado: ${files[0].name}. Trocar arquivo`
+                : 'Selecionar PDF ou foto da fatura',
+            })}
+            className={cn(
+              'outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background border-2 border-dashed rounded-xl p-6 sm:p-10 cursor-pointer transition-colors flex flex-col items-center justify-center gap-3',
+              // Arrastando: destaque roxo (IA); com arquivo: contorno ink
+              isDragActive
+                ? 'border-solid border-ai bg-ai/10'
+                : files[0]
+                  ? 'border-ink bg-surface'
+                  : 'border-border-custom bg-surface-muted/40 hover:border-ink',
+            )}
+          >
+            <input {...getInputProps()} />
+            {files[0] ? (
+              <FileText className='w-10 h-10 text-foreground' aria-hidden='true' />
+            ) : (
+              <UploadCloud
+                className={cn(
+                  'w-10 h-10',
+                  isDragActive ? 'text-ai' : 'text-muted-foreground',
+                )}
+                aria-hidden='true'
+              />
+            )}
+            <p className='text-sm font-medium text-center wrap-break-word max-w-full'>
+              {files[0]?.name || 'Selecione o PDF ou Foto da Fatura'}
+            </p>
           </div>
 
-          {/* Anuncia o andamento para leitores de tela */}
-          <p role='status' className='sr-only'>
-            {loading
-              ? 'Analisando documento...'
-              : results.length > 0
-                ? `${results.length} itens prontos para conferência.`
-                : ''}
-          </p>
-
-          {/* SEÇÃO DO MÊS DE REFERÊNCIA */}
-          {results.length > 0 && (
-            <div className='bg-surface border-border-custom border rounded-2xl p-5 space-y-4 animate-in fade-in zoom-in'>
-              <div className='flex items-center gap-3 mb-2'>
-                <CalendarDays className='w-5 h-5 text-purple-500' />
-                <h3 className='text-sm font-bold'>
-                  <label htmlFor='import-month'>Mês de Referência</label>
-                </h3>
-              </div>
-              <p className='text-[10px] text-zinc-500 uppercase font-bold tracking-widest'>
-                Para qual fatura/mês são esses gastos?
-              </p>
-              <input
-                id='import-month'
-                type='month'
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className='w-full bg-background border-border-custom border rounded-xl px-4 py-3 text-sm focus:border-purple-500 outline-none transition-all dark:[&::-webkit-calendar-picker-indicator]:invert'
+          {/* ERRO: mesmo estilo do erro do Assistente */}
+          {errorMessage && (
+            <div className='flex items-start gap-2 rounded-xl border-2 border-expense bg-surface p-3 text-sm font-medium'>
+              <AlertTriangle
+                className='w-4 h-4 shrink-0 mt-0.5 text-expense'
+                aria-hidden='true'
               />
-
-              <button
-                onClick={handleSaveAll}
-                disabled={saving}
-                className='w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all mt-4'
-              >
-                {saving ? (
-                  <Loader2 className='animate-spin w-5 h-5' />
-                ) : (
-                  <Save className='w-5 h-5' />
-                )}
-                CONFIRMAR E SALVAR
-              </button>
+              {errorMessage}
             </div>
           )}
-        </div>
 
-        {/* ÁREA DE REVISÃO */}
-        <div className='bg-surface border-border-custom border rounded-2xl flex flex-col h-[500px] sm:h-[600px] overflow-hidden shadow-sm dark:shadow-2xl'>
-          <div className='p-4 border-b border-border-custom bg-zinc-50 dark:bg-zinc-950/50 flex justify-between items-center text-xs'>
-            <span className='font-bold text-zinc-600 dark:text-zinc-200'>
-              CONFERÊNCIA DOS DADOS
-            </span>
-            <span className='bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-2 py-0.5 rounded-full'>
-              {results.length} Itens
-            </span>
-          </div>
-
-          <div className='flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 custom-scrollbar'>
-            {results.length === 0 ? (
-              <div className='h-full flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-600 opacity-50'>
-                <Sparkles className='w-8 h-8 mb-2' />
-                <p className='text-xs italic'>Aguardando processamento...</p>
-              </div>
+          <Button
+            variant='ai'
+            size='lg'
+            onClick={handleProcess}
+            disabled={loading || files.length === 0}
+            className='w-full'
+          >
+            {loading ? (
+              <Loader2 className='animate-spin w-4 h-4' />
             ) : (
-              results.map((item, idx) => (
-                <div
+              <Sparkles className='w-4 h-4' />
+            )}
+            {loading ? 'Analisando documento...' : 'Processar com IA'}
+          </Button>
+        </Card>
+
+        {/* Anuncia o andamento para leitores de tela */}
+        <p role='status' className='sr-only'>
+          {loading
+            ? 'Analisando documento...'
+            : results.length > 0
+              ? `${results.length} itens prontos para conferência.`
+              : ''}
+        </p>
+
+        {/* SEÇÃO DO MÊS DE REFERÊNCIA */}
+        {results.length > 0 && (
+          <Card className='p-5 sm:p-6 space-y-4 animate-in fade-in zoom-in'>
+            <div className='flex items-center gap-2'>
+              <CalendarDays className='w-4 h-4' aria-hidden='true' />
+              <h3 className='text-sm font-bold lowercase'>
+                <label htmlFor='import-month'>Mês de Referência</label>
+              </h3>
+            </div>
+            <div className='space-y-1 text-xs text-muted-foreground font-medium'>
+              <p>Para qual fatura/mês são esses gastos?</p>
+              <p>As transações serão agrupadas no mês de referência escolhido.</p>
+            </div>
+            <Input
+              id='import-month'
+              type='month'
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+            />
+
+            <Button
+              size='lg'
+              onClick={handleSaveAll}
+              disabled={saving}
+              className='w-full'
+            >
+              {saving ? (
+                <Loader2 className='animate-spin w-5 h-5' />
+              ) : (
+                <Save className='w-5 h-5' />
+              )}
+              CONFIRMAR E SALVAR
+            </Button>
+          </Card>
+        )}
+      </div>
+
+      {/* ÁREA DE REVISÃO: linha de tabela quando o painel é largo (@3xl),
+          lista empilhada quando é estreito */}
+      <Card className='@container flex flex-col'>
+        <CardHeader>
+          <h2 className='font-bold'>Conferência dos Dados</h2>
+          <span className='rounded-md border-2 border-ink bg-surface px-2 py-0.5 text-xs font-bold tabular-nums'>
+            {results.length} Itens
+          </span>
+        </CardHeader>
+
+        {loading ? (
+          // CARREGANDO
+          <div className='min-h-60 flex flex-col items-center justify-center gap-3 p-8 text-center'>
+            <Sparkles className='w-8 h-8 text-ai animate-pulse' aria-hidden='true' />
+            <p className='text-sm font-medium text-muted-foreground lowercase'>
+              Analisando documento...
+            </p>
+          </div>
+        ) : results.length === 0 ? (
+          // VAZIO
+          <div className='min-h-60 flex flex-col items-center justify-center gap-3 p-8 text-center'>
+            <Sparkles
+              className='w-8 h-8 text-muted-foreground'
+              aria-hidden='true'
+            />
+            <p className='text-sm font-medium text-muted-foreground'>
+              Aguardando processamento...
+            </p>
+          </div>
+        ) : (
+          <div>
+            {/* Cabeçalho de colunas: só no modo tabela */}
+            <div
+              aria-hidden='true'
+              className={`hidden @3xl:grid ${rowGrid} px-4 py-3 border-b border-border-custom text-xs font-bold lowercase text-muted-foreground`}
+            >
+              <span />
+              <span>Descrição</span>
+              <span>Categoria</span>
+              <span>Data Real</span>
+              <span>Tipo</span>
+              <span className='text-right'>
+                Valor (<span className='normal-case'>R$</span>)
+              </span>
+              <span />
+            </div>
+
+            <ul className='divide-y divide-border-custom'>
+              {results.map((item, idx) => (
+                <li
                   key={idx}
-                  className={`bg-background p-4 rounded-xl border border-border-custom border-l-4 relative group transition-all shadow-sm ${item.type === 'income' ? 'border-l-emerald-500' : 'border-l-rose-500'}`}
+                  className={`grid grid-cols-2 gap-3 p-4 items-end ${rowGrid} @3xl:items-center hover:bg-surface-muted/40 transition-colors`}
                 >
-                  <button
+                  {/* Tipo (seta) + remover: no topo da lista empilhada */}
+                  <div className='col-span-2 flex items-center justify-between @3xl:col-span-1'>
+                    <TypeIcon type={item.type} />
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      onClick={() => handleRemoveItem(idx)}
+                      aria-label={`Remover item ${item.description || idx + 1}`}
+                      className='size-8 text-muted-foreground hover:text-expense @3xl:hidden'
+                    >
+                      <Trash2 className='w-4 h-4' />
+                    </Button>
+                  </div>
+
+                  <div className='col-span-2 flex flex-col gap-1 @3xl:col-span-1 min-w-0'>
+                    <Label htmlFor={`import-desc-${idx}`} className={fieldLabel}>
+                      Descrição
+                    </Label>
+                    <Input
+                      id={`import-desc-${idx}`}
+                      size='sm'
+                      className='h-9'
+                      value={item.description}
+                      onChange={(e) =>
+                        handleUpdateItem(idx, 'description', e.target.value)
+                      }
+                    />
+                  </div>
+
+                  <div className='flex flex-col gap-1 min-w-0'>
+                    <Label
+                      htmlFor={`import-category-${idx}`}
+                      className={fieldLabel}
+                    >
+                      Categoria
+                    </Label>
+                    <Select
+                      value={item.category}
+                      onValueChange={(v) =>
+                        handleUpdateItem(idx, 'category', v)
+                      }
+                    >
+                      <SelectTrigger
+                        id={`import-category-${idx}`}
+                        size='sm'
+                        className='h-9'
+                      >
+                        <SelectValue placeholder='Selecione...' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.name}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className='flex flex-col gap-1 min-w-0'>
+                    <Label htmlFor={`import-date-${idx}`} className={fieldLabel}>
+                      Data Real
+                    </Label>
+                    <DatePicker
+                      id={`import-date-${idx}`}
+                      size='sm'
+                      value={item.date}
+                      onChange={(v) => handleUpdateItem(idx, 'date', v)}
+                      className='h-9 gap-2'
+                    />
+                  </div>
+
+                  <div className='flex flex-col gap-1 min-w-0'>
+                    <Label htmlFor={`import-type-${idx}`} className={fieldLabel}>
+                      Tipo
+                    </Label>
+                    <Select
+                      value={item.type}
+                      onValueChange={(v) => handleUpdateItem(idx, 'type', v)}
+                    >
+                      <SelectTrigger
+                        id={`import-type-${idx}`}
+                        size='sm'
+                        className='h-9'
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value='expense'>Saída</SelectItem>
+                        <SelectItem value='income'>Entrada</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className='flex flex-col gap-1 min-w-0'>
+                    <Label
+                      htmlFor={`import-amount-${idx}`}
+                      className={fieldLabel}
+                    >
+                      Valor (<span className='normal-case'>R$</span>)
+                    </Label>
+                    <Input
+                      id={`import-amount-${idx}`}
+                      type='number'
+                      size='sm'
+                      className={cn(
+                        'h-9 text-right font-bold tabular-nums',
+                        item.type === 'income' ? 'text-income' : 'text-expense',
+                      )}
+                      value={item.amount}
+                      onChange={(e) =>
+                        handleUpdateItem(
+                          idx,
+                          'amount',
+                          parseFloat(e.target.value),
+                        )
+                      }
+                    />
+                  </div>
+
+                  {/* Remover: última coluna no modo tabela */}
+                  <Button
+                    variant='ghost'
+                    size='icon'
                     onClick={() => handleRemoveItem(idx)}
                     aria-label={`Remover item ${item.description || idx + 1}`}
-                    className='absolute top-2 right-2 text-zinc-400 hover:text-rose-500 p-1 transition-colors'
+                    className='hidden size-8 text-muted-foreground hover:text-expense @3xl:inline-flex'
                   >
                     <Trash2 className='w-4 h-4' />
-                  </button>
-                  <div className='grid grid-cols-2 gap-x-3 gap-y-4'>
-                    <div className='col-span-2'>
-                      <label
-                        htmlFor={`import-desc-${idx}`}
-                        className='text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase mb-1 block'
-                      >
-                        Descrição
-                      </label>
-                      <input
-                        id={`import-desc-${idx}`}
-                        className='w-full bg-transparent text-sm border-b border-border-custom focus:border-purple-500 outline-none pb-1'
-                        value={item.description}
-                        onChange={(e) =>
-                          handleUpdateItem(idx, 'description', e.target.value)
-                        }
-                      />
-                    </div>
-                    <div>
-                      <label
-                        htmlFor={`import-amount-${idx}`}
-                        className='text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase mb-1 block'
-                      >
-                        Valor (R$)
-                      </label>
-                      <input
-                        id={`import-amount-${idx}`}
-                        type='number'
-                        className='w-full bg-transparent text-sm border-b border-border-custom focus:border-purple-500 outline-none pb-1'
-                        value={item.amount}
-                        onChange={(e) =>
-                          handleUpdateItem(
-                            idx,
-                            'amount',
-                            parseFloat(e.target.value),
-                          )
-                        }
-                      />
-                    </div>
-                    <div>
-                      <label
-                        htmlFor={`import-category-${idx}`}
-                        className='text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase mb-1 block'
-                      >
-                        Categoria
-                      </label>
-                      <Select
-                        value={item.category}
-                        onValueChange={(v) =>
-                          handleUpdateItem(idx, 'category', v)
-                        }
-                      >
-                        <SelectTrigger
-                          id={`import-category-${idx}`}
-                          size='sm'
-                          className='h-7'
-                        >
-                          <SelectValue placeholder='Selecione...' />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map((cat) => (
-                            <SelectItem key={cat.id} value={cat.name}>
-                              {cat.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <label
-                        htmlFor={`import-date-${idx}`}
-                        className='text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase mb-1 block'
-                      >
-                        Data Real
-                      </label>
-                      <DatePicker
-                        id={`import-date-${idx}`}
-                        size='sm'
-                        value={item.date}
-                        onChange={(v) => handleUpdateItem(idx, 'date', v)}
-                        className='h-7 gap-2 text-[10px]'
-                      />
-                    </div>
-                    <div>
-                      <label
-                        htmlFor={`import-type-${idx}`}
-                        className='text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase mb-1 block'
-                      >
-                        Tipo
-                      </label>
-                      <Select
-                        value={item.type}
-                        onValueChange={(v) => handleUpdateItem(idx, 'type', v)}
-                      >
-                        <SelectTrigger
-                          id={`import-type-${idx}`}
-                          size='sm'
-                          className='h-7 text-[10px]'
-                        >
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value='expense'>Saída</SelectItem>
-                          <SelectItem value='income'>Entrada</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
+                  </Button>
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
-      </div>
+        )}
+      </Card>
     </div>
   );
 }
+
+// Colunas do modo tabela: seta | descrição | categoria | data | tipo | valor | remover
+const rowGrid =
+  '@3xl:grid-cols-[2rem_minmax(0,1fr)_9rem_8.5rem_7rem_7.5rem_2rem]';
