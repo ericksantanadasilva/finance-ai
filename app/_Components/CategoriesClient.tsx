@@ -1,23 +1,16 @@
 'use client';
 
-import { useId, useState } from 'react';
-import {
-  Plus,
-  Trash2,
-  Loader2,
-  X,
-  Tags,
-  Pencil,
-  AlertTriangle,
-} from 'lucide-react';
-import {
-  createCategory,
-  deleteCategory,
-  setCategoryBudget,
-} from '../_actions/categories';
+import { useState } from 'react';
+import { Plus, Trash2, Pencil, AlertTriangle } from 'lucide-react';
+import { deleteCategory } from '../_actions/categories';
 import ConfirmDialog from '@/app/_Components/ConfirmDialog'; // Importando nosso dialog
+import CategoryDialog from './CategoryDialog';
+import CategoryBudgetDialog from './CategoryBudgetDialog';
+import CategoryBadge from './CategoryBadge';
 import { toast } from 'sonner';
-import { useModalBehavior } from '@/hooks/use-modal-behavior';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 type CategoryWithBudget = {
   id: string;
@@ -33,10 +26,12 @@ const formatMoney = (v: number) =>
     v,
   );
 
+// Faixas do orçamento: a cor reforça, mas o texto (e o ícone de alerta)
+// sempre dizem a situação
 function budgetTone(percent: number) {
-  if (percent >= 100) return { bar: 'bg-rose-500', text: 'text-rose-500' };
-  if (percent >= 80) return { bar: 'bg-amber-500', text: 'text-amber-500' };
-  return { bar: 'bg-emerald-500', text: 'text-emerald-600' };
+  if (percent >= 100) return { bar: 'bg-expense', text: 'text-expense' };
+  if (percent >= 80) return { bar: 'bg-warning', text: 'text-warning' };
+  return { bar: 'bg-income', text: 'text-income' };
 }
 
 export default function CategoriesClient({
@@ -45,17 +40,11 @@ export default function CategoriesClient({
   initialCategories: CategoryWithBudget[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [color, setColor] = useState('#10b981');
-  const [newBudget, setNewBudget] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  // ESTADOS PARA EDIÇÃO DE LIMITE
+  // ESTADO PARA EDIÇÃO DE LIMITE
   const [budgetTarget, setBudgetTarget] = useState<CategoryWithBudget | null>(
     null,
   );
-  const [budgetValue, setBudgetValue] = useState('');
-  const [savingBudget, setSavingBudget] = useState(false);
 
   // ESTADOS PARA EXCLUSÃO
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
@@ -67,66 +56,6 @@ export default function CategoriesClient({
   const nearBudget = initialCategories.filter(
     (c) => c.percent !== null && c.percent >= 80 && c.percent < 100,
   );
-
-  const openBudget = (cat: CategoryWithBudget) => {
-    setBudgetTarget(cat);
-    setBudgetValue(cat.budget ? String(cat.budget) : '');
-  };
-
-  const handleSaveBudget = async () => {
-    if (!budgetTarget) return;
-    const value = budgetValue.trim() === '' ? null : Number(budgetValue);
-    if (value !== null && (isNaN(value) || value < 0)) {
-      return toast.error('Informe um valor válido.');
-    }
-    setSavingBudget(true);
-    try {
-      await setCategoryBudget(budgetTarget.id, value);
-      toast.success(
-        value && value > 0
-          ? `Limite de ${budgetTarget.name} definido!`
-          : `Limite de ${budgetTarget.name} removido.`,
-      );
-      setBudgetTarget(null);
-    } catch {
-      toast.error('Erro ao salvar limite.');
-    } finally {
-      setSavingBudget(false);
-    }
-  };
-
-  const handleCreate = async () => {
-    if (!name) return;
-    setLoading(true);
-    try {
-      await createCategory(
-        name,
-        color,
-        newBudget.trim() === '' ? null : Number(newBudget),
-      );
-      toast.success(`Categoria "${name}" criada!`);
-      setIsOpen(false);
-      setName('');
-      setNewBudget('');
-    } catch (error) {
-      toast.error('Erro ao criar categoria.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Acessibilidade dos modais: Esc fecha, foco preso, rolagem travada e o
-  // foco volta para quem abriu
-  const createTitleId = useId();
-  const budgetTitleId = useId();
-  const createPanelRef = useModalBehavior<HTMLDivElement>({
-    isOpen,
-    onClose: () => setIsOpen(false),
-  });
-  const budgetPanelRef = useModalBehavior<HTMLDivElement>({
-    isOpen: !!budgetTarget,
-    onClose: () => setBudgetTarget(null),
-  });
 
   const handleConfirmDelete = async () => {
     if (!categoryToDelete) return;
@@ -144,7 +73,7 @@ export default function CategoriesClient({
   };
 
   return (
-    <div className='min-h-screen bg-background text-foreground p-4 sm:p-8 transition-colors duration-300'>
+    <div>
       {/* DIALOG DE CONFIRMAÇÃO DE EXCLUSÃO */}
       <ConfirmDialog
         isOpen={!!categoryToDelete}
@@ -155,44 +84,46 @@ export default function CategoriesClient({
         description='Tem certeza? Transações já registradas com esta categoria podem ficar sem classificação.'
       />
 
+      <CategoryDialog isOpen={isOpen} onClose={() => setIsOpen(false)} />
+
+      {/* key: o campo do limite começa com o valor atual a cada abertura */}
+      <CategoryBudgetDialog
+        key={budgetTarget?.id}
+        category={budgetTarget}
+        onClose={() => setBudgetTarget(null)}
+      />
+
       {/* HEADER */}
-      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 pt-12 lg:pt-0'>
+      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 pt-10 lg:pt-0'>
         <div>
-          <h1 className='text-xl sm:text-2xl font-black text-foreground uppercase tracking-tight'>
+          <h1 className='text-xl sm:text-2xl font-bold lowercase'>
             Categorias
           </h1>
-          <p className='text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium'>
+          <p className='text-muted-foreground text-xs sm:text-sm font-medium'>
             Gerencie como a Inteligência Artificial organiza seus gastos.
           </p>
         </div>
-        <button
-          onClick={() => setIsOpen(true)}
-          className='w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl text-xs font-black tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95'
-        >
+        <Button onClick={() => setIsOpen(true)} className='w-full sm:w-auto'>
           <Plus className='w-4 h-4' /> NOVA CATEGORIA
-        </button>
+        </Button>
       </div>
 
-      {/* ALERTAS DE ORÇAMENTO DO MÊS */}
+      {/* ALERTAS DE ORÇAMENTO DO MÊS: adesivo na cor da situação */}
       {(overBudget.length > 0 || nearBudget.length > 0) && (
-        <div className='mb-6 space-y-2'>
+        <div className='mb-6 space-y-3'>
           {overBudget.length > 0 && (
-            <div className='flex items-start gap-3 p-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 text-rose-500'>
-              <AlertTriangle className='w-5 h-5 shrink-0 mt-0.5' />
-              <p className='text-xs font-bold'>
-                Orçamento estourado este mês:{' '}
-                {overBudget.map((c) => c.name).join(', ')}.
-              </p>
-            </div>
+            <BudgetAlert
+              tone='expense'
+              label='Orçamento estourado este mês:'
+              categories={overBudget}
+            />
           )}
           {nearBudget.length > 0 && (
-            <div className='flex items-start gap-3 p-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 text-amber-500'>
-              <AlertTriangle className='w-5 h-5 shrink-0 mt-0.5' />
-              <p className='text-xs font-bold'>
-                Perto do limite (80% ou mais):{' '}
-                {nearBudget.map((c) => c.name).join(', ')}.
-              </p>
-            </div>
+            <BudgetAlert
+              tone='warning'
+              label='Perto do limite (80% ou mais):'
+              categories={nearBudget}
+            />
           )}
         </div>
       )}
@@ -200,277 +131,149 @@ export default function CategoriesClient({
       {/* GRID DE CATEGORIAS */}
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
         {initialCategories.map((cat) => (
-          <div
-            key={cat.id}
-            className='bg-surface border border-border-custom p-5 rounded-2xl group hover:border-emerald-500/50 transition-all shadow-sm hover:shadow-md space-y-4'
-          >
-            <div className='flex justify-between items-center'>
-              <div className='flex items-center gap-3 overflow-hidden'>
-                <div
-                  className='w-4 h-4 rounded-full shrink-0 border-2 border-white dark:border-zinc-800'
-                  style={{
-                    backgroundColor: cat.color,
-                    boxShadow: `0 0 15px ${cat.color}60`,
-                  }}
-                ></div>
-                <span className='font-bold truncate text-sm text-foreground uppercase tracking-tight'>
+          <Card key={cat.id} className='group flex flex-col'>
+            <CardHeader className='py-2'>
+              <h2 className='flex items-center gap-2 min-w-0 font-bold'>
+                <span
+                  className='size-3 shrink-0 rounded-full border-2 border-ink'
+                  style={{ backgroundColor: cat.color }}
+                  aria-hidden='true'
+                />
+                {/* Nome como foi cadastrado (a faixa força minúsculas) */}
+                <span className='truncate normal-case' title={cat.name}>
                   {cat.name}
                 </span>
-              </div>
+              </h2>
 
-              <div className='flex items-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity'>
-                <button
-                  onClick={() => openBudget(cat)}
+              {/* No desktop as ações aparecem no hover ou quando recebem foco */}
+              <div className='flex items-center shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity'>
+                <Button
+                  variant='ghost'
+                  size='icon'
+                  onClick={() => setBudgetTarget(cat)}
                   aria-label={`Definir limite de ${cat.name}`}
-                  className='p-2 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-xl text-zinc-400 hover:text-emerald-600 transition-colors'
+                  className='size-8 text-muted-foreground hover:text-foreground'
                 >
                   <Pencil className='w-4 h-4' />
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant='ghost'
+                  size='icon'
                   onClick={() => setCategoryToDelete(cat.id)}
                   aria-label={`Excluir ${cat.name}`}
-                  className='p-2 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl text-zinc-400 hover:text-rose-600 transition-colors'
+                  className='size-8 text-muted-foreground hover:text-expense'
                 >
                   <Trash2 className='w-4 h-4' />
-                </button>
+                </Button>
               </div>
-            </div>
+            </CardHeader>
 
-            {cat.budget && cat.percent !== null ? (
-              <div className='space-y-2'>
-                <div className='flex justify-between text-[11px] font-bold'>
-                  <span className={budgetTone(cat.percent).text}>
-                    {formatMoney(cat.spent)}
-                  </span>
-                  <span className='text-zinc-500'>
-                    de {formatMoney(cat.budget)}
-                  </span>
-                </div>
-                <div className='h-2 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden'>
+            <CardContent className='flex-1 p-4'>
+              {cat.budget && cat.percent !== null ? (
+                <div className='space-y-2'>
+                  <div className='flex justify-between gap-2 text-xs font-medium tabular-nums'>
+                    <span
+                      className={cn('font-bold', budgetTone(cat.percent).text)}
+                    >
+                      {formatMoney(cat.spent)}
+                    </span>
+                    <span className='text-muted-foreground'>
+                      de {formatMoney(cat.budget)}
+                    </span>
+                  </div>
                   <div
-                    className={`h-full rounded-full transition-all duration-500 ${budgetTone(cat.percent).bar}`}
-                    style={{ width: `${Math.min(cat.percent, 100)}%` }}
-                  />
+                    className='h-3 w-full rounded-full border-2 border-ink bg-surface-muted overflow-hidden'
+                    role='progressbar'
+                    aria-label={`Orçamento de ${cat.name}`}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Math.min(Math.round(cat.percent), 100)}
+                  >
+                    <div
+                      className={`h-full transition-all duration-500 ${budgetTone(cat.percent).bar}`}
+                      style={{ width: `${Math.min(cat.percent, 100)}%` }}
+                    />
+                  </div>
+                  <p
+                    className={cn(
+                      'flex items-center gap-1.5 text-xs font-bold',
+                      budgetTone(cat.percent).text,
+                    )}
+                  >
+                    {cat.percent >= 80 && (
+                      <AlertTriangle
+                        className='w-3.5 h-3.5 shrink-0'
+                        aria-hidden='true'
+                      />
+                    )}
+                    {cat.percent >= 100
+                      ? `Estourou ${formatMoney(cat.spent - cat.budget)}`
+                      : `${Math.round(cat.percent)}% usado · restam ${formatMoney(cat.budget - cat.spent)}`}
+                  </p>
                 </div>
-                <p
-                  className={`text-[10px] font-black uppercase tracking-widest ${budgetTone(cat.percent).text}`}
+              ) : (
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() => setBudgetTarget(cat)}
+                  className='w-full'
                 >
-                  {cat.percent >= 100
-                    ? `Estourou ${formatMoney(cat.spent - cat.budget)}`
-                    : `${Math.round(cat.percent)}% usado · restam ${formatMoney(cat.budget - cat.spent)}`}
-                </p>
-              </div>
-            ) : (
-              <button
-                onClick={() => openBudget(cat)}
-                className='text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-emerald-600 transition-colors'
-              >
-                + Definir limite mensal
-              </button>
-            )}
-          </div>
+                  <Plus className='w-3.5 h-3.5' /> Definir limite mensal
+                </Button>
+              )}
+            </CardContent>
+          </Card>
         ))}
 
-        {/* BOTÃO ADICIONAR (DASHED) */}
+        {/* BOTÃO ADICIONAR (TRACEJADO): ação secundária, plana */}
         <button
           onClick={() => setIsOpen(true)}
-          className='border-2 border-dashed border-zinc-200 dark:border-border-custom p-5 rounded-2xl flex items-center justify-center gap-2 text-zinc-400 cursor-pointer hover:border-emerald-500/50 hover:text-emerald-600 transition-all hover:bg-zinc-50 dark:hover:bg-emerald-500/5 group'
+          className='min-h-24 border-2 border-dashed border-border-custom p-5 rounded-2xl flex items-center justify-center gap-2 text-muted-foreground cursor-pointer transition-colors hover:border-ink hover:text-foreground hover:bg-surface outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
         >
-          <Plus className='w-4 h-4 group-hover:scale-125 transition-transform' />
-          <span className='text-xs font-black uppercase tracking-widest'>
+          <Plus className='w-4 h-4' />
+          <span className='text-sm font-bold lowercase'>
             Criar Personalizada
           </span>
         </button>
       </div>
+    </div>
+  );
+}
 
-      {/* MODAL DE CRIAÇÃO */}
-      {isOpen && (
-        <div className='fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300'>
-          <div
-            ref={createPanelRef}
-            role='dialog'
-            aria-modal='true'
-            aria-labelledby={createTitleId}
-            className='bg-surface border border-border-custom w-full max-w-md rounded-2xl p-8 space-y-8 shadow-2xl relative animate-in zoom-in duration-200'
-          >
-            <div className='flex justify-between items-center'>
-              <div className='flex items-center gap-2'>
-                <Tags className='w-5 h-5 text-emerald-500' />
-                <h3
-                  id={createTitleId}
-                  className='text-lg font-black text-foreground uppercase tracking-tight'
-                >
-                  Nova Categoria
-                </h3>
-              </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                aria-label='Fechar'
-                className='text-zinc-400 hover:text-foreground transition-colors p-1'
-              >
-                <X className='w-5 h-5' />
-              </button>
-            </div>
-
-            <div className='space-y-6'>
-              <div className='space-y-2'>
-                <label
-                  htmlFor='category-name'
-                  className='text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]'
-                >
-                  Nome da Categoria
-                </label>
-                <input
-                  id='category-name'
-                  placeholder='Ex: ALIMENTAÇÃO, SAÚDE...'
-                  autoComplete='off'
-                  className='w-full bg-background border border-border-custom p-4 rounded-xl outline-none focus:border-emerald-500/50 transition-all text-foreground font-bold placeholder:text-zinc-400 placeholder:font-medium shadow-inner'
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  autoFocus
-                />
-              </div>
-
-              <div className='space-y-2'>
-                <label
-                  htmlFor='category-color'
-                  className='text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]'
-                >
-                  Cor de Identificação
-                </label>
-                <div className='flex items-center gap-4 bg-background border border-border-custom p-3 rounded-xl shadow-inner'>
-                  <div className='relative w-10 h-10 shrink-0'>
-                    <input
-                      id='category-color'
-                      type='color'
-                      value={color}
-                      onChange={(e) => setColor(e.target.value)}
-                      className='absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10'
-                    />
-                    <div
-                      className='w-full h-full rounded-lg border-2 border-white dark:border-zinc-700 shadow-sm'
-                      style={{ backgroundColor: color }}
-                    />
-                  </div>
-                  <span className='text-sm text-zinc-500 font-black tracking-widest uppercase'>
-                    {color}
-                  </span>
-                </div>
-              </div>
-
-              <div className='space-y-2'>
-                <label
-                  htmlFor='category-budget'
-                  className='text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]'
-                >
-                  Limite mensal (opcional)
-                </label>
-                <input
-                  id='category-budget'
-                  type='number'
-                  inputMode='decimal'
-                  min='0'
-                  step='0.01'
-                  placeholder='Ex: 800,00'
-                  className='w-full bg-background border border-border-custom p-4 rounded-xl outline-none focus:border-emerald-500/50 transition-all text-foreground font-bold placeholder:text-zinc-400 placeholder:font-medium shadow-inner'
-                  value={newBudget}
-                  onChange={(e) => setNewBudget(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className='flex gap-3 pt-2'>
-              <button
-                onClick={() => setIsOpen(false)}
-                className='flex-1 py-4 bg-background border border-border-custom rounded-xl font-bold text-xs text-zinc-500 hover:text-foreground transition-all uppercase tracking-widest'
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleCreate}
-                disabled={loading || !name}
-                className='flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 py-4 rounded-xl font-black text-white text-xs tracking-[0.2em] flex justify-center items-center gap-2 transition-all shadow-lg shadow-emerald-500/20 active:scale-95'
-              >
-                {loading ? (
-                  <Loader2 className='animate-spin w-5 h-5' />
-                ) : (
-                  'SALVAR'
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+// Alerta de orçamento: contorno e sombra na cor da situação, ícone e texto
+// dizem o que aconteceu; as categorias aparecem como CategoryBadge
+function BudgetAlert({
+  tone,
+  label,
+  categories,
+}: {
+  tone: 'expense' | 'warning';
+  label: string;
+  categories: CategoryWithBudget[];
+}) {
+  return (
+    <div
+      className={cn(
+        'flex items-start gap-3 p-4 rounded-2xl border-2 border-ink bg-surface shadow-hard',
+        // Redefine --ink só aqui (mesma técnica do botão danger)
+        tone === 'expense'
+          ? '[--ink:var(--expense)]'
+          : '[--ink:var(--warning)]',
       )}
-
-      {/* MODAL DE LIMITE MENSAL */}
-      {budgetTarget && (
-        <div className='fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300'>
-          <div
-            ref={budgetPanelRef}
-            role='dialog'
-            aria-modal='true'
-            aria-labelledby={budgetTitleId}
-            className='bg-surface border border-border-custom w-full max-w-md rounded-2xl p-8 space-y-6 shadow-2xl animate-in zoom-in duration-200'
-          >
-            <div className='flex justify-between items-center'>
-              <h3
-                id={budgetTitleId}
-                className='text-lg font-black text-foreground uppercase tracking-tight'
-              >
-                Limite: {budgetTarget.name}
-              </h3>
-              <button
-                onClick={() => setBudgetTarget(null)}
-                aria-label='Fechar'
-                className='text-zinc-400 hover:text-foreground transition-colors p-1'
-              >
-                <X className='w-5 h-5' />
-              </button>
-            </div>
-
-            <div className='space-y-2'>
-              <label
-                htmlFor='category-budget-value'
-                className='text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]'
-              >
-                Quanto posso gastar por mês?
-              </label>
-              <input
-                id='category-budget-value'
-                type='number'
-                inputMode='decimal'
-                min='0'
-                step='0.01'
-                autoFocus
-                placeholder='Deixe vazio para remover o limite'
-                value={budgetValue}
-                onChange={(e) => setBudgetValue(e.target.value)}
-                className='w-full bg-background border border-border-custom p-4 rounded-xl outline-none focus:border-emerald-500/50 transition-all text-foreground font-bold placeholder:text-zinc-400 placeholder:font-medium shadow-inner'
-              />
-            </div>
-
-            <div className='flex gap-3'>
-              <button
-                onClick={() => setBudgetTarget(null)}
-                className='flex-1 py-4 bg-background border border-border-custom rounded-xl font-bold text-xs text-zinc-500 hover:text-foreground transition-all uppercase tracking-widest'
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveBudget}
-                disabled={savingBudget}
-                className='flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 py-4 rounded-xl font-black text-white text-xs tracking-[0.2em] flex justify-center items-center gap-2 transition-all shadow-lg shadow-emerald-500/20 active:scale-95'
-              >
-                {savingBudget ? (
-                  <Loader2 className='animate-spin w-5 h-5' />
-                ) : (
-                  'SALVAR'
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+    >
+      <AlertTriangle
+        className={cn(
+          'w-5 h-5 shrink-0 mt-0.5',
+          tone === 'expense' ? 'text-expense' : 'text-warning',
+        )}
+        aria-hidden='true'
+      />
+      <div className='flex flex-wrap items-center gap-2 text-sm font-bold text-foreground'>
+        <span>{label}</span>
+        {categories.map((c) => (
+          <CategoryBadge key={c.id} name={c.name} color={c.color} />
+        ))}
+      </div>
     </div>
   );
 }
