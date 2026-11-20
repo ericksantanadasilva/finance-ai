@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Plus,
@@ -34,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
 const formatMoney = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
@@ -74,6 +75,14 @@ export default function RecurringClient({
   const monthlyIncome = active
     .filter((r) => r.type === 'income')
     .reduce((acc, r) => acc + r.amount, 0);
+
+  // Acessibilidade do modal: Esc fecha, foco preso, rolagem travada e o foco
+  // volta para quem abriu
+  const titleId = useId();
+  const panelRef = useModalBehavior<HTMLDivElement>({
+    isOpen,
+    onClose: () => setIsOpen(false),
+  });
 
   const reset = () => {
     setDescription('');
@@ -307,10 +316,19 @@ export default function RecurringClient({
       {/* MODAL DE CRIAÇÃO (mesmo layout do TransactionDialog) */}
       {isOpen && (
         <div className='fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4'>
-          <div className='w-full max-w-md bg-surface border border-border-custom rounded-2xl shadow-2xl flex flex-col max-h-[90vh]'>
+          <div
+            ref={panelRef}
+            role='dialog'
+            aria-modal='true'
+            aria-labelledby={titleId}
+            className='w-full max-w-md bg-surface border border-border-custom rounded-2xl shadow-2xl flex flex-col max-h-[90vh]'
+          >
             {/* HEADER */}
             <div className='flex justify-between items-center p-6 border-b border-border-custom'>
-              <h2 className='text-lg font-black text-foreground uppercase tracking-tight'>
+              <h2
+                id={titleId}
+                className='text-lg font-black text-foreground uppercase tracking-tight'
+              >
                 Nova Recorrência
               </h2>
               <button
@@ -327,6 +345,7 @@ export default function RecurringClient({
               <div className='grid grid-cols-2 gap-2 p-1.5 bg-background border border-border-custom rounded-xl'>
                 <button
                   type='button'
+                  aria-pressed={type === 'income'}
                   onClick={() => setType('income')}
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all ${
                     type === 'income'
@@ -338,6 +357,7 @@ export default function RecurringClient({
                 </button>
                 <button
                   type='button'
+                  aria-pressed={type === 'expense'}
                   onClick={() => setType('expense')}
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all ${
                     type === 'expense'
@@ -351,7 +371,10 @@ export default function RecurringClient({
 
               {/* VALOR */}
               <div className='space-y-2'>
-                <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
+                <label
+                  htmlFor='recurring-amount'
+                  className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'
+                >
                   Valor
                 </label>
                 <div className='relative'>
@@ -359,6 +382,7 @@ export default function RecurringClient({
                     R$
                   </span>
                   <input
+                    id='recurring-amount'
                     type='number'
                     step='0.01'
                     min='0'
@@ -374,12 +398,15 @@ export default function RecurringClient({
               <div className='p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-xl space-y-3'>
                 <div className='flex items-center gap-2 text-emerald-600 dark:text-emerald-500'>
                   <Clock className='w-4 h-4' />
-                  <label className='text-[10px] font-black uppercase tracking-widest'>
+                  <label
+                    htmlFor='recurring-start'
+                    className='text-[10px] font-black uppercase tracking-widest'
+                  >
                     Começa em
                   </label>
                 </div>
                 <Select value={startMonth} onValueChange={setStartMonth}>
-                  <SelectTrigger aria-label='Começa em' className='font-bold'>
+                  <SelectTrigger id='recurring-start' className='font-bold'>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -399,12 +426,16 @@ export default function RecurringClient({
               <div className='space-y-4'>
                 {/* DESCRIÇÃO */}
                 <div className='space-y-2'>
-                  <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
+                  <label
+                    htmlFor='recurring-description'
+                    className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'
+                  >
                     Descrição
                   </label>
                   <div className='relative'>
                     <FileText className='absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400' />
                     <input
+                      id='recurring-description'
                       type='text'
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
@@ -417,14 +448,17 @@ export default function RecurringClient({
                 <div className='grid grid-cols-2 gap-4'>
                   {/* CATEGORIA */}
                   <div className='space-y-2'>
-                    <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
+                    <label
+                      htmlFor='recurring-category'
+                      className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'
+                    >
                       Categoria
                     </label>
                     <div className='relative'>
                       <Tag className='pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400' />
                       <Select value={category} onValueChange={setCategory}>
                         <SelectTrigger
-                          aria-label='Categoria'
+                          id='recurring-category'
                           className='pl-12 pr-4 text-xs font-bold'
                         >
                           <SelectValue placeholder='Selecionar...' />
@@ -442,12 +476,16 @@ export default function RecurringClient({
 
                   {/* DIA DO MÊS */}
                   <div className='space-y-2'>
-                    <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
+                    <label
+                      htmlFor='recurring-day'
+                      className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'
+                    >
                       Todo dia
                     </label>
                     <div className='relative'>
                       <Calendar className='absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400' />
                       <input
+                        id='recurring-day'
                         type='number'
                         min='1'
                         max='31'
