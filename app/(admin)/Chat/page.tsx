@@ -12,12 +12,18 @@ import {
   Sparkles,
   Receipt,
   Calendar,
+  AlertTriangle,
 } from 'lucide-react';
 import { sendMessage } from '@/app/_actions/chat';
 import { createTransaction } from '@/app/_actions/transactions';
 import { updateGoalAmount, createGoal } from '@/app/_actions/goals';
 import { toast } from 'sonner';
 import { currentMonthISO, todayISO } from '@/app/utils/dates';
+import CategoryBadge from '@/app/_Components/CategoryBadge';
+import TypeIcon from '@/app/_Components/TypeIcon';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 export default function AIAgentChat() {
   const [messages, setMessages] = useState<any[]>([
@@ -211,7 +217,9 @@ export default function AIAgentChat() {
     } catch (e) {
       setMessages((prev) => [
         ...prev,
-        { role: 'bot', content: 'Erro na conexão.', action: null },
+        // isError só muda o visual do balão (o histórico enviado à IA usa
+        // apenas role e content)
+        { role: 'bot', content: 'Erro na conexão.', action: null, isError: true },
       ]);
     } finally {
       setIsLoading(false);
@@ -221,14 +229,17 @@ export default function AIAgentChat() {
 
   return (
     <div
-      className='bg-background flex flex-col items-center lg:ml-64 overflow-hidden fixed inset-0 z-[40] transition-colors duration-300'
+      className='bg-background flex flex-col items-center lg:ml-64 overflow-hidden fixed inset-0 z-40 transition-colors duration-300'
       style={{ height: viewportHeight }}
     >
-      {/* HEADER DO CHAT */}
-      <div className='w-full flex items-center justify-center py-4 pt-14 lg:pt-8 border-b border-border-custom bg-surface shrink-0 relative shadow-sm'>
+      {/* HEADER DO CHAT: faixa com o ponto roxo de "assistente ativo" */}
+      <div className='w-full flex items-center justify-center py-4 pt-14 lg:pt-8 border-b-2 border-ink bg-band text-band-foreground shrink-0 relative'>
         <div className='flex items-center gap-2'>
-          <div className='w-2 h-2 rounded-full bg-emerald-500 animate-pulse' />
-          <h2 className='text-sm font-black text-foreground uppercase tracking-widest'>
+          <span
+            className='size-2.5 rounded-full border-2 border-ink bg-ai animate-pulse'
+            aria-hidden='true'
+          />
+          <h2 className='text-sm font-bold lowercase'>
             Assistente Financeiro
           </h2>
         </div>
@@ -243,127 +254,100 @@ export default function AIAgentChat() {
         aria-label='Conversa com o assistente'
         className='flex-1 w-full max-w-3xl overflow-y-auto p-4 space-y-6 scrollbar-hide custom-scrollbar'
       >
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
-          >
-            {/* AVATAR */}
+        {messages.map((msg, index) => {
+          const isUser = msg.role === 'user';
+          return (
             <div
-              aria-hidden='true'
-              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border shadow-sm ${msg.role === 'bot' ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20' : 'bg-surface border-border-custom'}`}
+              key={index}
+              className={`flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300 ${isUser ? 'flex-row-reverse' : ''}`}
             >
-              {msg.role === 'bot' ? (
-                <Bot className='w-5 h-5 text-emerald-600 dark:text-emerald-500' />
-              ) : (
-                <User className='w-5 h-5 text-zinc-500 dark:text-zinc-400' />
-              )}
-            </div>
-
-            {/* CONTEÚDO */}
-            <div
-              className={`space-y-3 w-full ${msg.role === 'user' ? 'max-w-[80%] flex flex-col items-end' : 'max-w-[85%]'}`}
-            >
+              {/* AVATAR: assistente é um adesivo roxo; você, um quadrado plano */}
               <div
-                className={`${msg.role === 'user' ? 'bg-emerald-600 text-white rounded-2xl rounded-tr-none font-medium' : 'bg-surface border border-border-custom text-foreground rounded-2xl rounded-tl-none font-medium'} p-4 text-sm shadow-sm leading-relaxed`}
+                aria-hidden='true'
+                className={cn(
+                  'size-9 rounded-xl flex items-center justify-center shrink-0 border-2',
+                  isUser
+                    ? 'border-border-custom bg-surface-muted text-muted-foreground'
+                    : 'border-ink bg-ai text-ai-foreground shadow-hard-sm',
+                )}
               >
-                {/* Diz quem fala para o leitor de tela (o avatar é só visual) */}
-                <span className='sr-only'>
-                  {msg.role === 'user' ? 'Você: ' : 'Assistente: '}
-                </span>
-                {msg.content}
+                {isUser ? (
+                  <User className='w-5 h-5' />
+                ) : (
+                  <Bot className='w-5 h-5' />
+                )}
               </div>
 
-              {/* CARD DE AÇÃO (WIDGET) */}
-              {msg.action && (
+              {/* CONTEÚDO */}
+              <div
+                className={`min-w-0 space-y-3 w-full ${isUser ? 'max-w-[80%] flex flex-col items-end' : 'max-w-[85%]'}`}
+              >
+                {/* Balão: assistente = adesivo com borda esquerda roxa;
+                    você = plano, fundo neutro. Quebras de linha preservadas. */}
                 <div
-                  className={`bg-surface border border-border-custom rounded-2xl p-5 border-l-4 shadow-md transition-all
-                  ${msg.action.action === 'UPDATE_GOAL' ? 'border-l-blue-500' : msg.action.action === 'CREATE_GOAL' ? 'border-l-purple-500' : 'border-l-emerald-500'}`}
+                  className={cn(
+                    'p-4 text-sm font-medium leading-relaxed whitespace-pre-wrap wrap-break-word rounded-2xl border-2',
+                    isUser
+                      ? 'rounded-tr-md border-border-custom bg-surface-muted text-foreground'
+                      : 'rounded-tl-md border-ink border-l-4 bg-surface text-foreground shadow-hard',
+                    !isUser && msg.isError && 'border-l-2 [--ink:var(--expense)]',
+                    !isUser && !msg.isError && 'border-l-ai',
+                  )}
                 >
-                  <div className='flex items-center gap-4 mb-5'>
-                    <div
-                      className={`p-3 rounded-xl 
-                      ${msg.action.action === 'UPDATE_GOAL' ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400' : msg.action.action === 'CREATE_GOAL' ? 'bg-purple-50 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400' : 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'}`}
-                    >
-                      {msg.action.action === 'CREATE_TRANSACTION' ? (
-                        <Receipt className='w-6 h-6' />
-                      ) : (
-                        <Target className='w-6 h-6' />
-                      )}
-                    </div>
-                    <div className='overflow-hidden'>
-                      <h4 className='font-black text-foreground text-sm truncate uppercase tracking-tight'>
-                        {msg.action.data.description || msg.action.data.name}
-                      </h4>
-                      <p className='text-[10px] text-zinc-500 font-bold uppercase tracking-widest flex items-center gap-1'>
-                        {msg.action.action === 'CREATE_GOAL'
-                          ? '✨ Nova Meta'
-                          : msg.action.action === 'UPDATE_GOAL'
-                            ? '🎯 Meta Existente'
-                            : `📂 ${msg.action.data.category || 'Geral'}`}
-
-                        {/* Exibe o mês de competência se detectado pela IA */}
-                        {msg.action.data.referenceMonth && (
-                          <span className='flex items-center gap-1 text-emerald-600 dark:text-emerald-500 lowercase'>
-                            • <Calendar className='w-2.5 h-2.5' />
-                            {new Date(
-                              msg.action.data.referenceMonth + '-02',
-                            ).toLocaleString('pt-BR', { month: 'short' })}
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className='flex justify-between items-center border-t border-border-custom pt-4 gap-4'>
-                    <span
-                      className={`text-xl font-black tracking-tight 
-                      ${msg.action.action === 'UPDATE_GOAL' ? 'text-blue-600 dark:text-blue-400' : msg.action.action === 'CREATE_GOAL' ? 'text-purple-600 dark:text-purple-400' : 'text-emerald-600 dark:text-emerald-500'}`}
-                    >
-                      R${' '}
-                      {(
-                        msg.action.data.amount || msg.action.data.targetAmount
-                      ).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </span>
-                    <div className='flex gap-2'>
-                      <button
-                        onClick={() => handleCancel(index)}
-                        aria-label='Cancelar ação'
-                        className='p-2.5 text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all'
-                      >
-                        <X className='w-5 h-5' />
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (msg.action.action === 'CREATE_GOAL')
-                            handleConfirmCreateGoal(index, msg.action.data);
-                          else if (msg.action.action === 'UPDATE_GOAL')
-                            handleConfirmGoalUpdate(index, msg.action.data);
-                          else handleConfirmTransaction(index, msg.action.data);
-                        }}
-                        className={`px-4 py-2.5 rounded-xl text-xs text-white font-black uppercase tracking-widest flex items-center gap-2 transition-all shadow-lg active:scale-95
-                          ${msg.action.action === 'CREATE_GOAL' ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-500/20' : msg.action.action === 'UPDATE_GOAL' ? 'bg-blue-600 hover:bg-blue-500 shadow-blue-500/20' : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20'}`}
-                      >
-                        <Check className='w-4 h-4' /> CONFIRMAR
-                      </button>
-                    </div>
-                  </div>
+                  {/* Diz quem fala para o leitor de tela (o avatar é só visual) */}
+                  <span className='sr-only'>
+                    {isUser ? 'Você: ' : 'Assistente: '}
+                  </span>
+                  {msg.isError && (
+                    <AlertTriangle
+                      className='inline w-4 h-4 mr-1.5 -mt-0.5 text-expense'
+                      aria-hidden='true'
+                    />
+                  )}
+                  {msg.content}
                 </div>
-              )}
+
+                {/* CARD DE AÇÃO (WIDGET) */}
+                {msg.action && (
+                  <ActionCard
+                    action={msg.action}
+                    onCancel={() => handleCancel(index)}
+                    onConfirm={() => {
+                      if (msg.action.action === 'CREATE_GOAL')
+                        handleConfirmCreateGoal(index, msg.action.data);
+                      else if (msg.action.action === 'UPDATE_GOAL')
+                        handleConfirmGoalUpdate(index, msg.action.data);
+                      else handleConfirmTransaction(index, msg.action.data);
+                    }}
+                  />
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
+
+        {/* DIGITANDO: mesmo avatar do assistente, balão plano */}
         {isLoading && (
-          <div className='flex gap-3 items-center text-emerald-600 dark:text-emerald-500 text-[10px] font-black uppercase tracking-widest ml-12 animate-pulse'>
-            <Sparkles className='w-3 h-3' /> Analisando suas finanças...
+          <div className='flex gap-3 items-center'>
+            <div
+              aria-hidden='true'
+              className='size-9 rounded-xl flex items-center justify-center shrink-0 border-2 border-ink bg-ai text-ai-foreground shadow-hard-sm'
+            >
+              <Bot className='w-5 h-5' />
+            </div>
+            <div className='flex items-center gap-2 rounded-2xl rounded-tl-md border-2 border-border-custom bg-surface px-4 py-2.5 text-xs font-medium text-muted-foreground lowercase animate-pulse'>
+              <Sparkles className='w-3.5 h-3.5 text-ai' aria-hidden='true' />
+              Analisando suas finanças...
+            </div>
           </div>
         )}
       </div>
 
       {/* INPUT DE MENSAGEM */}
       <div className='w-full max-w-3xl p-4 bg-transparent pb-safe shrink-0'>
-        <div className='relative flex items-center group'>
-          <input
+        <div className='flex items-center gap-2'>
+          {/* text-base no mobile: com 16px o iOS não dá zoom ao focar o campo */}
+          <Input
             ref={inputRef}
             aria-label='Mensagem para o assistente'
             value={input}
@@ -371,20 +355,130 @@ export default function AIAgentChat() {
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder='Gastei 50 no almoço e pago em março...'
             autoComplete='off'
-            className='w-full bg-surface border border-border-custom rounded-2xl pl-5 pr-14 py-4 text-sm text-foreground outline-none focus:border-emerald-500/50 transition-all shadow-lg dark:shadow-none placeholder:text-zinc-400'
+            className='h-12 flex-1 text-base sm:text-sm'
           />
-          <button
+          <Button
+            size='icon'
             onClick={handleSend}
             disabled={isLoading || !input.trim()}
             aria-label='Enviar mensagem'
-            className='absolute right-2 p-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl shadow-lg shadow-emerald-500/20 transition-all active:scale-90 flex items-center justify-center'
+            className='size-12'
           >
             {isLoading ? (
               <Loader2 className='w-5 h-5 animate-spin' />
             ) : (
               <Send className='w-5 h-5' />
             )}
-          </button>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Campos que a IA pode devolver no cartão (todos opcionais)
+type ChatAction = {
+  action: string;
+  data: {
+    description?: string;
+    name?: string;
+    category?: string;
+    referenceMonth?: string;
+    amount?: number;
+    targetAmount?: number;
+    type?: string;
+  };
+};
+
+// Cartão de ação sugerido pela IA: adesivo neutro com o tipo, o valor e os
+// botões. Receita/despesa usam a seta (TypeIcon) e a cor só como reforço.
+function ActionCard({
+  action,
+  onCancel,
+  onConfirm,
+}: {
+  action: ChatAction;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const data = action.data;
+  const isTransaction = action.action === 'CREATE_TRANSACTION';
+  const amount = Number(data.amount || data.targetAmount || 0);
+
+  return (
+    <div className='rounded-2xl border-2 border-ink bg-surface p-5 shadow-hard'>
+      <div className='flex items-center gap-4 mb-5'>
+        <div
+          className='size-11 shrink-0 rounded-xl border-2 border-ink bg-surface-muted flex items-center justify-center'
+          aria-hidden='true'
+        >
+          {isTransaction ? (
+            <Receipt className='w-5 h-5' />
+          ) : (
+            <Target className='w-5 h-5' />
+          )}
+        </div>
+        <div className='min-w-0 space-y-1'>
+          <h4 className='font-bold text-foreground text-sm truncate'>
+            {data.description || data.name}
+          </h4>
+          <div className='flex flex-wrap items-center gap-2 text-xs font-medium text-muted-foreground'>
+            {action.action === 'CREATE_GOAL' ? (
+              <span className='inline-flex items-center gap-1 lowercase'>
+                <Sparkles className='w-3.5 h-3.5' aria-hidden='true' /> Nova
+                Meta
+              </span>
+            ) : action.action === 'UPDATE_GOAL' ? (
+              <span className='inline-flex items-center gap-1 lowercase'>
+                <Target className='w-3.5 h-3.5' aria-hidden='true' /> Meta
+                Existente
+              </span>
+            ) : (
+              <CategoryBadge name={data.category || 'Geral'} />
+            )}
+
+            {/* Exibe o mês de competência se detectado pela IA */}
+            {data.referenceMonth && (
+              <span className='inline-flex items-center gap-1 lowercase'>
+                <Calendar className='w-3.5 h-3.5' aria-hidden='true' />
+                {new Date(data.referenceMonth + '-02').toLocaleString(
+                  'pt-BR',
+                  { month: 'short' },
+                )}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* flex-wrap: em telas estreitas os botões descem, o valor não quebra */}
+      <div className='flex flex-wrap justify-between items-center border-t border-border-custom pt-4 gap-3'>
+        <div className='flex items-center gap-2'>
+          {isTransaction && <TypeIcon type={data.type ?? 'expense'} />}
+          <span
+            className={cn(
+              'text-xl font-bold tabular-nums tracking-tight whitespace-nowrap',
+              isTransaction &&
+                (data.type === 'income' ? 'text-income' : 'text-expense'),
+            )}
+          >
+            R${' '}
+            {amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </span>
+        </div>
+        <div className='flex gap-2 shrink-0 ml-auto'>
+          <Button
+            variant='ghost'
+            size='icon'
+            onClick={onCancel}
+            aria-label='Cancelar ação'
+            className='text-muted-foreground hover:text-expense'
+          >
+            <X className='w-5 h-5' />
+          </Button>
+          <Button onClick={onConfirm}>
+            <Check className='w-4 h-4' /> CONFIRMAR
+          </Button>
         </div>
       </div>
     </div>
