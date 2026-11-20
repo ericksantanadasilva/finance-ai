@@ -46,8 +46,9 @@ export default function GoalsClient({
       currency: 'BRL',
     }).format(v);
 
+  // Math.floor: 99,9% mostra 99%, nunca arredonda para 100% antes da hora
   const calculateProgress = (current: number, target: number) => {
-    return Math.min(Math.round((current / target) * 100), 100);
+    return Math.min(Math.floor((current / target) * 100), 100);
   };
 
   // FUNÇÃO DE EXCLUSÃO REFORMULADA
@@ -137,7 +138,8 @@ export default function GoalsClient({
               goal.currentAmount,
               goal.targetAmount,
             );
-            const isDone = progress >= 100;
+            // Concluída pelos valores, não pela porcentagem exibida
+            const isDone = goal.currentAmount >= goal.targetAmount;
 
             return (
               <Card
