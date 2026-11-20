@@ -12,6 +12,11 @@ import {
 } from 'lucide-react';
 import TransactionDialog from './TransactionDialog';
 import {
+  ChartLegend,
+  ChartTooltip,
+  stickerShape,
+} from './ChartParts';
+import {
   Bar,
   BarChart,
   CartesianGrid,
@@ -273,15 +278,16 @@ export default function DashboardClient({
           {/* O gráfico ocupa a área que sobra; o absolute dá a ele uma altura
               definida, mesmo quando o card estica para acompanhar o vizinho */}
           <CardContent className='flex-1 flex flex-col p-4 sm:p-6'>
-            <div className='relative flex-1 min-h-72 sm:min-h-80'>
+            <ChartLegend />
+            {/* Ticks herdam a cor (currentColor) e a fonte mono deste wrapper */}
+            <div className='relative flex-1 min-h-72 sm:min-h-80 text-muted-foreground [&_.recharts-cartesian-axis-tick-value]:font-mono [&_.recharts-cartesian-axis-tick-value]:lowercase'>
               <div className='absolute inset-0'>
                 <ResponsiveContainer width='100%' height='100%'>
-                  <BarChart data={chartData}>
+                  <BarChart data={chartData} barGap={6}>
                     <CartesianGrid
-                      strokeDasharray='3 3'
                       vertical={false}
                       stroke='currentColor'
-                      className='text-zinc-200 dark:text-zinc-800'
+                      className='text-border-custom'
                     />
                     <XAxis
                       dataKey='name'
@@ -289,7 +295,7 @@ export default function DashboardClient({
                       tickLine={false}
                       tick={{
                         fill: 'currentColor',
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight: 'bold',
                       }}
                       dy={10}
@@ -299,28 +305,25 @@ export default function DashboardClient({
                       tickLine={false}
                       tick={{
                         fill: 'currentColor',
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight: 'bold',
                       }}
                     />
                     <Tooltip
-                      cursor={{ fill: 'currentColor', opacity: 0.05 }}
-                      contentStyle={{
-                        backgroundColor: 'var(--surface)',
-                        border: '1px solid var(--border-custom)',
-                        borderRadius: '12px',
-                      }}
-                      formatter={(v: any) => formatMoney(v)}
+                      cursor={{ fill: 'currentColor', opacity: 0.08 }}
+                      content={(props) => (
+                        <ChartTooltip {...props} formatValue={formatMoney} />
+                      )}
                     />
                     <Bar
                       dataKey='receitas'
-                      fill='#10b981'
-                      radius={[4, 4, 0, 0]}
+                      maxBarSize={32}
+                      shape={stickerShape('receitas')}
                     />
                     <Bar
                       dataKey='despesas'
-                      fill='#ef4444'
-                      radius={[4, 4, 0, 0]}
+                      maxBarSize={32}
+                      shape={stickerShape('despesas')}
                     />
                   </BarChart>
                 </ResponsiveContainer>
@@ -363,16 +366,16 @@ export default function DashboardClient({
               Análise de Gastos
             </p>
 
-            <div className='h-48 sm:h-56 relative'>
+            {/* Contorno ink nas fatias via CSS: vence o atributo stroke do SVG */}
+            <div className='h-48 sm:h-56 relative [&_.recharts-sector]:stroke-ink [&_.recharts-sector]:stroke-2'>
               <ResponsiveContainer width='100%' height='100%'>
                 <PieChart>
                   <Pie
                     data={categoryData}
                     innerRadius={65}
                     outerRadius={85}
-                    paddingAngle={5}
+                    paddingAngle={2}
                     dataKey='value'
-                    stroke='none'
                   >
                     {categoryData.map((entry, index) => (
                       <Cell
