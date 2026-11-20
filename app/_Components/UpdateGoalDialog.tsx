@@ -91,8 +91,9 @@ export default function UpdateGoalDialog({
             <p className='text-xs text-muted-foreground font-bold lowercase mb-1'>
               Depositando em:
             </p>
-            <p className='text-base font-bold text-foreground truncate'>
-              🎯 {goal.name}
+            <p className='flex items-center gap-2 min-w-0 text-base font-bold text-foreground'>
+              <Target className='w-4 h-4 shrink-0' aria-hidden='true' />
+              <span className='truncate'>{goal.name}</span>
             </p>
           </div>
 
