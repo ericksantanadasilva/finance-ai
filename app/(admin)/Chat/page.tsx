@@ -43,21 +43,20 @@ export default function AIAgentChat() {
   const inputRef = useRef<HTMLInputElement>(null);
   const focusInput = () => inputRef.current?.focus();
 
+  // Acompanha a altura visível (teclado do celular aberto/fechado). O zoom com
+  // dois dedos fica liberado: com zoom ativo (scale > 1) a altura visível
+  // encolhe, e ajustar a tela nesse momento atrapalharia quem está ampliando.
   useEffect(() => {
-    const preventDefault = (e: TouchEvent) => {
-      if ((e as any).scale !== 1) e.preventDefault();
-    };
-    document.addEventListener('touchmove', preventDefault, { passive: false });
     const updateViewport = () => {
-      if (window.visualViewport) {
-        setViewportHeight(`${window.visualViewport.height}px`);
+      const vv = window.visualViewport;
+      if (vv && vv.scale <= 1) {
+        setViewportHeight(`${vv.height}px`);
         window.scrollTo(0, 0);
       }
     };
     window.visualViewport?.addEventListener('resize', updateViewport);
     window.visualViewport?.addEventListener('scroll', updateViewport);
     return () => {
-      document.removeEventListener('touchmove', preventDefault);
       window.visualViewport?.removeEventListener('resize', updateViewport);
       window.visualViewport?.removeEventListener('scroll', updateViewport);
     };
