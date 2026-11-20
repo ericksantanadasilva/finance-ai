@@ -39,6 +39,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { StatCard } from './StatCard';
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
 
 export default function DashboardClient({
   initialTransactions,
@@ -46,6 +47,12 @@ export default function DashboardClient({
   initialTransactions: any[];
 }) {
   const router = useRouter();
+  // Gráficos: animação curta (300 ms) e desligada com movimento reduzido
+  const reducedMotion = useReducedMotion();
+  const chartAnimation = {
+    isAnimationActive: !reducedMotion,
+    animationDuration: 300,
+  };
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [transactions, setTransactions] = useState(initialTransactions);
   const [range, setRange] = useState(6);
@@ -297,11 +304,13 @@ export default function DashboardClient({
                     <Bar
                       dataKey='receitas'
                       maxBarSize={32}
+                      {...chartAnimation}
                       shape={stickerShape('receitas')}
                     />
                     <Bar
                       dataKey='despesas'
                       maxBarSize={32}
+                      {...chartAnimation}
                       shape={stickerShape('despesas')}
                     />
                   </BarChart>
@@ -355,6 +364,7 @@ export default function DashboardClient({
                     outerRadius={85}
                     paddingAngle={2}
                     dataKey='value'
+                    {...chartAnimation}
                   >
                     {categoryData.map((entry, index) => (
                       <Cell
