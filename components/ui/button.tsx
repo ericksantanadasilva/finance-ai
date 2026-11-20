@@ -12,7 +12,6 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: cn(pressable, 'bg-surface text-foreground'),
-        primary: cn(pressable, 'bg-primary text-primary-foreground'),
         // Plano, sem sombra e com borda fina: ação secundária (ex.: cancelar)
         // e opção não selecionada. A hierarquia vem da elevação.
         outline:

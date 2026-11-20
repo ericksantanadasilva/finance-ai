@@ -127,7 +127,7 @@ perigo de Configurações e os toasts de sucesso/erro/aviso.
 | Secundário, inativo | **plano**: borda fina, sem sombra | cancelar, chip inativo, regra pausada, "definir limite" |
 
 **Nada de bloco chapado da cor `ink` com sombra `ink`.** O fundo e a sombra
-viram uma mancha só. Por isso a variante `primary` do `Button` não é usada.
+viram uma mancha só. Por isso o `Button` não tem variante de fundo `ink`.
 
 ### Faixa de cabeçalho sem inverter
 
@@ -208,7 +208,7 @@ Reutilize antes de criar. Personalize com `variant`, `size` e `className`.
 
 | Componente | Arquivo | Notas |
 |---|---|---|
-| `Button` | `button.tsx` | Variantes: `default` (adesivo), `outline` (plano), `ghost`, `ai`, `danger`, `income`, `expense`. Tamanhos: `sm`, `md`, `lg`, `icon`. `primary` existe mas **não é usada** (ver Elevação). |
+| `Button` | `button.tsx` | Variantes: `default` (adesivo), `outline` (plano), `ghost`, `ai`, `danger`, `income`, `expense`. Tamanhos: `sm`, `md`, `lg`, `icon`. |
 | `Card`, `CardHeader`, `CardContent` | `card.tsx` | Card adesivo; `CardHeader` é a faixa. |
 | `Input` + `fieldVariants` | `input.tsx` | Contorno `ink`, tamanhos `sm`/`md`, estados de foco, `disabled` e `aria-invalid`. |
 | `Label` | `label.tsx` | `text-sm font-bold lowercase`. |
