@@ -160,15 +160,15 @@ export default function AIAgentChat() {
       });
 
       if (res.success) {
-        let displayDate = 'não definido';
+        let deadlineText = 'sem prazo definido';
         if (finalDate) {
           const [datePart] = finalDate.split('T');
           const [year, month, day] = datePart.split('-');
-          displayDate = `${day}/${month}/${year}`;
+          deadlineText = `com prazo para ${day}/${month}/${year}`;
         }
         updateMessageAfterAction(
           index,
-          `🎯 Meta "${data.name}" criada com prazo para ${displayDate}!`,
+          `🎯 Meta "${data.name}" criada ${deadlineText}!`,
         );
       }
     } catch (error) {
@@ -185,9 +185,21 @@ export default function AIAgentChat() {
     focusInput();
   };
 
+  // A resposta da IA costuma falar como se a ação já tivesse sido feita
+  // ("registrei seu gasto..."); ao cancelar, o balão passa a dizer o que houve.
   const handleCancel = (index: number) => {
     setMessages((prev) =>
-      prev.map((msg, i) => (i === index ? { ...msg, action: null } : msg)),
+      prev.map((msg, i) => {
+        if (i !== index) return msg;
+        const label = msg.action?.data?.description || msg.action?.data?.name;
+        return {
+          ...msg,
+          action: null,
+          content: label
+            ? `Cancelado: "${label}" não foi salvo.`
+            : 'Cancelado: nada foi salvo.',
+        };
+      }),
     );
     focusInput();
   };
