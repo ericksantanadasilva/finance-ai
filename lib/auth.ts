@@ -30,18 +30,27 @@ function registerFailedLogin(email: string) {
     });
 }
 
+/** Campos do perfil Google usados no login (vêm do OAuth web ou do ID token do mobile). */
+export type GoogleIdentity = Pick<
+  GoogleProfile,
+  'sub' | 'email' | 'email_verified' | 'name'
+>;
+
 /**
  * Encontra o usuário da conta Google pelo googleId ou pelo e-mail (conta existente
- * ainda não vinculada) e cria um novo se não houver. Retorna false se recusar o login.
+ * ainda não vinculada) e cria um novo se não houver. Retorna o id do usuário, ou
+ * null se recusar o login. Usado pelo login web e pelo login do app mobile.
  */
-async function linkGoogleAccount(profile: GoogleProfile) {
-  if (!profile.email_verified || !profile.email) return false;
+export async function linkGoogleAccount(
+  profile: GoogleIdentity,
+): Promise<string | null> {
+  if (!profile.email_verified || !profile.email) return null;
 
   const byGoogleId = await prisma.user.findUnique({
     where: { googleId: profile.sub },
     select: { id: true },
   });
-  if (byGoogleId) return true;
+  if (byGoogleId) return byGoogleId.id;
 
   const email = profile.email.toLowerCase();
   const byEmail = await prisma.user.findUnique({
@@ -50,20 +59,21 @@ async function linkGoogleAccount(profile: GoogleProfile) {
   });
 
   if (!byEmail) {
-    await prisma.user.create({
+    const created = await prisma.user.create({
       data: { email, name: profile.name || 'Usuário', googleId: profile.sub },
+      select: { id: true },
     });
-    return true;
+    return created.id;
   }
 
   // E-mail já vinculado a outra conta Google (ex: endereço reaproveitado)
-  if (byEmail.googleId) return false;
+  if (byEmail.googleId) return null;
 
   await prisma.user.update({
     where: { id: byEmail.id },
     data: { googleId: profile.sub },
   });
-  return true;
+  return byEmail.id;
 }
 
 export const authOptions: NextAuthOptions = {
@@ -105,7 +115,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ account, profile }) {
       if (account?.provider !== 'google') return true;
-      return linkGoogleAccount(profile as GoogleProfile);
+      return !!(await linkGoogleAccount(profile as GoogleProfile));
     },
     async jwt({ token, account }) {
       // O sub padrão seria o ID do Google; a sessão precisa do ID do usuário no banco

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth';
+import { authenticateAccessToken } from '@/lib/mobile-auth';
 
 /**
  * Valida a chave de API fornecida no header `x-api-key` para integrações externas (ex: n8n).
@@ -35,4 +36,27 @@ export async function validateUserSession(): Promise<AuthSessionResult> {
   }
 
   return { user: { id: user.id, email: user.email }, errorResponse: null };
+}
+
+/**
+ * Valida o access token do app mobile (`Authorization: Bearer <token>`).
+ * Não aceita o cookie do next-auth: as rotas do mobile ficam fora do alcance de CSRF.
+ */
+export async function requireMobileUser(
+  request: Request,
+): Promise<AuthSessionResult> {
+  const unauthorized: AuthSessionResult = {
+    user: null,
+    errorResponse: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+  };
+
+  const match = /^Bearer\s+(\S+)$/i.exec(
+    request.headers.get('authorization') ?? '',
+  );
+  if (!match) return unauthorized;
+
+  const userId = await authenticateAccessToken(match[1]);
+  if (!userId) return unauthorized;
+
+  return { user: { id: userId }, errorResponse: null };
 }
