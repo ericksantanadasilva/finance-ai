@@ -97,11 +97,15 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
 - [x] **1a** Extrair transações e categorias para `lib/finance` (sem mudar comportamento)
 - [x] **1b** Extrair recorrências
 - [x] **1c** Extrair metas e perfil; `chat.ts` passa a usar os services
-- [ ] **2a** Migration `MobileSession` (refresh tokens), **só depois do banco de dev**
-- [ ] **2b** Instalar `jose`; criar os helpers de token e o `requireMobileUser`; exportar `linkGoogleAccount`
-- [ ] **2c** Rotas `auth/google`, `auth/refresh`, `auth/logout`, `GET /me`; client IDs de Android e iOS
+- [x] **2a** Migration `MobileSession` (refresh tokens), **só depois do banco de dev**
+- [x] **2b** Instalar `jose`; criar os helpers de token e o `requireMobileUser`; exportar `linkGoogleAccount`
+- [x] **2c** Rotas `auth/google`, `auth/refresh`, `auth/logout`, `GET /me` (Zod antecipado para cá)
+  - Pendências da Etapa 2:
+    - [ ] Login real pelo Google: testar quando o projeto Expo e os client IDs de Android/iOS existirem, e preencher `GOOGLE_MOBILE_CLIENT_IDS`
+    - [ ] Detecção de reuso do refresh token (guardar o hash anterior e revogar a sessão se um token já trocado voltar)
+    - [ ] Deploy: aplicar a migration `add_mobile_session` no banco `finance` junto com o deploy e definir `MOBILE_JWT_SECRET` e `GOOGLE_MOBILE_CLIENT_IDS` no ambiente da VPS
 - [ ] **3** Rotas de leitura (dashboard, transactions, categories, recurring, goals)
-- [ ] **4** Instalar Zod; rotas de escrita com validação
+- [ ] **4** Rotas de escrita com validação (Zod já instalado na 2c)
 - [ ] **5a** Migration `PushDevice` + `NotificationLog`; rotas `/devices`
 - [ ] **5b** `lib/push.ts` + rota `dispatch`
 - [ ] **5c** Workflow diário no n8n
