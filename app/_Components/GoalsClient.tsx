@@ -146,19 +146,21 @@ export default function GoalsClient({
               key={goal.id}
               className='bg-surface border border-border-custom p-6 rounded-2xl group relative overflow-hidden transition-all hover:border-zinc-300 dark:hover:border-zinc-700 shadow-sm dark:shadow-none animate-in fade-in slide-in-from-bottom-3 duration-500'
             >
-              {/* AÇÕES NO HOVER */}
-              <div className='absolute top-4 right-4 flex gap-2 md:opacity-0 md:group-hover:opacity-100 transition-all z-10'>
+              {/* AÇÕES NO HOVER (ou quando recebem foco pelo teclado) */}
+              <div className='absolute top-4 right-4 flex gap-2 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-all z-10'>
                 <button
                   onClick={() => {
                     setSelectedGoal(goal);
                     setIsModalOpen(true);
                   }}
+                  aria-label={`Editar meta ${goal.name}`}
                   className='p-2 bg-background border border-border-custom hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 dark:text-zinc-400 transition-colors'
                 >
                   <Edit2 className='w-3.5 h-3.5' />
                 </button>
                 <button
                   onClick={() => setGoalToDelete(goal.id)} // Abre o ConfirmDialog
+                  aria-label={`Excluir meta ${goal.name}`}
                   className='p-2 bg-background border border-border-custom hover:bg-rose-500/10 rounded-lg text-zinc-500 hover:text-rose-500 transition-colors'
                 >
                   <Trash2 className='w-3.5 h-3.5' />
@@ -197,7 +199,14 @@ export default function GoalsClient({
 
                 <div className='space-y-3'>
                   {/* PROGRESS BAR REFINADA */}
-                  <div className='h-3 w-full bg-zinc-100 dark:bg-zinc-900/50 rounded-full overflow-hidden shadow-inner border border-border-custom/50'>
+                  <div
+                    role='progressbar'
+                    aria-label={`Progresso da meta ${goal.name}`}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={progress}
+                    className='h-3 w-full bg-zinc-100 dark:bg-zinc-900/50 rounded-full overflow-hidden shadow-inner border border-border-custom/50'
+                  >
                     <div
                       className='h-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_#10b98140]'
                       style={{ width: `${progress}%` }}
