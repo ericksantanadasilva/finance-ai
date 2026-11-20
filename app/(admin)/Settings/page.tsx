@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import { useUser } from '@/app/_Context/UserContext';
 import { getAvatarData } from '../../utils/utils';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -60,18 +60,22 @@ export default function SettingsPage() {
   return (
     <div className='min-h-screen bg-background text-foreground font-sans p-4 sm:p-8 transition-all duration-300'>
       <div className='max-w-2xl mx-auto pt-10 lg:pt-0'>
-        <h1 className='text-xl sm:text-2xl font-bold mb-2'>Configurações</h1>
+        <h1 className='text-xl sm:text-2xl font-bold lowercase mb-2'>
+          Configurações
+        </h1>
         <p className='text-muted-foreground text-xs sm:text-sm mb-8 font-medium'>
           Gerencie suas preferências e dados da conta com segurança.
         </p>
 
         {/* SEÇÃO 1: PERFIL */}
-        <section className='mb-10 animate-in fade-in slide-in-from-bottom-3'>
-          <h2 className='text-sm font-bold lowercase mb-4 flex items-center gap-2'>
-            <User className='w-4 h-4' /> Perfil do Usuário
-          </h2>
-
+        <section className='mb-8 animate-in fade-in slide-in-from-bottom-3'>
           <Card>
+            <CardHeader>
+              <h2 className='font-bold flex items-center gap-2'>
+                <User className='w-4 h-4' aria-hidden='true' /> Perfil do
+                Usuário
+              </h2>
+            </CardHeader>
             <CardContent className='space-y-8'>
               <div className='flex flex-col sm:flex-row items-center gap-8'>
                 {/* NOVO AVATAR DINÂMICO ESTILIZADO */}
@@ -79,9 +83,7 @@ export default function SettingsPage() {
                   <div
                     className={`w-24 h-24 rounded-3xl ${avatarTheme} border-2 border-ink shadow-hard flex items-center justify-center rotate-2 transition-transform hover:rotate-0 duration-500`}
                   >
-                    <span className='font-black text-3xl tracking-tighter'>
-                      {initials}
-                    </span>
+                    <span className='font-bold text-3xl'>{initials}</span>
                   </div>
                   <span className='text-xs font-medium lowercase text-muted-foreground'>
                     Avatar Dinâmico
@@ -123,51 +125,64 @@ export default function SettingsPage() {
         </section>
 
         {/* SEÇÃO 2: APARÊNCIA */}
-        <section className='mb-10'>
-          <h2
-            id='settings-theme-title'
-            className='text-sm font-bold lowercase mb-4 flex items-center gap-2'
-          >
-            <Smartphone className='w-4 h-4' /> Estilo do App
-          </h2>
+        <section className='mb-8'>
+          <Card>
+            <CardHeader>
+              <h2
+                id='settings-theme-title'
+                className='font-bold flex items-center gap-2'
+              >
+                <Smartphone className='w-4 h-4' aria-hidden='true' /> Estilo do
+                App
+              </h2>
+            </CardHeader>
+            <CardContent>
+              {/* Grupo com nome: o leitor de tela diz que os botões escolhem o estilo */}
+              <div
+                role='group'
+                aria-labelledby='settings-theme-title'
+                className='grid grid-cols-2 gap-4'
+              >
+                <Button
+                  size='lg'
+                  variant={theme === 'light' ? 'default' : 'outline'}
+                  aria-pressed={theme === 'light'}
+                  onClick={() => setTheme('light')}
+                >
+                  <Sun className='w-5 h-5' />
+                  Modo Claro
+                </Button>
 
-          {/* Grupo com nome: o leitor de tela diz que os botões escolhem o estilo */}
-          <div
-            role='group'
-            aria-labelledby='settings-theme-title'
-            className='grid grid-cols-2 gap-4'
-          >
-            <Button
-              size='lg'
-              variant={theme === 'light' ? 'default' : 'outline'}
-              aria-pressed={theme === 'light'}
-              onClick={() => setTheme('light')}
-            >
-              <Sun className='w-5 h-5' />
-              Modo Claro
-            </Button>
-
-            <Button
-              size='lg'
-              variant={theme === 'dark' ? 'default' : 'outline'}
-              aria-pressed={theme === 'dark'}
-              onClick={() => setTheme('dark')}
-            >
-              <Moon className='w-5 h-5' />
-              Modo Escuro
-            </Button>
-          </div>
+                <Button
+                  size='lg'
+                  variant={theme === 'dark' ? 'default' : 'outline'}
+                  aria-pressed={theme === 'dark'}
+                  onClick={() => setTheme('dark')}
+                >
+                  <Moon className='w-5 h-5' />
+                  Modo Escuro
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </section>
 
         {/* SEÇÃO 3: ZONA DE PERIGO */}
         <section className='mb-32'>
-          <Card>
+          {/* Contorno e sombra na cor de perigo (redefine --ink só aqui,
+              mesma técnica dos alertas de orçamento) */}
+          <Card className='[--ink:var(--expense)]'>
+            <CardHeader>
+              <h2 className='font-bold flex items-center gap-2'>
+                <ShieldAlert
+                  className='w-4 h-4 text-expense'
+                  aria-hidden='true'
+                />
+                Excluir Conta permanentemente
+              </h2>
+            </CardHeader>
             <CardContent className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6'>
               <div>
-                <h4 className='text-expense font-bold text-sm flex items-center gap-2 mb-1'>
-                  <ShieldAlert className='w-4 h-4' /> Excluir Conta
-                  permanentemente
-                </h4>
                 <p className='text-muted-foreground text-xs font-medium leading-relaxed'>
                   Atenção: Todos os seus dados, metas e histórico de transações
                   serão apagados sem possibilidade de recuperação.
