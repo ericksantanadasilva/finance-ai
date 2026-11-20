@@ -76,7 +76,7 @@ export default function CategoryDialog({
             <Label htmlFor='category-name'>Nome da Categoria</Label>
             <Input
               id='category-name'
-              placeholder='Ex: ALIMENTAÇÃO, SAÚDE...'
+              placeholder='Ex: alimentação, saúde...'
               autoComplete='off'
               value={name}
               onChange={(e) => setName(e.target.value)}
