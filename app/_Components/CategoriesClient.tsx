@@ -10,6 +10,7 @@ import CategoryBadge from './CategoryBadge';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { ProgressBar } from '@/components/ui/progress-bar';
 import { cn } from '@/lib/utils';
 
 type CategoryWithBudget = {
@@ -181,19 +182,11 @@ export default function CategoriesClient({
                       de {formatMoney(cat.budget)}
                     </span>
                   </div>
-                  <div
-                    className='h-3 w-full rounded-full border-2 border-ink bg-surface-muted overflow-hidden'
-                    role='progressbar'
-                    aria-label={`Orçamento de ${cat.name}`}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={Math.min(Math.round(cat.percent), 100)}
-                  >
-                    <div
-                      className={`h-full transition-all duration-500 ${budgetTone(cat.percent).bar}`}
-                      style={{ width: `${Math.min(cat.percent, 100)}%` }}
-                    />
-                  </div>
+                  <ProgressBar
+                    value={cat.percent}
+                    label={`Orçamento de ${cat.name}`}
+                    barClassName={budgetTone(cat.percent).bar}
+                  />
                   <p
                     className={cn(
                       'flex items-center gap-1.5 text-xs font-bold',

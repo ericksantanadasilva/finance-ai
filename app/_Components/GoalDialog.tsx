@@ -96,7 +96,7 @@ export default function GoalDialog({
   }
 
   return (
-    <DialogOverlay className='z-60 animate-in fade-in duration-300'>
+    <DialogOverlay className='animate-in fade-in duration-300'>
       <Card
         ref={panelRef}
         role='dialog'

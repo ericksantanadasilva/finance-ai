@@ -9,12 +9,16 @@ import {
   PlusCircle,
   Loader2,
   Calendar,
+  CheckCircle2,
 } from 'lucide-react';
 import GoalDialog from '@/app/_Components/GoalDialog';
 import UpdateGoalDialog from '@/app/_Components/UpdateGoalDialog';
 import ConfirmDialog from '@/app/_Components/ConfirmDialog'; // Importe o ConfirmDialog
 import { deleteGoal, updateGoalAmount } from '@/app/_actions/goals';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { ProgressBar } from '@/components/ui/progress-bar';
 
 interface Goal {
   id: string;
@@ -112,132 +116,152 @@ export default function GoalsClient({
       />
 
       {/* HEADER */}
-      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 pt-12 lg:pt-0'>
+      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 pt-10 lg:pt-0'>
         <div>
-          <h1 className='text-xl sm:text-2xl font-black text-foreground uppercase tracking-tight'>
+          <h1 className='text-xl sm:text-2xl font-bold lowercase'>
             Metas Financeiras
           </h1>
-          <p className='text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium'>
+          <p className='text-muted-foreground text-xs sm:text-sm font-medium'>
             Visualize e acompanhe seus sonhos de perto.
           </p>
         </div>
 
-        <button
+        <Button
           onClick={() => {
             setSelectedGoal(null);
             setIsModalOpen(true);
           }}
-          className='w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3.5 rounded-2xl text-xs font-black tracking-[0.2em] transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 active:scale-95'
+          className='w-full sm:w-auto'
         >
           <Plus className='w-4 h-4' /> NOVA META
-        </button>
+        </Button>
       </div>
 
-      {/* GRID DE CARDS */}
-      <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'>
-        {initialGoals.map((goal) => {
-          const progress = calculateProgress(
-            goal.currentAmount,
-            goal.targetAmount,
-          );
+      {initialGoals.length === 0 ? (
+        /* ESTADO VAZIO (mesmo padrão de Recorrentes) */
+        <div className='border-2 border-dashed border-border-custom rounded-2xl p-12 text-center space-y-3'>
+          <Target
+            className='w-8 h-8 mx-auto text-muted-foreground'
+            aria-hidden='true'
+          />
+          <p className='text-sm font-medium text-muted-foreground'>
+            Nenhuma meta ainda. Crie a primeira e acompanhe quanto falta para
+            chegar lá.
+          </p>
+        </div>
+      ) : (
+        /* GRID DE CARDS */
+        <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'>
+          {initialGoals.map((goal) => {
+            const progress = calculateProgress(
+              goal.currentAmount,
+              goal.targetAmount,
+            );
+            const isDone = progress >= 100;
 
-          return (
-            <div
-              key={goal.id}
-              className='bg-surface border border-border-custom p-6 rounded-2xl group relative overflow-hidden transition-all hover:border-zinc-300 dark:hover:border-zinc-700 shadow-sm dark:shadow-none animate-in fade-in slide-in-from-bottom-3 duration-500'
-            >
-              {/* AÇÕES NO HOVER (ou quando recebem foco pelo teclado) */}
-              <div className='absolute top-4 right-4 flex gap-2 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-all z-10'>
-                <button
-                  onClick={() => {
-                    setSelectedGoal(goal);
-                    setIsModalOpen(true);
-                  }}
-                  aria-label={`Editar meta ${goal.name}`}
-                  className='p-2 bg-background border border-border-custom hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 dark:text-zinc-400 transition-colors'
-                >
-                  <Edit2 className='w-3.5 h-3.5' />
-                </button>
-                <button
-                  onClick={() => setGoalToDelete(goal.id)} // Abre o ConfirmDialog
-                  aria-label={`Excluir meta ${goal.name}`}
-                  className='p-2 bg-background border border-border-custom hover:bg-rose-500/10 rounded-lg text-zinc-500 hover:text-rose-500 transition-colors'
-                >
-                  <Trash2 className='w-3.5 h-3.5' />
-                </button>
-              </div>
-
-              <div className='mb-4'>
-                <div className='w-12 h-12 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/5 flex items-center justify-center'>
-                  <Target className='w-6 h-6 text-emerald-600 dark:text-emerald-500' />
-                </div>
-              </div>
-
-              <h3 className='text-lg font-black text-foreground mb-4 pr-16 uppercase tracking-tight'>
-                {goal.name}
-              </h3>
-
-              <div className='space-y-5'>
-                <div className='flex justify-between items-end'>
-                  <div className='flex flex-col'>
-                    <span className='text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-black tracking-widest mb-1'>
-                      Acumulado
+            return (
+              <Card
+                key={goal.id}
+                className='group flex flex-col animate-in fade-in slide-in-from-bottom-3 duration-500'
+              >
+                <CardHeader className='py-2'>
+                  <h2 className='flex items-center gap-2 min-w-0 font-bold'>
+                    <Target className='w-4 h-4 shrink-0' aria-hidden='true' />
+                    {/* Nome como foi cadastrado (a faixa força minúsculas) */}
+                    <span className='truncate normal-case' title={goal.name}>
+                      {goal.name}
                     </span>
-                    <span className='text-foreground font-black text-xl tracking-tight'>
-                      {formatMoney(goal.currentAmount)}
-                    </span>
+                  </h2>
+
+                  {/* AÇÕES NO HOVER (ou quando recebem foco pelo teclado) */}
+                  <div className='flex items-center shrink-0 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity'>
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      onClick={() => {
+                        setSelectedGoal(goal);
+                        setIsModalOpen(true);
+                      }}
+                      aria-label={`Editar meta ${goal.name}`}
+                      className='size-8 text-muted-foreground hover:text-foreground'
+                    >
+                      <Edit2 className='w-4 h-4' />
+                    </Button>
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      onClick={() => setGoalToDelete(goal.id)} // Abre o ConfirmDialog
+                      aria-label={`Excluir meta ${goal.name}`}
+                      className='size-8 text-muted-foreground hover:text-expense'
+                    >
+                      <Trash2 className='w-4 h-4' />
+                    </Button>
                   </div>
-                  <div className='flex flex-col items-end'>
-                    <span className='text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-black tracking-widest mb-1'>
-                      Objetivo
-                    </span>
-                    <span className='text-zinc-500 dark:text-zinc-400 text-sm font-bold'>
-                      {formatMoney(goal.targetAmount)}
-                    </span>
-                  </div>
-                </div>
+                </CardHeader>
 
-                <div className='space-y-3'>
-                  {/* PROGRESS BAR REFINADA */}
-                  <div
-                    role='progressbar'
-                    aria-label={`Progresso da meta ${goal.name}`}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={progress}
-                    className='h-3 w-full bg-zinc-100 dark:bg-zinc-900/50 rounded-full overflow-hidden shadow-inner border border-border-custom/50'
-                  >
-                    <div
-                      className='h-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_#10b98140]'
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-
-                  <div className='flex justify-between items-center'>
-                    <div className='flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400'>
-                      <Calendar className='w-3.5 h-3.5' />
-                      <span className='text-[10px] font-black uppercase tracking-tighter'>
-                        {goal.deadline}
+                <CardContent className='flex-1 flex flex-col gap-5'>
+                  <div className='flex justify-between items-end gap-3'>
+                    <div className='flex flex-col min-w-0'>
+                      <span className='text-xs text-muted-foreground font-medium lowercase mb-1'>
+                        Acumulado
+                      </span>
+                      <span className='text-2xl font-bold tabular-nums tracking-tight wrap-break-word'>
+                        {formatMoney(goal.currentAmount)}
                       </span>
                     </div>
-                    <p className='text-xs font-black text-emerald-600 dark:text-emerald-500'>
-                      {progress}%
-                    </p>
+                    <div className='flex flex-col items-end shrink-0'>
+                      <span className='text-xs text-muted-foreground font-medium lowercase mb-1'>
+                        Objetivo
+                      </span>
+                      <span className='text-sm font-bold text-muted-foreground tabular-nums'>
+                        {formatMoney(goal.targetAmount)}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                <button
-                  onClick={() => setQuickDepositGoal(goal)}
-                  className='w-full mt-2 flex items-center justify-center gap-2 py-3.5 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-emerald-600 hover:text-white rounded-2xl text-[10px] font-black tracking-[0.2em] text-zinc-500 dark:text-zinc-400 transition-all border border-border-custom hover:border-emerald-600 active:scale-95 uppercase'
-                >
-                  <PlusCircle className='w-4 h-4' />
-                  Adicionar Valor
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+                  <div className='space-y-3'>
+                    <ProgressBar
+                      value={progress}
+                      label={`Progresso da meta ${goal.name}`}
+                    />
+
+                    {/* min-h-6: a linha tem a mesma altura com o selo
+                        "concluída" ou só com a porcentagem */}
+                    <div className='flex justify-between items-center gap-3 min-h-6'>
+                      <div className='flex items-center gap-1.5 text-muted-foreground'>
+                        <Calendar className='w-3.5 h-3.5' aria-hidden='true' />
+                        <span className='text-xs font-medium lowercase tabular-nums'>
+                          {goal.deadline}
+                        </span>
+                      </div>
+                      {isDone ? (
+                        // Concluída: ícone + texto, além da cor
+                        <span className='inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold lowercase bg-surface text-income border-2 border-income'>
+                          <CheckCircle2 className='w-3 h-3' aria-hidden='true' />
+                          Concluída
+                        </span>
+                      ) : (
+                        <p className='text-xs font-bold tabular-nums'>
+                          {progress}%
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <Button
+                    variant='outline'
+                    onClick={() => setQuickDepositGoal(goal)}
+                    className='w-full mt-auto'
+                  >
+                    <PlusCircle className='w-4 h-4' />
+                    Adicionar Valor
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
