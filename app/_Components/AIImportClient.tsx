@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
 import { toast } from 'sonner';
 
 // Server Actions aceitam no máximo 1 MB por requisição e o base64 aumenta o arquivo em ~33%
@@ -289,13 +290,12 @@ export default function AIImportClient() {
                       <label className='text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase mb-1 block'>
                         Data Real
                       </label>
-                      <input
-                        type='date'
-                        className='w-full bg-transparent text-[10px] border-b border-border-custom outline-none dark:[&::-webkit-calendar-picker-indicator]:invert'
+                      <DatePicker
+                        size='sm'
+                        aria-label='Data real'
                         value={item.date}
-                        onChange={(e) =>
-                          handleUpdateItem(idx, 'date', e.target.value)
-                        }
+                        onChange={(v) => handleUpdateItem(idx, 'date', v)}
+                        className='h-7 gap-2 text-[10px]'
                       />
                     </div>
                     <div>

@@ -2,7 +2,6 @@
 
 import React, { useState, useTransition, useEffect, useId } from 'react';
 import {
-  Calendar,
   Tag,
   FileText,
   ArrowUpCircle,
@@ -16,6 +15,7 @@ import { toast } from 'sonner';
 import { todayISO } from '@/app/utils/dates';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
 import { DialogCloseButton, DialogOverlay } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -287,16 +287,12 @@ export default function TransactionDialog({
               {/* DATA REAL */}
               <div className='flex flex-col gap-2'>
                 <Label htmlFor='tx-date'>Data da Compra</Label>
-                <div className='relative'>
-                  <Calendar className='absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground' />
-                  <Input
-                    id='tx-date'
-                    type='date'
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className='pl-12 pr-2 text-xs'
-                  />
-                </div>
+                <DatePicker
+                  id='tx-date'
+                  value={date}
+                  onChange={setDate}
+                  className='text-xs'
+                />
               </div>
             </div>
           </div>

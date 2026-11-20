@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useTransition, useEffect, useId } from 'react';
-import { Target, DollarSign, Calendar, Loader2 } from 'lucide-react';
+import { Target, DollarSign, Loader2 } from 'lucide-react';
 import { createGoal, updateGoal } from '../_actions/goals'; // Importada a função updateGoal
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
 import { DialogCloseButton, DialogOverlay } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,7 +37,7 @@ export default function GoalDialog({
         setTargetAmount(editData.targetAmount.toString());
         setCurrentAmount(editData.currentAmount.toString());
 
-        // Ajuste na lógica de data para preencher o input type="date"
+        // Ajuste na lógica de data para preencher o campo de data (aaaa-mm-dd)
         if (editData.deadline) {
           // Se a data vier do banco como objeto Date ou string ISO
           const d = new Date(editData.deadline);
@@ -164,16 +165,14 @@ export default function GoalDialog({
 
           <div className='flex flex-col gap-2'>
             <Label htmlFor='goal-deadline'>Prazo Final (Opcional)</Label>
-            <div className='relative'>
-              <Calendar className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground' />
-              <Input
-                id='goal-deadline'
-                type='date'
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
-                className='pl-10'
-              />
-            </div>
+            {/* Opcional: "limpar data" volta para sem prazo */}
+            <DatePicker
+              id='goal-deadline'
+              value={deadline}
+              onChange={setDeadline}
+              placeholder='Sem prazo'
+              clearable
+            />
           </div>
         </div>
 
