@@ -139,9 +139,16 @@ export default function AIImportClient() {
         <div className='space-y-4'>
           {/* CARD DE UPLOAD */}
           <div className='bg-surface border-border-custom border rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm dark:shadow-2xl'>
+            {/* role="button": a área é focável e abre o seletor com Enter ou
+                Espaço (o react-dropzone cuida do teclado) */}
             <div
-              {...getRootProps()}
-              className={`border-2 border-dashed rounded-xl p-6 sm:p-10 cursor-pointer transition-all flex flex-col items-center justify-center ${
+              {...getRootProps({
+                role: 'button',
+                'aria-label': files[0]
+                  ? `Arquivo selecionado: ${files[0].name}. Trocar arquivo`
+                  : 'Selecionar PDF ou foto da fatura',
+              })}
+              className={`outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background border-2 border-dashed rounded-xl p-6 sm:p-10 cursor-pointer transition-all flex flex-col items-center justify-center ${
                 isDragActive
                   ? 'border-purple-500 bg-purple-500/10'
                   : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-zinc-50 dark:bg-zinc-950/20'
@@ -168,17 +175,29 @@ export default function AIImportClient() {
             </button>
           </div>
 
+          {/* Anuncia o andamento para leitores de tela */}
+          <p role='status' className='sr-only'>
+            {loading
+              ? 'Analisando documento...'
+              : results.length > 0
+                ? `${results.length} itens prontos para conferência.`
+                : ''}
+          </p>
+
           {/* SEÇÃO DO MÊS DE REFERÊNCIA */}
           {results.length > 0 && (
             <div className='bg-surface border-border-custom border rounded-2xl p-5 space-y-4 animate-in fade-in zoom-in'>
               <div className='flex items-center gap-3 mb-2'>
                 <CalendarDays className='w-5 h-5 text-purple-500' />
-                <h3 className='text-sm font-bold'>Mês de Referência</h3>
+                <h3 className='text-sm font-bold'>
+                  <label htmlFor='import-month'>Mês de Referência</label>
+                </h3>
               </div>
               <p className='text-[10px] text-zinc-500 uppercase font-bold tracking-widest'>
                 Para qual fatura/mês são esses gastos?
               </p>
               <input
+                id='import-month'
                 type='month'
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
@@ -226,16 +245,21 @@ export default function AIImportClient() {
                 >
                   <button
                     onClick={() => handleRemoveItem(idx)}
+                    aria-label={`Remover item ${item.description || idx + 1}`}
                     className='absolute top-2 right-2 text-zinc-400 hover:text-rose-500 p-1 transition-colors'
                   >
                     <Trash2 className='w-4 h-4' />
                   </button>
                   <div className='grid grid-cols-2 gap-x-3 gap-y-4'>
                     <div className='col-span-2'>
-                      <label className='text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase mb-1 block'>
+                      <label
+                        htmlFor={`import-desc-${idx}`}
+                        className='text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase mb-1 block'
+                      >
                         Descrição
                       </label>
                       <input
+                        id={`import-desc-${idx}`}
                         className='w-full bg-transparent text-sm border-b border-border-custom focus:border-purple-500 outline-none pb-1'
                         value={item.description}
                         onChange={(e) =>
@@ -244,10 +268,14 @@ export default function AIImportClient() {
                       />
                     </div>
                     <div>
-                      <label className='text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase mb-1 block'>
+                      <label
+                        htmlFor={`import-amount-${idx}`}
+                        className='text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase mb-1 block'
+                      >
                         Valor (R$)
                       </label>
                       <input
+                        id={`import-amount-${idx}`}
                         type='number'
                         className='w-full bg-transparent text-sm border-b border-border-custom focus:border-purple-500 outline-none pb-1'
                         value={item.amount}
@@ -261,7 +289,10 @@ export default function AIImportClient() {
                       />
                     </div>
                     <div>
-                      <label className='text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase mb-1 block'>
+                      <label
+                        htmlFor={`import-category-${idx}`}
+                        className='text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase mb-1 block'
+                      >
                         Categoria
                       </label>
                       <Select
@@ -271,8 +302,8 @@ export default function AIImportClient() {
                         }
                       >
                         <SelectTrigger
+                          id={`import-category-${idx}`}
                           size='sm'
-                          aria-label='Categoria'
                           className='h-7'
                         >
                           <SelectValue placeholder='Selecione...' />
@@ -287,19 +318,25 @@ export default function AIImportClient() {
                       </Select>
                     </div>
                     <div>
-                      <label className='text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase mb-1 block'>
+                      <label
+                        htmlFor={`import-date-${idx}`}
+                        className='text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase mb-1 block'
+                      >
                         Data Real
                       </label>
                       <DatePicker
+                        id={`import-date-${idx}`}
                         size='sm'
-                        aria-label='Data real'
                         value={item.date}
                         onChange={(v) => handleUpdateItem(idx, 'date', v)}
                         className='h-7 gap-2 text-[10px]'
                       />
                     </div>
                     <div>
-                      <label className='text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase mb-1 block'>
+                      <label
+                        htmlFor={`import-type-${idx}`}
+                        className='text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase mb-1 block'
+                      >
                         Tipo
                       </label>
                       <Select
@@ -307,8 +344,8 @@ export default function AIImportClient() {
                         onValueChange={(v) => handleUpdateItem(idx, 'type', v)}
                       >
                         <SelectTrigger
+                          id={`import-type-${idx}`}
                           size='sm'
-                          aria-label='Tipo'
                           className='h-7 text-[10px]'
                         >
                           <SelectValue />
