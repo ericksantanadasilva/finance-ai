@@ -1,6 +1,9 @@
 'use server';
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import {
+  GoogleGenerativeAI,
+  GoogleGenerativeAIFetchError,
+} from '@google/generative-ai';
 import { getRecentTransactions } from '@/lib/finance/transactions';
 import { getCategories } from '@/lib/finance/categories';
 import { getGoals } from '@/lib/finance/goals';
@@ -26,6 +29,25 @@ function normalizeDeadline(value: unknown, today: string) {
   const currentYear = Number(today.slice(0, 4));
   if (value < today && y === currentYear) return `${y + 1}${value.slice(4)}`;
   return value;
+}
+
+/**
+ * Mensagem para quando o Gemini recusa por cota (HTTP 429). O plano gratuito
+ * tem limite por dia e por minuto, e os dois chegam como 429; o quotaId do
+ * QuotaFailure diz qual foi. Sem essa informação, assume o limite diário.
+ */
+function quotaExceededReply(error: GoogleGenerativeAIFetchError) {
+  const perMinute = (error.errorDetails ?? []).some((detail) => {
+    const violations: unknown = (detail as { violations?: unknown }).violations;
+    return (
+      Array.isArray(violations) &&
+      violations.some((v) => /PerMinute/i.test(String(v?.quotaId ?? '')))
+    );
+  });
+
+  return perMinute
+    ? 'Muitas mensagens seguidas para a IA. Aguarde um minuto e tente novamente.'
+    : 'Limite diário da IA atingido. Tente novamente mais tarde.';
 }
 
 export async function sendMessage(message: string, history: any[] = []) {
@@ -143,6 +165,11 @@ export async function sendMessage(message: string, history: any[] = []) {
 
     return parsed;
   } catch (error) {
+    if (error instanceof GoogleGenerativeAIFetchError && error.status === 429) {
+      console.warn('Cota do Gemini esgotada:', error.message);
+      return { reply: quotaExceededReply(error), action: 'NONE', data: {} };
+    }
+
     console.error('Erro no chat com IA:', error);
     return {
       reply: 'Não consegui processar sua mensagem agora. Tente novamente.',
