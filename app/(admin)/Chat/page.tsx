@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useId } from 'react';
 import {
   Send,
   Bot,
@@ -20,10 +20,17 @@ import { createTransaction } from '@/app/_actions/transactions';
 import { updateGoalAmount, createGoal } from '@/app/_actions/goals';
 import { toast } from 'sonner';
 import { currentMonthISO, todayISO } from '@/app/utils/dates';
-import CategoryBadge from '@/app/_Components/CategoryBadge';
 import TypeIcon from '@/app/_Components/TypeIcon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 export default function AIAgentChat() {
@@ -333,12 +340,16 @@ export default function AIAgentChat() {
                   <ActionCard
                     action={msg.action}
                     onCancel={() => handleCancel(index)}
-                    onConfirm={() => {
+                    onConfirm={(category) => {
                       if (msg.action.action === 'CREATE_GOAL')
                         handleConfirmCreateGoal(index, msg.action.data);
                       else if (msg.action.action === 'UPDATE_GOAL')
                         handleConfirmGoalUpdate(index, msg.action.data);
-                      else handleConfirmTransaction(index, msg.action.data);
+                      else
+                        handleConfirmTransaction(index, {
+                          ...msg.action.data,
+                          category,
+                        });
                     }}
                   />
                 )}
@@ -410,7 +421,22 @@ type ChatAction = {
     type?: string;
     deadline?: string; // YYYY-MM-DD (só em CREATE_GOAL)
   };
+  // Categorias do usuário (só em CREATE_TRANSACTION)
+  categories?: { name: string; color: string }[];
 };
+
+/**
+ * Categoria inicial do cartão: a sugerida pela IA. Se ela já existe com outra
+ * caixa ("alimentação" x "Alimentação"), usa o nome cadastrado, para não criar
+ * uma duplicada ao confirmar.
+ */
+function suggestedCategory(action: ChatAction) {
+  const suggested = action.data.category?.trim() || 'Geral';
+  const existing = action.categories?.find(
+    (c) => c.name.toLowerCase() === suggested.toLowerCase(),
+  );
+  return existing?.name ?? suggested;
+}
 
 // Cartão de ação sugerido pela IA: adesivo neutro com o tipo, o valor e os
 // botões. Receita/despesa usam a seta (TypeIcon) e a cor só como reforço.
@@ -421,11 +447,19 @@ function ActionCard({
 }: {
   action: ChatAction;
   onCancel: () => void;
-  onConfirm: () => void;
+  onConfirm: (category: string) => void;
 }) {
   const data = action.data;
   const isTransaction = action.action === 'CREATE_TRANSACTION';
   const amount = Number(data.amount || data.targetAmount || 0);
+
+  // Sugestão da IA que ainda não existe: continua como opção, marcada como
+  // nova; o save cria a categoria pelo nome ao confirmar
+  const suggested = suggestedCategory(action);
+  const [category, setCategory] = useState(suggested);
+  const categories = action.categories ?? [];
+  const suggestedIsNew = !categories.some((c) => c.name === suggested);
+  const selectId = useId();
 
   return (
     <div className='rounded-2xl border-2 border-ink bg-surface p-5 shadow-hard'>
@@ -455,9 +489,7 @@ function ActionCard({
                 <Target className='w-3.5 h-3.5' aria-hidden='true' /> Meta
                 Existente
               </span>
-            ) : (
-              <CategoryBadge name={data.category || 'Geral'} />
-            )}
+            ) : null}
 
             {/* Exibe o mês de competência se detectado pela IA */}
             {data.referenceMonth && (
@@ -482,6 +514,27 @@ function ActionCard({
           </div>
         </div>
       </div>
+
+      {isTransaction && (
+        <div className='mb-5 space-y-2'>
+          <Label htmlFor={selectId}>Categoria</Label>
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger id={selectId} size='sm'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {suggestedIsNew && (
+                <SelectItem value={suggested}>{suggested} (nova)</SelectItem>
+              )}
+              {categories.map((c) => (
+                <SelectItem key={c.name} value={c.name}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {/* flex-wrap: em telas estreitas os botões descem, o valor não quebra */}
       <div className='flex flex-wrap justify-between items-center border-t border-border-custom pt-4 gap-3'>
@@ -508,7 +561,7 @@ function ActionCard({
           >
             <X className='w-5 h-5' />
           </Button>
-          <Button onClick={onConfirm}>
+          <Button onClick={() => onConfirm(category)}>
             <Check className='w-4 h-4' /> CONFIRMAR
           </Button>
         </div>

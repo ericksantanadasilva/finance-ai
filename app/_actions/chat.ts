@@ -133,6 +133,14 @@ export async function sendMessage(message: string, history: any[] = []) {
       else delete parsed.data.deadline;
     }
 
+    // Opções do seletor de categoria do cartão de lançamento
+    if (parsed?.action === 'CREATE_TRANSACTION') {
+      parsed.categories = categories.map((c) => ({
+        name: c.name,
+        color: c.color,
+      }));
+    }
+
     return parsed;
   } catch (error) {
     console.error('Erro no chat com IA:', error);
