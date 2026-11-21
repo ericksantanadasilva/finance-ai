@@ -101,7 +101,7 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
 - [x] **2b** Instalar `jose`; criar os helpers de token e o `requireMobileUser`; exportar `linkGoogleAccount`
 - [x] **2c** Rotas `auth/google`, `auth/refresh`, `auth/logout`, `GET /me` (Zod antecipado para cá)
   - Pendências da Etapa 2:
-    - [ ] Login real pelo Google: testar quando o projeto Expo e os client IDs de Android/iOS existirem, e preencher `GOOGLE_MOBILE_CLIENT_IDS`
+    - [x] Login real pelo Google: testado de ponta a ponta pelo app mobile (login, refresh com rotação sob 3 chamadas simultâneas, logout revogando a sessão e `/me`)
     - [ ] Detecção de reuso do refresh token (guardar o hash anterior e revogar a sessão se um token já trocado voltar)
     - [ ] Deploy: aplicar a migration `add_mobile_session` no banco `finance` junto com o deploy e definir `MOBILE_JWT_SECRET` e `GOOGLE_MOBILE_CLIENT_IDS` no ambiente da VPS
 - [ ] **3** Rotas de leitura (dashboard, transactions, categories, recurring, goals)
