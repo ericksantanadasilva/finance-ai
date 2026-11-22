@@ -10,6 +10,11 @@ export type BudgetStatus = {
   percent: number;
 };
 
+/** Percentual em 2 casas: tira o resíduo de ponto flutuante (ex.: 99.99999999999999) antes de comparar com 80/100. */
+function budgetPercent(spent: number, budget: number) {
+  return Math.round((spent / budget) * 10000) / 100;
+}
+
 function monthRange(month?: string) {
   const base =
     month && /^\d{4}-\d{2}$/.test(month)
@@ -67,7 +72,7 @@ export async function getCategoriesWithBudget(userId: string, month?: string) {
       color: c.color,
       budget,
       spent,
-      percent: budget && budget > 0 ? (spent / budget) * 100 : null,
+      percent: budget && budget > 0 ? budgetPercent(spent, budget) : null,
     };
   });
 }
@@ -117,7 +122,7 @@ export async function getBudgetStatus(
     category: category.name,
     spent,
     budget,
-    percent: (spent / budget) * 100,
+    percent: budgetPercent(spent, budget),
   };
 }
 
