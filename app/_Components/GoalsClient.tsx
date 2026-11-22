@@ -46,9 +46,13 @@ export default function GoalsClient({
       currency: 'BRL',
     }).format(v);
 
-  // Math.floor: 99,9% mostra 99%, nunca arredonda para 100% antes da hora
+  // Math.floor: 99,9% mostra 99%, nunca arredonda para 100% antes da hora.
+  // Antes do floor, arredonda em 2 casas para tirar o resíduo de ponto
+  // flutuante (29 / 100 * 100 = 28,999...96, que viraria 28%). Mesmo cálculo
+  // do app mobile.
   const calculateProgress = (current: number, target: number) => {
-    return Math.min(Math.floor((current / target) * 100), 100);
+    const percent = Math.round((current / target) * 100 * 100) / 100;
+    return Math.min(Math.floor(percent), 100);
   };
 
   // FUNÇÃO DE EXCLUSÃO REFORMULADA
