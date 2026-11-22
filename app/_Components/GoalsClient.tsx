@@ -9,7 +9,10 @@ import {
   PlusCircle,
   Calendar,
   CheckCircle2,
+  AlertTriangle,
+  CalendarX,
 } from 'lucide-react';
+import { APP_TIME_ZONE } from '@/app/utils/dates';
 import GoalDialog from '@/app/_Components/GoalDialog';
 import UpdateGoalDialog from '@/app/_Components/UpdateGoalDialog';
 import ConfirmDialog from '@/app/_Components/ConfirmDialog'; // Importe o ConfirmDialog
@@ -24,13 +27,110 @@ interface Goal {
   name: string;
   targetAmount: number;
   currentAmount: number;
-  deadline: string;
+  deadline: string; // já formatado para exibir ("dd/mm/aaaa" ou "Sem prazo")
+  deadlineDate: string | null; // YYYY-MM-DD
+  createdAt: string | null; // ISO; início do ritmo
+}
+
+// Regras do ritmo iguais às do app mobile (finance-mobile/src/lib/goals.ts):
+// a situação vem do ritmo, não da porcentagem pura. Uma meta no começo com
+// pouco juntado não é problema, se o prazo também mal começou.
+type GoalPace =
+  | { status: 'done' }
+  /** Sem prazo, não há ritmo a cobrar. */
+  | { status: 'noDeadline' }
+  | { status: 'onTrack' }
+  /** `expected`: porcentagem inteira do prazo já passada (1 a 100). */
+  | { status: 'behind'; expected: number }
+  | { status: 'overdue' }
+  /** Sem data de criação válida: não dá para medir o ritmo (fica em income). */
+  | { status: 'noPace' };
+
+/** Tira o resíduo de ponto flutuante (ex.: 28.999999999999996 → 29). */
+function round2(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
+/** Porcentagem juntada, exata (sem floor), para comparar com o ritmo. */
+function savedPercent(goal: Goal) {
+  if (goal.targetAmount <= 0) return 0;
+  return round2((goal.currentAmount / goal.targetAmount) * 100);
+}
+
+/**
+ * Progresso exibido: inteiro para baixo (99,9% mostra 99%, nunca 100% antes da
+ * hora), limitado a 100.
+ */
+function goalProgress(goal: Goal) {
+  return Math.min(Math.floor(savedPercent(goal)), 100);
+}
+
+/**
+ * "YYYY-MM-DD" de hoje. Diferença do app (que usa o fuso do aparelho): o web
+ * renderiza no servidor (UTC) e hidrata no navegador, então usa o fuso fixo
+ * do app para os dois lados chegarem ao mesmo dia.
+ */
+function todayISO(now: Date) {
+  // en-CA formata como YYYY-MM-DD
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: APP_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now);
+}
+
+/**
+ * Concluída pelos valores; vencida quando hoje já passou do dia do prazo; no
+ * ritmo quando a porcentagem juntada alcança a porcentagem do tempo passado
+ * entre a criação e o prazo.
+ */
+function goalPace(goal: Goal, now: Date): GoalPace {
+  if (goal.currentAmount >= goal.targetAmount) return { status: 'done' };
+  if (!goal.deadlineDate) return { status: 'noDeadline' };
+  // O dia do prazo ainda conta: vence a partir do dia seguinte
+  if (todayISO(now) > goal.deadlineDate) return { status: 'overdue' };
+
+  const start = goal.createdAt ? new Date(goal.createdAt).getTime() : NaN;
+  if (Number.isNaN(start)) return { status: 'noPace' };
+
+  // Prazos são gravados ao meio-dia UTC do dia (parseDateOnly)
+  const [year, month, day] = goal.deadlineDate.split('-').map(Number);
+  const end = Date.UTC(year, month - 1, day, 12);
+  const total = end - start;
+  // Prazo anterior à criação: o tempo todo já passou
+  const elapsed = total > 0 ? ((now.getTime() - start) / total) * 100 : 100;
+  // Em pontos inteiros, os mesmos do texto: uma meta recém-criada (esperado
+  // 0,07%) não aparece "abaixo do ritmo · esperado 0%"
+  const expected = Math.floor(Math.min(Math.max(elapsed, 0), 100));
+
+  return savedPercent(goal) >= expected
+    ? { status: 'onTrack' }
+    : { status: 'behind', expected };
+}
+
+// Cor da barra pelo ritmo. A cor só reforça: abaixo do ritmo e vencida têm
+// texto e ícone
+function barClassName(pace: GoalPace) {
+  if (pace.status === 'overdue') return 'bg-expense';
+  if (pace.status === 'behind') return 'bg-warning';
+  return 'bg-income';
+}
+
+function paceLabel(pace: GoalPace) {
+  if (pace.status === 'overdue') return ', prazo vencido';
+  if (pace.status === 'behind') return ', abaixo do ritmo';
+  return '';
 }
 
 export default function GoalsClient({
   initialGoals,
+  now,
 }: {
   initialGoals: Goal[];
+  // Instante da renderização no servidor (ms): o navegador hidrata com o mesmo
+  // valor, então a barra e o aviso do ritmo saem iguais nos dois lados
+  now: number;
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
@@ -45,15 +145,6 @@ export default function GoalsClient({
       style: 'currency',
       currency: 'BRL',
     }).format(v);
-
-  // Math.floor: 99,9% mostra 99%, nunca arredonda para 100% antes da hora.
-  // Antes do floor, arredonda em 2 casas para tirar o resíduo de ponto
-  // flutuante (29 / 100 * 100 = 28,999...96, que viraria 28%). Mesmo cálculo
-  // do app mobile.
-  const calculateProgress = (current: number, target: number) => {
-    const percent = Math.round((current / target) * 100 * 100) / 100;
-    return Math.min(Math.floor(percent), 100);
-  };
 
   // FUNÇÃO DE EXCLUSÃO REFORMULADA
   const handleConfirmDelete = async () => {
@@ -138,12 +229,10 @@ export default function GoalsClient({
         /* GRID DE CARDS */
         <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'>
           {initialGoals.map((goal) => {
-            const progress = calculateProgress(
-              goal.currentAmount,
-              goal.targetAmount,
-            );
+            const progress = goalProgress(goal);
+            const pace = goalPace(goal, new Date(now));
             // Concluída pelos valores, não pela porcentagem exibida
-            const isDone = goal.currentAmount >= goal.targetAmount;
+            const isDone = pace.status === 'done';
 
             return (
               <Card
@@ -208,7 +297,8 @@ export default function GoalsClient({
                   <div className='space-y-3'>
                     <ProgressBar
                       value={progress}
-                      label={`Progresso da meta ${goal.name}`}
+                      label={`Progresso da meta ${goal.name}${paceLabel(pace)}`}
+                      barClassName={barClassName(pace)}
                     />
 
                     {/* min-h-6: a linha tem a mesma altura com o selo
@@ -232,6 +322,27 @@ export default function GoalsClient({
                         </p>
                       )}
                     </div>
+
+                    {/* Ritmo: a cor da barra sempre vem com texto e ícone
+                        (mesmos textos e ícones do app mobile) */}
+                    {pace.status === 'behind' && (
+                      <p className='flex items-center gap-1.5 text-xs font-bold lowercase tabular-nums text-warning'>
+                        <AlertTriangle
+                          className='w-3.5 h-3.5 shrink-0'
+                          aria-hidden='true'
+                        />
+                        Abaixo do ritmo · esperado {pace.expected}% até hoje
+                      </p>
+                    )}
+                    {pace.status === 'overdue' && (
+                      <p className='flex items-center gap-1.5 text-xs font-bold lowercase text-expense'>
+                        <CalendarX
+                          className='w-3.5 h-3.5 shrink-0'
+                          aria-hidden='true'
+                        />
+                        Prazo vencido
+                      </p>
+                    )}
                   </div>
 
                   <Button
