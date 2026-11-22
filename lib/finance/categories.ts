@@ -42,18 +42,23 @@ export async function getCategories(userId: string) {
 
 /**
  * Categorias com o limite mensal e quanto já foi gasto no mês de competência
- * (referenceDate, o mesmo critério do restante do app).
+ * (referenceDate, o mesmo critério do restante do app). Com `categoryId`, só essa categoria.
  */
-export async function getCategoriesWithBudget(userId: string, month?: string) {
+export async function getCategoriesWithBudget(
+  userId: string,
+  month?: string,
+  categoryId?: string,
+) {
   const [categories, spentByCategory] = await Promise.all([
     prisma.category.findMany({
-      where: { userId },
+      where: { userId, id: categoryId },
       orderBy: { name: 'asc' },
     }),
     prisma.transaction.groupBy({
       by: ['categoryId'],
       where: {
         userId,
+        categoryId,
         type: 'expense',
         referenceDate: monthRange(month),
       },
@@ -77,6 +82,7 @@ export async function getCategoriesWithBudget(userId: string, month?: string) {
   });
 }
 
+/** Retorna false se a categoria não existir ou for de outro usuário. */
 export async function setCategoryBudget(
   userId: string,
   id: string,
@@ -87,10 +93,11 @@ export async function setCategoryBudget(
   }
 
   // updateMany garante que só altera categorias do próprio usuário
-  await prisma.category.updateMany({
+  const result = await prisma.category.updateMany({
     where: { id, userId },
     data: { budget: budget && budget > 0 ? budget : null },
   });
+  return result.count > 0;
 }
 
 /**

@@ -111,7 +111,7 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
   - [x] **4c** Schemas Zod compartilhados: valor (> 0, até 2 casas, até 99999999.99), data `YYYY-MM-DD` válida, mês `YYYY-MM`
   - [x] **4d** `POST /transactions` → `201 { transaction, budgetAlert }`
   - [x] **4e** `PATCH /transactions/:id` (edição completa ou `{ isPaid }`) e `DELETE /transactions/:id`
-  - [ ] **4f** `PATCH /categories/:id` (`budget`; `null` remove o limite)
+  - [x] **4f** `PATCH /categories/:id` (`budget`; `null` remove o limite)
   - [ ] **4g** `POST /recurring`, `PATCH /recurring/:id` (`active`) e `DELETE /recurring/:id`
   - [ ] **4h** `POST /goals` e `POST /goals/:id/contributions` (aporte > 0)
   - Depois (o app ainda não usa):
