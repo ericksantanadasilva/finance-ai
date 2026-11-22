@@ -104,8 +104,20 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
     - [x] Login real pelo Google: testado de ponta a ponta pelo app mobile (login, refresh com rotação sob 3 chamadas simultâneas, logout revogando a sessão e `/me`)
     - [ ] Detecção de reuso do refresh token (guardar o hash anterior e revogar a sessão se um token já trocado voltar)
     - [ ] Deploy: aplicar a migration `add_mobile_session` no banco `finance` junto com o deploy e definir `MOBILE_JWT_SECRET` e `GOOGLE_MOBILE_CLIENT_IDS` no ambiente da VPS
-- [ ] **3** Rotas de leitura (dashboard, transactions, categories, recurring, goals)
-- [ ] **4** Rotas de escrita com validação (Zod já instalado na 2c)
+- [x] **3** Rotas de leitura (dashboard, transactions, categories, recurring, goals): em uso pelo app mobile
+- [ ] **4** Rotas de escrita com validação (Zod já instalado na 2c). Contrato levantado pelo app em `finance-mobile/docs/ESCRITA_BACKEND.md`: 201 com o recurso no formato da leitura, 200 ao alterar, 204 ao excluir, 404 para id inexistente ou de outro usuário
+  - [ ] **4a** Mês de competência padrão no fuso do app (`currentMonthISO(APP_TIME_ZONE)`) em `createTransaction`
+  - [ ] **4b** Percentual do orçamento arredondado em 2 casas (`getCategoriesWithBudget` e `getBudgetStatus`), antes de comparar com 80%
+  - [ ] **4c** Schemas Zod compartilhados: valor (> 0, até 2 casas, até 99999999.99), data `YYYY-MM-DD` válida, mês `YYYY-MM`
+  - [ ] **4d** `POST /transactions` → `201 { transaction, budgetAlert }`
+  - [ ] **4e** `PATCH /transactions/:id` (edição completa ou `{ isPaid }`) e `DELETE /transactions/:id`
+  - [ ] **4f** `PATCH /categories/:id` (`budget`; `null` remove o limite)
+  - [ ] **4g** `POST /recurring`, `PATCH /recurring/:id` (`active`) e `DELETE /recurring/:id`
+  - [ ] **4h** `POST /goals` e `POST /goals/:id/contributions` (aporte > 0)
+  - Depois (o app ainda não usa):
+    - [ ] `POST /categories` (nome repetido → 409; cor validada em hex) e `DELETE /categories/:id`
+    - [ ] `PATCH /goals/:id`, `DELETE /goals/:id` e `PATCH /me`
+    - [ ] Mesma cor padrão para a categoria nova em `createTransaction`, `updateTransaction` e `createRecurringRule`
 - [ ] **5a** Migration `PushDevice` + `NotificationLog`; rotas `/devices`
 - [ ] **5b** `lib/push.ts` + rota `dispatch`
 - [ ] **5c** Workflow diário no n8n
