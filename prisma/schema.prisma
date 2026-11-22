@@ -128,6 +128,9 @@ model Goal {
   targetAmount  Decimal   @db.Decimal(10, 2)
   currentAmount Decimal   @default(0) @db.Decimal(10, 2)
   deadline      DateTime?
+  // Início do ritmo da meta (app mobile). As metas antigas receberam o
+  // instante embutido no id (cuid v1) na migration add_goal_created_at
+  createdAt     DateTime  @default(now())
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
