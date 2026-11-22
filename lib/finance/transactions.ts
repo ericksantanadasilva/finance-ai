@@ -2,7 +2,11 @@
 // Sem 'use server': o userId vem de quem chama, depois de autenticar.
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@/prisma/generated/client';
-import { parseDateOnly } from '@/app/utils/dates';
+import {
+  APP_TIME_ZONE,
+  currentMonthISO,
+  parseDateOnly,
+} from '@/app/utils/dates';
 import { getBudgetStatus, type BudgetStatus } from './categories';
 
 const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
@@ -83,8 +87,7 @@ export async function createTransaction(
     },
   });
 
-  const safeReferenceMonth =
-    referenceMonth || new Date().toISOString().slice(0, 7);
+  const safeReferenceMonth = referenceMonth || currentMonthISO(APP_TIME_ZONE);
 
   const transaction = await prisma.transaction.create({
     data: {
