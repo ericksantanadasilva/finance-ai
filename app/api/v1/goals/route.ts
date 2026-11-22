@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { requireMobileUser } from '@/lib/api-auth';
-import { getGoals } from '@/lib/finance/goals';
+import {
+  dateOnlySchema,
+  moneySchema,
+  nonNegativeMoneySchema,
+  parseJsonBody,
+} from '@/lib/api-validation';
+import { createGoal, getGoals, toGoalItem } from '@/lib/finance/goals';
 
 /**
  * Metas do usuário, com valores em número, prazo em "YYYY-MM-DD" (ou null) e
@@ -12,20 +19,43 @@ export async function GET(request: Request) {
 
   try {
     const goals = await getGoals(user.id);
-    return NextResponse.json({
-      goals: goals.map((goal) => ({
-        id: goal.id,
-        name: goal.name,
-        targetAmount: Number(goal.targetAmount),
-        currentAmount: Number(goal.currentAmount),
-        // Prazos são gravados ao meio-dia UTC (parseDateOnly): a data UTC é o dia certo
-        deadline: goal.deadline ? goal.deadline.toISOString().slice(0, 10) : null,
-        // Início do ritmo da meta (ISO completo)
-        createdAt: goal.createdAt.toISOString(),
-      })),
-    });
+    return NextResponse.json({ goals: goals.map(toGoalItem) });
   } catch (error) {
     console.error('Erro ao buscar metas (mobile):', error);
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 },
+    );
+  }
+}
+
+const createSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  targetAmount: moneySchema,
+  currentAmount: nonNegativeMoneySchema.default(0),
+  // Data inválida dá 400 (o service a transformaria em "sem prazo")
+  deadline: dateOnlySchema.nullable().optional(),
+});
+
+/** Cria a meta. Responde com o item no formato de GET /goals. */
+export async function POST(request: Request) {
+  const { user, errorResponse } = await requireMobileUser(request);
+  if (errorResponse) return errorResponse;
+
+  const { data: body, errorResponse: bodyError } = await parseJsonBody(
+    request,
+    createSchema,
+  );
+  if (bodyError) return bodyError;
+
+  try {
+    const goal = await createGoal(user.id, {
+      ...body,
+      deadline: body.deadline ?? undefined,
+    });
+    return NextResponse.json({ goal }, { status: 201 });
+  } catch (error) {
+    console.error('Erro ao criar meta (mobile):', error);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 },

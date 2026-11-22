@@ -113,7 +113,7 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
   - [x] **4e** `PATCH /transactions/:id` (edição completa ou `{ isPaid }`) e `DELETE /transactions/:id`
   - [x] **4f** `PATCH /categories/:id` (`budget`; `null` remove o limite)
   - [x] **4g** `POST /recurring`, `PATCH /recurring/:id` (`active`) e `DELETE /recurring/:id`
-  - [ ] **4h** `POST /goals` e `POST /goals/:id/contributions` (aporte > 0)
+  - [x] **4h** `POST /goals` e `POST /goals/:id/contributions` (aporte > 0)
   - Depois (o app ainda não usa):
     - [ ] `POST /categories` (nome repetido → 409; cor validada em hex) e `DELETE /categories/:id`
     - [ ] `PATCH /goals/:id`, `DELETE /goals/:id` e `PATCH /me`

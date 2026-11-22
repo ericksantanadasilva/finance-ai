@@ -1,15 +1,26 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
+const MAX_MONEY = 99999999.99; // Decimal(10, 2) do banco
+
+// Compara em centavos: multipleOf(0.01) falha com ponto flutuante (ex.: 152.9)
+const hasAtMostTwoDecimals = (v: number) =>
+  Math.abs(Math.round(v * 100) - v * 100) < 1e-6;
+const twoDecimalsMessage = { message: 'Must have at most 2 decimal places' };
+
 /** Dinheiro: > 0, até 2 casas e dentro do Decimal(10, 2) do banco. */
 export const moneySchema = z
   .number()
   .positive()
-  .max(99999999.99)
-  // Compara em centavos: multipleOf(0.01) falha com ponto flutuante (ex.: 152.9)
-  .refine((v) => Math.abs(Math.round(v * 100) - v * 100) < 1e-6, {
-    message: 'Must have at most 2 decimal places',
-  });
+  .max(MAX_MONEY)
+  .refine(hasAtMostTwoDecimals, twoDecimalsMessage);
+
+/** Como moneySchema, mas aceita 0 (ex.: valor inicial de uma meta). */
+export const nonNegativeMoneySchema = z
+  .number()
+  .nonnegative()
+  .max(MAX_MONEY)
+  .refine(hasAtMostTwoDecimals, twoDecimalsMessage);
 
 /** Data sem horário "YYYY-MM-DD", existente no calendário (rejeita 2026-02-30). */
 export const dateOnlySchema = z
