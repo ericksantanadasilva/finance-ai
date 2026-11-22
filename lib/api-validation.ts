@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { Prisma } from '@/prisma/generated/client';
 
 /** Dinheiro: > 0, até 2 casas e dentro do Decimal(10, 2) do banco. */
 export const moneySchema = z
@@ -37,10 +36,16 @@ export function notFoundResponse() {
   return NextResponse.json({ error: 'Not Found' }, { status: 404 });
 }
 
-/** Erro do Prisma quando o update/delete por { id, userId } não encontra o registro. */
+/**
+ * Erro do Prisma quando o update/delete por { id, userId } não encontra o registro.
+ * Compara o `code` em vez de usar `instanceof`: no Next o client gerado pode ser
+ * carregado duas vezes, e a classe do erro deixa de ser a mesma.
+ */
 export function isRecordNotFound(error: unknown) {
   return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
     error.code === 'P2025'
   );
 }
