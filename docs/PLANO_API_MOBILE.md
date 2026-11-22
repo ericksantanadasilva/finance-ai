@@ -108,7 +108,7 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
 - [ ] **4** Rotas de escrita com validação (Zod já instalado na 2c). Contrato levantado pelo app em `finance-mobile/docs/ESCRITA_BACKEND.md`: 201 com o recurso no formato da leitura, 200 ao alterar, 204 ao excluir, 404 para id inexistente ou de outro usuário
   - [x] **4a** Mês de competência padrão no fuso do app (`currentMonthISO(APP_TIME_ZONE)`) em `createTransaction`
   - [x] **4b** Percentual do orçamento arredondado em 2 casas (`getCategoriesWithBudget` e `getBudgetStatus`), antes de comparar com 80%
-  - [ ] **4c** Schemas Zod compartilhados: valor (> 0, até 2 casas, até 99999999.99), data `YYYY-MM-DD` válida, mês `YYYY-MM`
+  - [x] **4c** Schemas Zod compartilhados: valor (> 0, até 2 casas, até 99999999.99), data `YYYY-MM-DD` válida, mês `YYYY-MM`
   - [ ] **4d** `POST /transactions` → `201 { transaction, budgetAlert }`
   - [ ] **4e** `PATCH /transactions/:id` (edição completa ou `{ isPaid }`) e `DELETE /transactions/:id`
   - [ ] **4f** `PATCH /categories/:id` (`budget`; `null` remove o limite)

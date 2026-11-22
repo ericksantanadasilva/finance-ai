@@ -1,5 +1,49 @@
 import { NextResponse } from 'next/server';
-import type { z } from 'zod';
+import { z } from 'zod';
+import { Prisma } from '@/prisma/generated/client';
+
+/** Dinheiro: > 0, até 2 casas e dentro do Decimal(10, 2) do banco. */
+export const moneySchema = z
+  .number()
+  .positive()
+  .max(99999999.99)
+  // Compara em centavos: multipleOf(0.01) falha com ponto flutuante (ex.: 152.9)
+  .refine((v) => Math.abs(Math.round(v * 100) - v * 100) < 1e-6, {
+    message: 'Must have at most 2 decimal places',
+  });
+
+/** Data sem horário "YYYY-MM-DD", existente no calendário (rejeita 2026-02-30). */
+export const dateOnlySchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .refine(
+    (value) => {
+      const [y, m, d] = value.split('-').map(Number);
+      const date = new Date(Date.UTC(y, m - 1, d));
+      return (
+        date.getUTCFullYear() === y &&
+        date.getUTCMonth() === m - 1 &&
+        date.getUTCDate() === d
+      );
+    },
+    { message: 'Invalid date' },
+  );
+
+/** Mês "YYYY-MM" (01 a 12). */
+export const monthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
+
+/** 404 para id que não existe ou é de outro usuário (não revela qual dos dois). */
+export function notFoundResponse() {
+  return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+}
+
+/** Erro do Prisma quando o update/delete por { id, userId } não encontra o registro. */
+export function isRecordNotFound(error: unknown) {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2025'
+  );
+}
 
 export type ParseResult<T> =
   | { data: T; errorResponse: null }
