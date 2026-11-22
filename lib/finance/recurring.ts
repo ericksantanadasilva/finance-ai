@@ -1,6 +1,7 @@
 // Regras recorrentes por usuário, usadas pelas server actions e pelas rotas da API.
 // Sem 'use server': o userId vem de quem chama, depois de autenticar.
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@/prisma/generated/client';
 import { APP_TIME_ZONE, currentMonthISO } from '@/app/utils/dates';
 
 const MONTH_RE = /^\d{4}-\d{2}$/;
@@ -29,6 +30,27 @@ export type RecurringRuleItem = {
   lastGeneratedMonth: string | null;
   category: { name: string; color: string } | null;
 };
+
+// Campos de RecurringRuleItem: usados na listagem e na resposta das rotas de escrita
+const RULE_ITEM_INCLUDE = {
+  category: { select: { name: true, color: true } },
+} satisfies Prisma.RecurringRuleInclude;
+
+function toRecurringRuleItem(
+  r: Prisma.RecurringRuleGetPayload<{ include: typeof RULE_ITEM_INCLUDE }>,
+): RecurringRuleItem {
+  return {
+    id: r.id,
+    description: r.description,
+    amount: Number(r.amount),
+    type: r.type,
+    dayOfMonth: r.dayOfMonth,
+    startMonth: r.startMonth,
+    active: r.active,
+    lastGeneratedMonth: r.lastGeneratedMonth,
+    category: r.category,
+  };
+}
 
 export type RecurringRuleInput = {
   description: string;
@@ -105,20 +127,19 @@ export async function getRecurringRules(
   const rules = await prisma.recurringRule.findMany({
     where: { userId },
     orderBy: [{ active: 'desc' }, { description: 'asc' }],
-    include: { category: { select: { name: true, color: true } } },
+    include: RULE_ITEM_INCLUDE,
   });
 
-  return rules.map((r) => ({
-    id: r.id,
-    description: r.description,
-    amount: Number(r.amount),
-    type: r.type,
-    dayOfMonth: r.dayOfMonth,
-    startMonth: r.startMonth,
-    active: r.active,
-    lastGeneratedMonth: r.lastGeneratedMonth,
-    category: r.category,
-  }));
+  return rules.map(toRecurringRuleItem);
+}
+
+/** RecurringRuleItem por id, ou null se não existir ou for de outro usuário. */
+export async function getRecurringRuleItem(userId: string, id: string) {
+  const rule = await prisma.recurringRule.findFirst({
+    where: { id, userId },
+    include: RULE_ITEM_INCLUDE,
+  });
+  return rule ? toRecurringRuleItem(rule) : null;
 }
 
 /**
@@ -128,7 +149,7 @@ export async function getRecurringRules(
 export async function createRecurringRule(
   userId: string,
   input: RecurringRuleInput,
-): Promise<{ success: true } | { success: false; error: string }> {
+): Promise<{ success: true; id: string } | { success: false; error: string }> {
   const description = input.description?.trim();
   const dayOfMonth = Math.floor(Number(input.dayOfMonth));
   if (!description) return { success: false, error: 'Informe a descrição.' };
@@ -157,7 +178,7 @@ export async function createRecurringRule(
     categoryId = category.id;
   }
 
-  await prisma.recurringRule.create({
+  const rule = await prisma.recurringRule.create({
     data: {
       description,
       amount: input.amount,
@@ -171,7 +192,7 @@ export async function createRecurringRule(
 
   await generateForUser(userId);
 
-  return { success: true };
+  return { success: true, id: rule.id };
 }
 
 /** Pausa ou retoma a regra. Retorna false se ela não existir ou for de outro usuário. */
@@ -204,7 +225,11 @@ export async function toggleRecurringRule(
   return true;
 }
 
-/** Exclui a regra. As transações já geradas continuam no histórico. */
+/**
+ * Exclui a regra. As transações já geradas continuam no histórico.
+ * Retorna false se ela não existir ou for de outro usuário.
+ */
 export async function deleteRecurringRule(userId: string, id: string) {
-  await prisma.recurringRule.deleteMany({ where: { id, userId } });
+  const result = await prisma.recurringRule.deleteMany({ where: { id, userId } });
+  return result.count > 0;
 }
