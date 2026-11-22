@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireMobileUser } from '@/lib/api-auth';
-import { parseSearchParams } from '@/lib/api-validation';
+import {
+  dateOnlySchema,
+  moneySchema,
+  monthSchema,
+  parseJsonBody,
+  parseSearchParams,
+} from '@/lib/api-validation';
 import { generateForUser } from '@/lib/finance/recurring';
-import { getTransactionsPage } from '@/lib/finance/transactions';
+import {
+  createTransaction,
+  getTransactionsPage,
+} from '@/lib/finance/transactions';
 import { APP_TIME_ZONE, currentMonthISO } from '@/app/utils/dates';
 
 const querySchema = z.object({
@@ -45,6 +54,43 @@ export async function GET(request: Request) {
     return NextResponse.json(page);
   } catch (error) {
     console.error('Erro ao buscar transações (mobile):', error);
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 },
+    );
+  }
+}
+
+const createSchema = z.object({
+  description: z.string().trim().min(1).max(200),
+  amount: moneySchema,
+  date: dateOnlySchema, // data da compra
+  type: z.enum(['income', 'expense']),
+  category: z.string().trim().min(1).max(50), // nome; criada se não existir
+  referenceMonth: monthSchema.optional(), // competência; padrão: mês atual
+});
+
+/** Lança a transação. Responde com o item (formato da listagem) e o alerta de orçamento. */
+export async function POST(request: Request) {
+  const { user, errorResponse } = await requireMobileUser(request);
+  if (errorResponse) return errorResponse;
+
+  const { data: body, errorResponse: bodyError } = await parseJsonBody(
+    request,
+    createSchema,
+  );
+  if (bodyError) return bodyError;
+
+  try {
+    const { referenceMonth, ...data } = body;
+    const { transaction, budgetAlert } = await createTransaction(
+      user.id,
+      data,
+      referenceMonth,
+    );
+    return NextResponse.json({ transaction, budgetAlert }, { status: 201 });
+  } catch (error) {
+    console.error('Erro ao criar transação (mobile):', error);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 },

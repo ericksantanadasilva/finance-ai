@@ -109,7 +109,7 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
   - [x] **4a** Mês de competência padrão no fuso do app (`currentMonthISO(APP_TIME_ZONE)`) em `createTransaction`
   - [x] **4b** Percentual do orçamento arredondado em 2 casas (`getCategoriesWithBudget` e `getBudgetStatus`), antes de comparar com 80%
   - [x] **4c** Schemas Zod compartilhados: valor (> 0, até 2 casas, até 99999999.99), data `YYYY-MM-DD` válida, mês `YYYY-MM`
-  - [ ] **4d** `POST /transactions` → `201 { transaction, budgetAlert }`
+  - [x] **4d** `POST /transactions` → `201 { transaction, budgetAlert }`
   - [ ] **4e** `PATCH /transactions/:id` (edição completa ou `{ isPaid }`) e `DELETE /transactions/:id`
   - [ ] **4f** `PATCH /categories/:id` (`budget`; `null` remove o limite)
   - [ ] **4g** `POST /recurring`, `PATCH /recurring/:id` (`active`) e `DELETE /recurring/:id`

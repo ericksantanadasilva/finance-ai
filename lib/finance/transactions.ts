@@ -51,6 +51,30 @@ export type TransactionItem = {
   category: { name: string; color: string } | null;
 };
 
+// Campos de TransactionItem: usados na listagem e na resposta das rotas de escrita
+const TRANSACTION_ITEM_SELECT = {
+  id: true,
+  description: true,
+  amount: true,
+  date: true,
+  referenceDate: true,
+  type: true,
+  isPaid: true,
+  recurringRuleId: true,
+  category: { select: { name: true, color: true } },
+} satisfies Prisma.TransactionSelect;
+
+function toTransactionItem(
+  t: Prisma.TransactionGetPayload<{ select: typeof TRANSACTION_ITEM_SELECT }>,
+): TransactionItem {
+  return {
+    ...t,
+    amount: Number(t.amount),
+    date: t.date.toISOString(),
+    referenceDate: t.referenceDate.toISOString(),
+  };
+}
+
 const SORT_MAP: Record<
   NonNullable<TransactionFilters['sort']>,
   Prisma.TransactionOrderByWithRelationInput[]
@@ -68,8 +92,8 @@ function referenceDateOf(month: string) {
 }
 
 /**
- * Cria a transação (e a categoria, se for nova). Para despesas, devolve o
- * orçamento da categoria quando passou de 80%.
+ * Cria a transação (e a categoria, se for nova) e devolve o TransactionItem.
+ * Para despesas, devolve também o orçamento da categoria quando passou de 80%.
  */
 export async function createTransaction(
   userId: string,
@@ -99,7 +123,7 @@ export async function createTransaction(
       userId,
       categoryId: category.id,
     },
-    select: { id: true },
+    select: TRANSACTION_ITEM_SELECT,
   });
 
   // Alerta de orçamento (não deve impedir o lançamento se falhar)
@@ -117,7 +141,11 @@ export async function createTransaction(
     }
   }
 
-  return { id: transaction.id, budgetAlert };
+  return {
+    id: transaction.id,
+    transaction: toTransactionItem(transaction),
+    budgetAlert,
+  };
 }
 
 export async function getRecentTransactions(userId: string, limit?: number) {
@@ -269,17 +297,7 @@ export async function getTransactionsPage(
     orderBy,
     skip: (page - 1) * pageSize,
     take: pageSize,
-    select: {
-      id: true,
-      description: true,
-      amount: true,
-      date: true,
-      referenceDate: true,
-      type: true,
-      isPaid: true,
-      recurringRuleId: true,
-      category: { select: { name: true, color: true } },
-    },
+    select: TRANSACTION_ITEM_SELECT,
   });
 
   const sumOf = (type: string) =>
@@ -292,14 +310,7 @@ export async function getTransactionsPage(
   );
 
   return {
-    items: rows.map(
-      (t): TransactionItem => ({
-        ...t,
-        amount: Number(t.amount),
-        date: t.date.toISOString(),
-        referenceDate: t.referenceDate.toISOString(),
-      }),
-    ),
+    items: rows.map(toTransactionItem),
     total,
     page,
     pageSize,
