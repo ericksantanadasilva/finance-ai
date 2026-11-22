@@ -1,18 +1,13 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireMobileUser } from '@/lib/api-auth';
-import {
-  dateOnlySchema,
-  moneySchema,
-  monthSchema,
-  parseJsonBody,
-  parseSearchParams,
-} from '@/lib/api-validation';
+import { parseJsonBody, parseSearchParams } from '@/lib/api-validation';
 import { generateForUser } from '@/lib/finance/recurring';
 import {
   createTransaction,
   getTransactionsPage,
 } from '@/lib/finance/transactions';
+import { transactionBodySchema } from './schema';
 import { APP_TIME_ZONE, currentMonthISO } from '@/app/utils/dates';
 
 const querySchema = z.object({
@@ -61,15 +56,6 @@ export async function GET(request: Request) {
   }
 }
 
-const createSchema = z.object({
-  description: z.string().trim().min(1).max(200),
-  amount: moneySchema,
-  date: dateOnlySchema, // data da compra
-  type: z.enum(['income', 'expense']),
-  category: z.string().trim().min(1).max(50), // nome; criada se não existir
-  referenceMonth: monthSchema.optional(), // competência; padrão: mês atual
-});
-
 /** Lança a transação. Responde com o item (formato da listagem) e o alerta de orçamento. */
 export async function POST(request: Request) {
   const { user, errorResponse } = await requireMobileUser(request);
@@ -77,7 +63,7 @@ export async function POST(request: Request) {
 
   const { data: body, errorResponse: bodyError } = await parseJsonBody(
     request,
-    createSchema,
+    transactionBodySchema,
   );
   if (bodyError) return bodyError;
 

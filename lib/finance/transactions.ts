@@ -328,6 +328,15 @@ export async function getTransactionsPage(
   };
 }
 
+/** TransactionItem por id, ou null se não existir ou for de outro usuário. */
+export async function getTransactionItem(userId: string, id: string) {
+  const transaction = await prisma.transaction.findFirst({
+    where: { id, userId },
+    select: TRANSACTION_ITEM_SELECT,
+  });
+  return transaction ? toTransactionItem(transaction) : null;
+}
+
 /** Retorna false se a transação não existir ou for de outro usuário. */
 export async function setTransactionPaid(
   userId: string,
@@ -347,6 +356,7 @@ export async function deleteTransaction(userId: string, id: string) {
   await prisma.transaction.delete({ where: { id, userId } });
 }
 
+/** Devolve o TransactionItem alterado. Lança erro (P2025) se a transação não for do usuário. */
 export async function updateTransaction(
   userId: string,
   id: string,
@@ -364,7 +374,7 @@ export async function updateTransaction(
     },
   });
 
-  await prisma.transaction.update({
+  const transaction = await prisma.transaction.update({
     where: { id, userId },
     data: {
       description: data.description,
@@ -374,5 +384,7 @@ export async function updateTransaction(
       type: data.type,
       categoryId: category.id,
     },
+    select: TRANSACTION_ITEM_SELECT,
   });
+  return toTransactionItem(transaction);
 }
