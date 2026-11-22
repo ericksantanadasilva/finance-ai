@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireMobileUser } from '@/lib/api-auth';
-import { parseSearchParams } from '@/lib/api-validation';
+import { monthSchema, parseSearchParams } from '@/lib/api-validation';
 import { getCategoriesWithBudget } from '@/lib/finance/categories';
 
 const querySchema = z.object({
-  month: z.string().regex(/^\d{4}-\d{2}$/).optional(), // padrão: mês atual
+  month: monthSchema.optional(), // padrão: mês atual
 });
 
 /** Categorias com o limite mensal e quanto já foi gasto no mês de competência. */

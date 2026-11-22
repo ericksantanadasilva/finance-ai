@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireMobileUser } from '@/lib/api-auth';
-import { parseJsonBody, parseSearchParams } from '@/lib/api-validation';
+import {
+  monthSchema,
+  parseJsonBody,
+  parseSearchParams,
+} from '@/lib/api-validation';
 import { generateForUser } from '@/lib/finance/recurring';
 import {
   createTransaction,
@@ -14,9 +18,7 @@ const querySchema = z.object({
   q: z.string().max(100).optional(),
   category: z.string().max(100).optional(),
   // Igual à tela web: sem mês = mês atual; "all" = todos os meses
-  month: z
-    .union([z.string().regex(/^\d{4}-\d{2}$/), z.literal('all')])
-    .optional(),
+  month: z.union([monthSchema, z.literal('all')]).optional(),
   type: z.enum(['income', 'expense']).optional(),
   status: z.enum(['paid', 'pending']).optional(),
   minAmount: z.coerce.number().nonnegative().optional(),
