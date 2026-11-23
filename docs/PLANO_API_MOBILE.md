@@ -72,15 +72,52 @@ Erros: 400 (validação), 401 (token), 404 (não existe ou é de outro usuário)
 
 ## Push
 
-- `PushDevice`: `id`, `userId`, `expoPushToken` (unique), `platform`, `createdAt`, `lastSeenAt`, `disabledAt`.
-- `NotificationLog`: `userId`, `kind`, `dedupeKey` (unique, ex.: `budget:<catId>:2026-11:80`), `sentAt`. Evita repetir o mesmo aviso.
-- Preferências de aviso no `User.settings` (Json, já existe).
-- `lib/push.ts`: `fetch` para `https://exp.host/--/api/v2/push/send`, em lotes de 100, sem SDK. Ao receber `DeviceNotRegistered`, desativa o token.
-- `dispatch` (o n8n chama uma vez por dia):
-  1. roda `generateForUser` para cada usuário com regra ativa (hoje as recorrências só são geradas quando o usuário abre uma página);
-  2. recorrências com `isPaid = false` e `date` entre hoje e hoje + N dias;
-  3. categorias acima de 80% / 100% do orçamento no mês;
-  4. consulta o log, envia e responde `{ sent, skipped }`.
+Só Android por enquanto (push no iOS exige o Apple Developer Program). No app, Etapa 6 do `PLANO_MOBILE.md`.
+
+### Avisos
+
+Todos às 9h (America/Sao_Paulo), agrupados: um aviso por tipo, nunca um por transação. No pior dia, 3 notificações.
+
+| Aviso | Regra | Frequência | `dedupeKey` |
+|---|---|---|---|
+| Vence hoje | Despesas pendentes com `date` = hoje (desde a 4j, a data de uma pendente lançada é o vencimento). Ficam fora as lançadas hoje (`createdAt` = hoje), para não avisar do que a pessoa acabou de registrar; ocorrências de recorrência contam mesmo se geradas hoje (senão a regra com dia 1 nunca avisaria) | Diário | `due:<txId>` |
+| Atrasadas | Pendentes com competência anterior ao mês atual (mesma regra do selo da 4i), em um resumo ("3 contas atrasadas, R$ X") | Semanal, segunda-feira | `overdue:<ano>-W<semana ISO>` |
+| Orçamento | Categoria com limite acima de 80% ou de 100% no mês. Se os dois chegarem juntos, só o de 100% sai (as duas chaves são gravadas) | Checado todo dia; no máximo uma vez por limiar no mês | `budget:<catId>:<YYYY-MM>:<80\|100>` |
+
+- Receitas ("a receber hoje") ficam fora da primeira versão.
+- O `budgetAlert` continua aparecendo na hora ao lançar pelo web e pelo app; o push cobre o que entra por fora (n8n, importação da IA, recorrências). Push imediato: Etapa 6 (opcional).
+- Preferências no `User.settings` (`notifications.due`, `notifications.overdue`, `notifications.budget`), todas ligadas por padrão. O `dispatch` já respeita; a tela fica para quando existir o `PATCH /me` (6d do app).
+
+### Banco (migration aditiva `add_push_notifications`)
+
+- `PushDevice`: `id`, `expoPushToken` (unique), `platform`, `createdAt`, `lastSeenAt`, `disabledAt`, `userId` e `mobileSessionId` (o token pertence à instalação, como a sessão). Só recebe push o aparelho com `disabledAt` nulo **e** sessão ativa (sem `revokedAt` e sem expirar).
+- `NotificationLog`: `kind`, `dedupeKey`, `sentAt`, `tickets` (Json, `[{ deviceId, ticketId }]`), `receiptsCheckedAt`, `userId`; único por `(userId, dedupeKey)`.
+
+### Aparelhos
+
+- `POST /api/v1/devices { expoPushToken, platform: 'android' }`: upsert pelo token (o mesmo celular trocando de conta passa o token para o usuário e a sessão atuais e limpa o `disabledAt`). O app chama a cada abertura com sessão e permissão (atualiza `lastSeenAt` e cobre a troca do token). Responde `200 { device: { id } }`. O `requireMobileUser` passa a devolver também o `sessionId` (`sid` do JWT).
+- `DELETE /api/v1/devices/:id`: filtra `{ id, userId }`; 204 ou 404. O app chama antes do `/auth/logout`.
+- Logout: `revokeMobileSession` também preenche `disabledAt` nos aparelhos da sessão (vale mesmo se o app estiver offline e não chamar o `DELETE`).
+
+### Envio
+
+- Quem envia para a Expo é a API (`lib/push.ts`): `fetch` para `https://exp.host/--/api/v2/push/send`, em lotes de 100, sem SDK, com `Authorization: Bearer EXPO_ACCESS_TOKEN` (Enhanced Security ligado no expo.dev; o token fica só no `.env` e na VPS).
+- `DeviceNotRegistered` no ticket desativa o aparelho na hora. No Android o erro costuma vir no recibo, horas depois: cada `dispatch` confere primeiro os recibos dos envios anteriores (pelos `tickets` do log) e desativa os aparelhos com `DeviceNotRegistered`.
+- Sem envio duplicado: o log é gravado **antes** de enviar (a chave única faz um retry pular o aviso); se o envio falhar inteiro, o log é apagado e o aviso volta na próxima execução.
+- A notificação leva `data.url` para o app abrir a tela certa (pendentes → Transações filtrada; orçamento → Categorias).
+
+### `dispatch` (o n8n chama uma vez por dia)
+
+`POST /api/integrations/notifications/dispatch`, com `x-api-key` = `N8N_INTERNAL_SECRET` (o mesmo das outras rotas do n8n). `?dryRun=1` devolve o que seria enviado, sem enviar nem gravar log.
+
+1. confere os recibos dos envios anteriores;
+2. roda `generateForUser` para os usuários com aparelho ativo e regra ativa (hoje as recorrências só são geradas quando o usuário abre uma página);
+3. calcula os três avisos, respeitando as preferências;
+4. grava o log, envia e responde `{ users, sent, skipped, disabled }`.
+
+### n8n
+
+Schedule Trigger diário às 09:00 (fuso do workflow `America/Sao_Paulo`) → HTTP Request `POST` no `dispatch` com credencial **Header Auth** (`x-api-key`), timeout de 60 s e "Retry on Fail" 2× (seguro por causa do log). Se o n8n estiver na mesma rede Docker da API, usar o endereço interno do container. Opcional: Error Workflow avisando falha.
 
 ## Riscos e cuidados
 
@@ -135,7 +172,12 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
   - Continuam nascendo pagos, sem mudança: chat (server action sem `isPaid`), rota de integração (contrato externo, default do banco), importação da IA (`createMany`) e recorrências (regra própria)
   - Publicar a API antes do app: no backend antigo o POST descarta o `isPaid` (entra como pago) e a edição com `isPaid` dá 400
   - Fora do escopo: a server action `createTransaction(data: any)` repassa o objeto sem validar (já existia)
-- [ ] **5a** Migration `PushDevice` + `NotificationLog`; rotas `/devices`
-- [ ] **5b** `lib/push.ts` + rota `dispatch`
-- [ ] **5c** Workflow diário no n8n
+- [ ] **5** Notificações push (desenho na seção "Push"; no app, Etapa 6 do `PLANO_MOBILE.md`)
+  - [ ] **5a** Migration `add_push_notifications` (`PushDevice` + `NotificationLog`): primeiro no `finance_dev`, com autorização
+  - [ ] **5b** `POST /devices` e `DELETE /devices/:id`; `requireMobileUser` devolve o `sessionId`; logout desativa os aparelhos da sessão
+  - [ ] **5c** `lib/push.ts`: envio em lotes, tickets e recibos, `DeviceNotRegistered` desativa o aparelho; `EXPO_ACCESS_TOKEN`
+  - [ ] **5d** `validateApiKey` com `crypto.timingSafeEqual` (commit `fix` separado, antes do `dispatch`)
+  - [ ] **5e** Rota `dispatch` (vence hoje, atrasadas, orçamento) com `dryRun`
+  - [ ] **5f** Workflow diário no n8n
+  - Deploy: migration `add_push_notifications` em produção depois da `add_mobile_session` (o `PushDevice` depende da `MobileSession`), `EXPO_ACCESS_TOKEN` na VPS; API no ar antes da build do app com push
 - [ ] **6** (opcional) Push imediato de orçamento; chat e importação no mobile
