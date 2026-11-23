@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth';
 import { authenticateAccessToken } from '@/lib/mobile-auth';
@@ -10,11 +11,22 @@ export function validateApiKey(request: Request): NextResponse | null {
   const apiKey = request.headers.get('x-api-key');
   const internalSecret = process.env.N8N_INTERNAL_SECRET;
 
-  if (!internalSecret || !apiKey || apiKey !== internalSecret) {
+  if (!internalSecret || !apiKey || !sameSecret(apiKey, internalSecret)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   return null;
+}
+
+/**
+ * Compara em tempo constante, para o tempo de resposta não revelar quantos
+ * caracteres da chave estão certos. O hash iguala os tamanhos (o
+ * timingSafeEqual exige buffers do mesmo tamanho e não pode vazar o tamanho).
+ */
+function sameSecret(received: string, expected: string) {
+  const digest = (value: string) =>
+    crypto.createHash('sha256').update(value).digest();
+  return crypto.timingSafeEqual(digest(received), digest(expected));
 }
 
 export type AuthSessionResult =
