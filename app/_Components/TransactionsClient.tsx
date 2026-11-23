@@ -452,6 +452,8 @@ export default function TransactionsClient({
                   <td className='px-6 py-4 text-center border-b border-border-custom'>
                     <TransactionRowActions
                       transactionId={tx.id}
+                      isPaid={tx.isPaid}
+                      type={tx.type}
                       onEdit={() => handleEdit(tx)}
                       isLast={index === filteredTransactions.length - 1}
                     />
@@ -488,6 +490,8 @@ export default function TransactionsClient({
                 </div>
                 <TransactionRowActions
                   transactionId={tx.id}
+                  isPaid={tx.isPaid}
+                  type={tx.type}
                   onEdit={() => handleEdit(tx)}
                   isLast={index === filteredTransactions.length - 1}
                 />

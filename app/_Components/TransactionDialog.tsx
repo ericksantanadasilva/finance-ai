@@ -8,6 +8,7 @@ import {
   ArrowDownCircle,
   Loader2,
   Clock,
+  CheckCircle2,
 } from 'lucide-react';
 import { createTransaction, updateTransaction } from '../_actions/transactions';
 import { getCategories } from '../_actions/categories';
@@ -44,6 +45,7 @@ export default function TransactionDialog({
 }: TransactionDialogProps) {
   const [isPending, startTransition] = useTransition();
   const titleId = useId();
+  const paidLabelId = useId();
   const panelRef = useModalBehavior<HTMLDivElement>({ isOpen, onClose });
 
   const [type, setType] = useState<'income' | 'expense'>('expense');
@@ -51,6 +53,7 @@ export default function TransactionDialog({
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [date, setDate] = useState(todayISO());
+  const [isPaid, setIsPaid] = useState(true);
 
   // NOVO: Estado para controlar o Mês de Competência dentro do modal
   const [selectedReference, setSelectedReference] = useState(referenceMonth);
@@ -84,6 +87,7 @@ export default function TransactionDialog({
         setAmount(editData.amount.toString());
         setDescription(editData.description);
         setCategory(editData.category?.name || '');
+        setIsPaid(editData.isPaid ?? true);
 
         // Se for edição, pega o referenceDate real do banco de dados
         if (editData.referenceDate) {
@@ -100,6 +104,7 @@ export default function TransactionDialog({
         setDescription('');
         setCategory('');
         setDate(todayISO());
+        setIsPaid(true);
         // Se for novo, usa o que veio do Dashboard (ex: 2026-02)
         setSelectedReference(referenceMonth);
       }
@@ -129,6 +134,7 @@ export default function TransactionDialog({
         category,
         date: `${date}T12:00:00`,
         type,
+        isPaid,
       };
 
       // Enviamos o selectedReference que o usuário escolheu no Modal
@@ -295,6 +301,41 @@ export default function TransactionDialog({
                   className='text-xs'
                 />
               </div>
+            </div>
+          </div>
+
+          {/* SITUAÇÃO: o pendente usa o mesmo aviso do selo "a pagar/a receber" */}
+          <div className='flex flex-col gap-2'>
+            <Label id={paidLabelId}>Situação</Label>
+            <div
+              role='group'
+              aria-labelledby={paidLabelId}
+              className='grid grid-cols-2 gap-3'
+            >
+              <Button
+                variant={isPaid ? 'default' : 'ghost'}
+                aria-pressed={isPaid}
+                onClick={() => setIsPaid(true)}
+                className={
+                  isPaid ? '' : 'border-border-custom text-muted-foreground'
+                }
+              >
+                <CheckCircle2 className='w-4 h-4' />
+                {type === 'income' ? 'RECEBIDO' : 'PAGO'}
+              </Button>
+              <Button
+                variant={isPaid ? 'ghost' : 'default'}
+                aria-pressed={!isPaid}
+                onClick={() => setIsPaid(false)}
+                className={
+                  isPaid
+                    ? 'border-border-custom text-muted-foreground'
+                    : 'text-warning [--ink:var(--warning)]'
+                }
+              >
+                <Clock className='w-4 h-4' />
+                {type === 'income' ? 'A RECEBER' : 'A PAGAR'}
+              </Button>
             </div>
           </div>
 

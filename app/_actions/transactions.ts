@@ -97,6 +97,7 @@ export async function setTransactionPaid(id: string, isPaid: boolean) {
     if (!updated) return { success: false };
     revalidatePath('/Transactions');
     revalidatePath('/Recurring');
+    revalidatePath('/Dashboard'); // o saldo conta só o pago (4i)
     return { success: true };
   } catch (error) {
     console.error('Erro ao atualizar status de pagamento:', error);
