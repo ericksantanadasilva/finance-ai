@@ -178,14 +178,15 @@ export async function getRecentTransactions(userId: string, limit?: number) {
 }
 
 /**
- * Totais por mês de competência, tipo e categoria para o Dashboard.
+ * Totais por mês de competência, tipo, situação (pago/pendente) e categoria para o Dashboard.
  * Soma no banco em vez de enviar todas as transações para o navegador;
- * cada linha tem o mesmo formato de uma transação (referenceDate, type, amount, category).
+ * cada linha tem o mesmo formato de uma transação (referenceDate, type, isPaid, amount, category).
+ * Somar as linhas sem olhar o isPaid dá os mesmos totais de antes.
  */
 export async function getDashboardTotals(userId: string) {
   const [groups, categories] = await Promise.all([
     prisma.transaction.groupBy({
-      by: ['referenceDate', 'type', 'categoryId'],
+      by: ['referenceDate', 'type', 'isPaid', 'categoryId'],
       where: { userId },
       _sum: { amount: true },
     }),
@@ -202,6 +203,7 @@ export async function getDashboardTotals(userId: string) {
     return {
       referenceDate: g.referenceDate.toISOString(),
       type: g.type,
+      isPaid: g.isPaid,
       amount: Number(g._sum.amount ?? 0),
       category: category ? { name: category.name, color: category.color } : null,
     };

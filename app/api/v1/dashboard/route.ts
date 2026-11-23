@@ -4,7 +4,7 @@ import { generateForUser } from '@/lib/finance/recurring';
 import { getDashboardTotals } from '@/lib/finance/transactions';
 
 /**
- * Totais por mês de competência, tipo e categoria (os mesmos do Dashboard web).
+ * Totais por mês de competência, tipo, situação (isPaid) e categoria (os mesmos do Dashboard web).
  * Como a página web, gera antes as recorrências devidas.
  */
 export async function GET(request: Request) {
