@@ -166,16 +166,30 @@ export async function rotateMobileSession(
 
 /** Logout do aparelho: revoga a sessão do refresh token (sem erro se já não valer). */
 export async function revokeMobileSession(refreshToken: string) {
-  await prisma.mobileSession.updateMany({
-    where: { refreshTokenHash: hashRefreshToken(refreshToken), revokedAt: null },
-    data: { revokedAt: new Date() },
+  const session = await prisma.mobileSession.findUnique({
+    where: { refreshTokenHash: hashRefreshToken(refreshToken) },
+    select: { id: true },
   });
+  if (!session) return;
+
+  // Os aparelhos da sessão deixam de receber push junto com o logout
+  const now = new Date();
+  await prisma.$transaction([
+    prisma.mobileSession.updateMany({
+      where: { id: session.id, revokedAt: null },
+      data: { revokedAt: now },
+    }),
+    prisma.pushDevice.updateMany({
+      where: { mobileSessionId: session.id, disabledAt: null },
+      data: { disabledAt: now },
+    }),
+  ]);
 }
 
 /**
  * Valida o access token e confere no banco se a sessão continua ativa
  * (revogar um aparelho vale na hora, sem esperar o token expirar).
- * Retorna o id do usuário ou null.
+ * Retorna o id do usuário e o da sessão, ou null.
  */
 export async function authenticateAccessToken(token: string) {
   let userId: string;
@@ -206,5 +220,5 @@ export async function authenticateAccessToken(token: string) {
     select: { id: true },
   });
 
-  return session ? userId : null;
+  return session ? { userId, sessionId } : null;
 }

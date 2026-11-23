@@ -38,14 +38,18 @@ export async function validateUserSession(): Promise<AuthSessionResult> {
   return { user: { id: user.id, email: user.email }, errorResponse: null };
 }
 
+export type MobileAuthResult =
+  | { user: { id: string; sessionId: string }; errorResponse: null }
+  | { user: null; errorResponse: NextResponse };
+
 /**
  * Valida o access token do app mobile (`Authorization: Bearer <token>`).
  * Não aceita o cookie do next-auth: as rotas do mobile ficam fora do alcance de CSRF.
  */
 export async function requireMobileUser(
   request: Request,
-): Promise<AuthSessionResult> {
-  const unauthorized: AuthSessionResult = {
+): Promise<MobileAuthResult> {
+  const unauthorized: MobileAuthResult = {
     user: null,
     errorResponse: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
   };
@@ -55,8 +59,11 @@ export async function requireMobileUser(
   );
   if (!match) return unauthorized;
 
-  const userId = await authenticateAccessToken(match[1]);
-  if (!userId) return unauthorized;
+  const auth = await authenticateAccessToken(match[1]);
+  if (!auth) return unauthorized;
 
-  return { user: { id: userId }, errorResponse: null };
+  return {
+    user: { id: auth.userId, sessionId: auth.sessionId },
+    errorResponse: null,
+  };
 }
