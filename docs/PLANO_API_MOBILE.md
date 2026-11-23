@@ -122,7 +122,11 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
   - Regra: receitas, despesas, gráfico mensal e limites das categorias continuam por competência, contando tudo. O saldo atual (inclusive "meses anteriores" da Visão Geral e o `carryOver` de Transações) conta só o pago. Pendentes = não pagas com competência até o mês atual; as de meses anteriores levam o selo "atrasada", e meses futuros ficam fora. Previsto = saldo atual + a receber − a pagar
   - [x] `getDashboardTotals` agrupa também por `isPaid` e devolve o campo em cada total (só acréscimo: nenhum número muda)
   - [ ] Produção: repetir a medição de pendentes (só leitura) antes de publicar; se houver pendentes com competência anterior à virada, script de dados com autorização e backup (medição de 22/11/2026: 0 pendentes)
-  - [ ] `carryOver` de `getTransactionsPage` só com `isPaid: true`; Visão Geral do web com saldo pelo pago, card de pendentes (a pagar e a receber, com "atrasada") e saldo previsto. Publicar junto com o app
+  - Decisão: "saldo" é sempre só o pago, em qualquer tela (Visão Geral, Transações, web e app). Receitas e despesas de Transações continuam por competência, contando tudo
+  - [x] `getTransactionsPage`: `carryOver` só com `isPaid: true` e `totals.balance` novo (`carryOver` + recebido − pago do conjunto filtrado); o card "saldo" de Transações do web usa o `balance`
+  - [ ] Visão Geral do web com saldo pelo pago, card de pendentes (a pagar e a receber, com "atrasada") e saldo previsto
+  - Publicar os dois itens acima junto com o app
+  - [ ] Depois: selo "atrasada" na lista de Transações do web (`TransactionStatus`)
   - Depois: lançar já pendente (`isPaid` opcional no `transactionBodySchema`, padrão `true`; "desmarcar" e campo "pago?" no web)
 - [ ] **5a** Migration `PushDevice` + `NotificationLog`; rotas `/devices`
 - [ ] **5b** `lib/push.ts` + rota `dispatch`

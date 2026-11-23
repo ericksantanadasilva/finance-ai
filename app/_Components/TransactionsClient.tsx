@@ -44,7 +44,12 @@ type PageData = {
   page: number;
   pageSize: number;
   totalPages: number;
-  totals: { income: number; expense: number; carryOver: number };
+  totals: {
+    income: number;
+    expense: number;
+    carryOver: number; // só o pago dos meses anteriores
+    balance: number; // só o pago: carryOver + recebido − pago no conjunto
+  };
   categories: string[];
   months: string[];
 };
@@ -379,7 +384,8 @@ export default function TransactionsClient({
         <StatCard
           label='Saldo'
           icon={Wallet}
-          value={formatMoney(incomeTotal - expenseTotal)}
+          value={formatMoney(data.totals.balance)}
+          note='Conta só o que foi pago'
         />
       </div>
 

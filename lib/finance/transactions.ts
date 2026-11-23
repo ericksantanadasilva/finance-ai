@@ -260,14 +260,14 @@ export async function getTransactionsPage(
 
   const orderBy = SORT_MAP[filters.sort ?? 'date_desc'] ?? SORT_MAP.date_desc;
 
-  // Sobra dos meses anteriores: só faz sentido vendo o mês inteiro, sem outros filtros
+  // Sobra dos meses anteriores (só o pago): só faz sentido vendo o mês inteiro, sem outros filtros
   const carryOverStart =
     Object.keys(where).length === 2 && monthStart ? monthStart : null;
 
   const [total, totalsByType, categories, months, previous] = await Promise.all([
     prisma.transaction.count({ where }),
     prisma.transaction.groupBy({
-      by: ['type'],
+      by: ['type', 'isPaid'],
       where,
       _sum: { amount: true },
     }),
@@ -285,7 +285,11 @@ export async function getTransactionsPage(
     carryOverStart
       ? prisma.transaction.groupBy({
           by: ['type'],
-          where: { userId, referenceDate: { lt: carryOverStart } },
+          where: {
+            userId,
+            isPaid: true,
+            referenceDate: { lt: carryOverStart },
+          },
           _sum: { amount: true },
         })
       : [],
@@ -302,8 +306,11 @@ export async function getTransactionsPage(
     select: TRANSACTION_ITEM_SELECT,
   });
 
-  const sumOf = (type: string) =>
-    Number(totalsByType.find((t) => t.type === type)?._sum.amount ?? 0);
+  // Receitas e despesas contam tudo (competência); o saldo conta só o pago
+  const sumOf = (type: string, onlyPaid = false) =>
+    totalsByType
+      .filter((t) => t.type === type && (!onlyPaid || t.isPaid))
+      .reduce((acc, t) => acc + Number(t._sum.amount ?? 0), 0);
 
   const carryOver = previous.reduce(
     (acc, p) =>
@@ -317,7 +324,12 @@ export async function getTransactionsPage(
     page,
     pageSize,
     totalPages,
-    totals: { income: sumOf('income'), expense: sumOf('expense'), carryOver },
+    totals: {
+      income: sumOf('income'),
+      expense: sumOf('expense'),
+      carryOver,
+      balance: carryOver + sumOf('income', true) - sumOf('expense', true),
+    },
     categories: categories.map((c) => c.name),
     months: Array.from(
       new Set(

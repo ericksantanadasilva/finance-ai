@@ -70,7 +70,7 @@ export async function getTransactionsPage(filters: TransactionFilters = {}) {
     page: 1,
     pageSize: 20,
     totalPages: 1,
-    totals: { income: 0, expense: 0, carryOver: 0 },
+    totals: { income: 0, expense: 0, carryOver: 0, balance: 0 },
     categories: [] as string[],
     months: [] as string[],
   };
