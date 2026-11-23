@@ -40,11 +40,14 @@ export async function disablePushDevice(userId: string, id: string) {
   return result.count > 0;
 }
 
-/** Aparelhos que podem receber push: ativos e com a sessão do app ainda válida. */
-export async function getActivePushDevices(userIds: string[]) {
+/**
+ * Aparelhos que podem receber push: ativos e com a sessão do app ainda válida.
+ * Sem `userIds`, de todos os usuários.
+ */
+export async function getActivePushDevices(userIds?: string[]) {
   return prisma.pushDevice.findMany({
     where: {
-      userId: { in: userIds },
+      userId: userIds ? { in: userIds } : undefined,
       disabledAt: null,
       mobileSession: { revokedAt: null, expiresAt: { gt: new Date() } },
     },
@@ -133,10 +136,18 @@ export async function sendPushMessages(messages: PushMessage[]) {
         ),
       });
       const json = await res.json().catch(() => null);
-      if (res.ok && Array.isArray(json?.data) && json.data.length === batch.length) {
+      if (
+        res.ok &&
+        Array.isArray(json?.data) &&
+        json.data.length === batch.length
+      ) {
         tickets = json.data;
       } else {
-        console.error('Expo recusou o lote de push:', res.status, json?.errors ?? json);
+        console.error(
+          'Expo recusou o lote de push:',
+          res.status,
+          json?.errors ?? json,
+        );
       }
     } catch (error) {
       console.error('Erro ao enviar lote de push:', error);
@@ -147,7 +158,11 @@ export async function sendPushMessages(messages: PushMessage[]) {
       if (!ticket) {
         results.push({ deviceId: m.deviceId, status: 'failed' });
       } else if (ticket.status === 'ok') {
-        results.push({ deviceId: m.deviceId, status: 'ok', ticketId: ticket.id });
+        results.push({
+          deviceId: m.deviceId,
+          status: 'ok',
+          ticketId: ticket.id,
+        });
       } else {
         const error = ticket.details?.error ?? ticket.message ?? 'unknown';
         results.push({ deviceId: m.deviceId, status: 'error', error });
@@ -217,7 +232,11 @@ export async function checkPushReceipts() {
       });
       const json = await res.json().catch(() => null);
       if (!res.ok || typeof json?.data !== 'object' || json.data === null) {
-        console.error('Expo recusou a consulta de recibos:', res.status, json?.errors ?? json);
+        console.error(
+          'Expo recusou a consulta de recibos:',
+          res.status,
+          json?.errors ?? json,
+        );
         failed = true;
         continue;
       }
