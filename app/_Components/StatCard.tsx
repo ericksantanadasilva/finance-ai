@@ -21,6 +21,7 @@ type StatCardProps = {
   value: string;
   tone?: keyof typeof toneClass;
   note?: React.ReactNode;
+  className?: string; // posição no grid (ex.: col-span)
 };
 
 // Card de resumo: faixa com o rótulo e o ícone, valor grande embaixo.
@@ -30,9 +31,10 @@ function StatCard({
   value,
   tone = 'neutral',
   note,
+  className,
 }: StatCardProps) {
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
         <h2 className='font-bold'>{label}</h2>
         <Icon className='w-4 h-4' aria-hidden='true' />
@@ -50,9 +52,15 @@ function StatCard({
 }
 
 // Mesma estrutura do StatCard, para o skeleton ter a altura do card carregado.
-function StatCardSkeleton({ hasNote = false }: { hasNote?: boolean }) {
+function StatCardSkeleton({
+  hasNote = false,
+  className,
+}: {
+  hasNote?: boolean;
+  className?: string;
+}) {
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
         <SkeletonText className='font-display font-bold' chars={10} />
         <div className='size-4 rounded-md bg-border-custom'></div>
