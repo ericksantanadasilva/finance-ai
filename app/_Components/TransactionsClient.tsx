@@ -429,6 +429,7 @@ export default function TransactionsClient({
                           isPaid={tx.isPaid}
                           isRecurring={!!tx.recurringRuleId}
                           type={tx.type}
+                          referenceDate={tx.referenceDate}
                         />
                       </div>
                     </div>
@@ -484,6 +485,7 @@ export default function TransactionsClient({
                         isPaid={tx.isPaid}
                         isRecurring={!!tx.recurringRuleId}
                         type={tx.type}
+                        referenceDate={tx.referenceDate}
                       />
                     </div>
                   </div>

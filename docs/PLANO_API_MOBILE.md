@@ -126,7 +126,7 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
   - [x] `getTransactionsPage`: `carryOver` só com `isPaid: true` e `totals.balance` novo (`carryOver` + recebido − pago do conjunto filtrado); o card "saldo" de Transações do web usa o `balance`
   - [x] Visão Geral do web com saldo pelo pago, card de pendentes (a pagar e a receber, com "atrasada") e saldo previsto
   - Publicar os dois itens acima junto com o app
-  - [ ] Depois: selo "atrasada" na lista de Transações do web (`TransactionStatus`)
+  - [x] Depois: selo "atrasada" na lista de Transações do web (`TransactionStatus`), junto do "a pagar · marcar", que continua tocável; mês atual pelo `currentMonthISO(APP_TIME_ZONE)`
 - [x] **4j** Lançar já pendente (no app, item 5h do `PLANO_MOBILE.md`). Sem migration: a coluna `isPaid` e o default `true` já existem
   - [x] **(a)** Schema e lib: `isPaid: z.boolean().optional()` no `transactionBodySchema`, sem `.default(true)` (o schema é o mesmo do POST e do PATCH; com o default, uma edição sem o campo marcaria como paga uma pendente). `createTransaction` grava `data.isPaid ?? true`; `updateTransaction` repassa `data.isPaid` e, sem o campo, mantém o valor atual
   - [x] **(b)** `PATCH /transactions/:id`: só é "marcar/desmarcar" quando a única chave do body for `isPaid`; qualquer outro body vai para a edição completa (antes, uma edição com `isPaid` dava 400 no `paidSchema` estrito). A resposta e o `budgetAlert` não mudam
