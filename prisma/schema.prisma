@@ -29,6 +29,8 @@ model User {
   goals          Goal[]
   recurringRules RecurringRule[]
   mobileSessions MobileSession[]
+  pushDevices    PushDevice[]
+  notificationLogs NotificationLog[]
   settings       Json?
 }
 
@@ -47,7 +49,45 @@ model MobileSession {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  pushDevices PushDevice[]
+
   @@index([userId])
+}
+
+// Aparelho que recebe push (Expo). Pertence à instalação, como a sessão: só
+// recebe com disabledAt nulo e a MobileSession ativa (logout desliga o push).
+model PushDevice {
+  id            String    @id @default(cuid())
+  expoPushToken String    @unique // ExponentPushToken[...]; upsert ao trocar de conta
+  platform      String // 'android' (iOS depois)
+  createdAt     DateTime  @default(now())
+  lastSeenAt    DateTime  @default(now()) // atualizado a cada POST /devices
+  disabledAt    DateTime? // logout, DELETE /devices/:id ou DeviceNotRegistered
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  mobileSessionId String
+  mobileSession   MobileSession @relation(fields: [mobileSessionId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([mobileSessionId])
+}
+
+// Aviso já enviado. Gravado antes do envio: a chave única impede repetir o
+// mesmo aviso (ex.: budget:<catId>:2026-11:80), inclusive num retry do n8n.
+model NotificationLog {
+  id                String    @id @default(cuid())
+  kind              String // 'due' | 'overdue' | 'budget'
+  dedupeKey         String
+  sentAt            DateTime  @default(now())
+  tickets           Json? // [{ deviceId, ticketId }] para conferir os recibos da Expo
+  receiptsCheckedAt DateTime?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupeKey])
 }
 
 model Category {
