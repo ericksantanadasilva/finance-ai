@@ -24,6 +24,7 @@ export type TransactionInput = {
   date: string; // YYYY-MM-DD (aceita sufixo de hora, ver parseDateOnly)
   type: 'income' | 'expense';
   category: string; // nome; é criada se ainda não existir
+  isPaid?: boolean; // ao lançar, padrão true; ao editar, sem o campo mantém o atual
 };
 
 export type TransactionFilters = {
@@ -120,6 +121,7 @@ export async function createTransaction(
       date: parseDateOnly(data.date),
       referenceDate: referenceDateOf(safeReferenceMonth), // Campo de competência
       type: data.type,
+      isPaid: data.isPaid ?? true,
       userId,
       categoryId: category.id,
     },
@@ -396,6 +398,7 @@ export async function updateTransaction(
       date: parseDateOnly(data.date),
       referenceDate: referenceDateOf(referenceMonth),
       type: data.type,
+      isPaid: data.isPaid, // undefined: o Prisma mantém o valor atual
       categoryId: category.id,
     },
     select: TRANSACTION_ITEM_SELECT,

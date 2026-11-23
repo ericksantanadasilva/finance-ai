@@ -13,4 +13,7 @@ export const transactionBodySchema = z.object({
   type: z.enum(['income', 'expense']),
   category: z.string().trim().min(1).max(50), // nome; criada se não existir
   referenceMonth: monthSchema.optional(), // competência; padrão: mês atual
+  // Sem .default(true): o PATCH usa este schema, e uma edição sem o campo
+  // marcaria como paga uma transação pendente. O padrão fica no createTransaction
+  isPaid: z.boolean().optional(),
 });

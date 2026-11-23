@@ -19,7 +19,7 @@ type Context = { params: Promise<{ id: string }> };
 
 // Edição completa: o app sempre manda todos os campos, com a competência
 const editSchema = transactionBodySchema.extend({ referenceMonth: monthSchema });
-// Pagar / desfazer. Estrito: misturar com campos da edição dá 400
+// Pagar / desfazer: só quando isPaid é a única chave do body
 const paidSchema = z.strictObject({ isPaid: z.boolean() });
 
 function internalError(message: string, error: unknown) {
@@ -29,7 +29,8 @@ function internalError(message: string, error: unknown) {
 
 /**
  * Edita a transação ou marca como paga/pendente. O body é um dos dois formatos;
- * escolhe pelo `isPaid` em vez de `z.union`, que perderia o campo inválido no erro.
+ * escolhe pelas chaves em vez de `z.union`, que perderia o campo inválido no erro.
+ * Só `{ isPaid }` é marcar/desmarcar; a edição completa também pode levar `isPaid`.
  */
 export async function PATCH(request: Request, { params }: Context) {
   const { user, errorResponse } = await requireMobileUser(request);
@@ -40,7 +41,11 @@ export async function PATCH(request: Request, { params }: Context) {
     .clone()
     .json()
     .catch(() => undefined);
-  const isPaidBody = typeof raw === 'object' && raw !== null && 'isPaid' in raw;
+  const isPaidBody =
+    typeof raw === 'object' &&
+    raw !== null &&
+    'isPaid' in raw &&
+    Object.keys(raw).length === 1;
 
   try {
     if (isPaidBody) {
