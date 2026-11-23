@@ -118,6 +118,12 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
     - [ ] `POST /categories` (nome repetido → 409; cor validada em hex) e `DELETE /categories/:id`
     - [ ] `PATCH /goals/:id`, `DELETE /goals/:id` e `PATCH /me`
     - [ ] Mesma cor padrão para a categoria nova em `createTransaction`, `updateTransaction` e `createRecurringRule`
+- [ ] **4i** Saldo pelo pago (contrato em `finance-mobile/docs/ESCRITA_BACKEND.md`, "Depois da escrita: saldo pelo pago"; no app, item 5g do `PLANO_MOBILE.md`)
+  - Regra: receitas, despesas, gráfico mensal e limites das categorias continuam por competência, contando tudo. O saldo atual (inclusive "meses anteriores" da Visão Geral e o `carryOver` de Transações) conta só o pago. Pendentes = não pagas com competência até o mês atual; as de meses anteriores levam o selo "atrasada", e meses futuros ficam fora. Previsto = saldo atual + a receber − a pagar
+  - [ ] `getDashboardTotals` agrupa também por `isPaid` e devolve o campo em cada total (só acréscimo: nenhum número muda)
+  - [ ] Produção: repetir a medição de pendentes (só leitura) antes de publicar; se houver pendentes com competência anterior à virada, script de dados com autorização e backup (medição de 22/11/2026: 0 pendentes)
+  - [ ] `carryOver` de `getTransactionsPage` só com `isPaid: true`; Visão Geral do web com saldo pelo pago, card de pendentes (a pagar e a receber, com "atrasada") e saldo previsto. Publicar junto com o app
+  - Depois: lançar já pendente (`isPaid` opcional no `transactionBodySchema`, padrão `true`; "desmarcar" e campo "pago?" no web)
 - [ ] **5a** Migration `PushDevice` + `NotificationLog`; rotas `/devices`
 - [ ] **5b** `lib/push.ts` + rota `dispatch`
 - [ ] **5c** Workflow diário no n8n
