@@ -127,7 +127,14 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
   - [x] Visão Geral do web com saldo pelo pago, card de pendentes (a pagar e a receber, com "atrasada") e saldo previsto
   - Publicar os dois itens acima junto com o app
   - [ ] Depois: selo "atrasada" na lista de Transações do web (`TransactionStatus`)
-  - Depois: lançar já pendente (`isPaid` opcional no `transactionBodySchema`, padrão `true`; "desmarcar" e campo "pago?" no web)
+- [ ] **4j** Lançar já pendente (no app, item 5h do `PLANO_MOBILE.md`). Sem migration: a coluna `isPaid` e o default `true` já existem
+  - [ ] **(a)** Schema e lib: `isPaid: z.boolean().optional()` no `transactionBodySchema`, sem `.default(true)` (o schema é o mesmo do POST e do PATCH; com o default, uma edição sem o campo marcaria como paga uma pendente). `createTransaction` grava `data.isPaid ?? true`; `updateTransaction` repassa `data.isPaid` e, sem o campo, mantém o valor atual
+  - [ ] **(b)** `PATCH /transactions/:id`: só é "marcar/desmarcar" quando a única chave do body for `isPaid`; qualquer outro body vai para a edição completa (hoje uma edição com `isPaid` daria 400 no `paidSchema` estrito). A resposta e o `budgetAlert` não mudam
+  - [ ] **(c)** Campo "Situação" no `TransactionDialog` do web: dois botões com `aria-pressed`, como RECEITA/DESPESA (PAGO / A PAGAR na despesa, RECEBIDO / A RECEBER na receita; o lado pendente usa os tokens `warning` do `TransactionStatus`). Último campo, antes de CANCELAR/SALVAR; `true` ao lançar, o valor atual ao editar; o payload sempre leva o campo
+  - [ ] **(d)** "Voltar para pendente" no menu "…" do `TransactionRowActions`, só nas pagas, com `setTransactionPaid(id, false)`, toast e "Desfazer". `setTransactionPaid` passa a revalidar também `/Dashboard` (o saldo depende do `isPaid` desde a 4i)
+  - Continuam nascendo pagos, sem mudança: chat (server action sem `isPaid`), rota de integração (contrato externo, default do banco), importação da IA (`createMany`) e recorrências (regra própria)
+  - Publicar a API antes do app: no backend antigo o POST descarta o `isPaid` (entra como pago) e a edição com `isPaid` dá 400
+  - Fora do escopo: a server action `createTransaction(data: any)` repassa o objeto sem validar (já existia)
 - [ ] **5a** Migration `PushDevice` + `NotificationLog`; rotas `/devices`
 - [ ] **5b** `lib/push.ts` + rota `dispatch`
 - [ ] **5c** Workflow diário no n8n
