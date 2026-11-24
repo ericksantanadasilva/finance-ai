@@ -1,9 +1,9 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { getSessionUser, requireUser } from '@/lib/auth';
-import { parseDateOnly } from '@/app/utils/dates';
+import * as goalsService from '@/lib/finance/goals';
+import type { GoalInput } from '@/lib/finance/goals';
 
 /**
  * BUSCAR TODAS AS METAS DO USUÁRIO
@@ -13,40 +13,16 @@ export async function getGoals() {
 
   if (!user) return [];
 
-  return await prisma.goal.findMany({
-    where: { userId: user.id },
-    orderBy: { deadline: 'asc' },
-  });
+  return goalsService.getGoals(user.id);
 }
 
 /**
  * CRIAR NOVA META
  */
-export async function createGoal(data: {
-  name: string;
-  targetAmount: number;
-  currentAmount: number;
-  deadline?: string;
-}) {
+export async function createGoal(data: GoalInput) {
   const user = await requireUser();
 
-  let parsedDeadline: Date | null = null;
-  if (data.deadline) {
-    const d = parseDateOnly(data.deadline);
-    if (!isNaN(d.getTime())) {
-      parsedDeadline = d;
-    }
-  }
-
-  await prisma.goal.create({
-    data: {
-      name: data.name,
-      targetAmount: Number(data.targetAmount),
-      currentAmount: Number(data.currentAmount),
-      deadline: parsedDeadline,
-      userId: user.id,
-    },
-  });
+  await goalsService.createGoal(user.id, data);
 
   revalidatePath('/Goals');
   return { success: true };
@@ -55,38 +31,11 @@ export async function createGoal(data: {
 /**
  * ATUALIZAR META COMPLETA (Edição de Nome, Valores e Prazo)
  */
-export async function updateGoal(
-  id: string,
-  data: {
-    name: string;
-    targetAmount: number;
-    currentAmount: number;
-    deadline?: string;
-  },
-) {
+export async function updateGoal(id: string, data: GoalInput) {
   try {
     const user = await requireUser();
 
-    let parsedDeadline: Date | null = null;
-    if (data.deadline) {
-      const d = parseDateOnly(data.deadline);
-      if (!isNaN(d.getTime())) {
-        parsedDeadline = d;
-      }
-    }
-
-    await prisma.goal.update({
-      where: {
-        id: id,
-        userId: user.id,
-      },
-      data: {
-        name: data.name,
-        targetAmount: Number(data.targetAmount),
-        currentAmount: Number(data.currentAmount), // Aqui ele substitui o valor, ideal para correções
-        deadline: parsedDeadline,
-      },
-    });
+    await goalsService.updateGoal(user.id, id, data);
 
     revalidatePath('/Goals');
     revalidatePath('/Dashboard');
@@ -105,20 +54,7 @@ export async function updateGoalAmount(id: string, amountToAdd: number) {
   try {
     const user = await requireUser();
 
-    const value = Number(amountToAdd);
-    if (isNaN(value)) throw new Error('Valor inválido');
-
-    await prisma.goal.update({
-      where: {
-        id: id,
-        userId: user.id,
-      },
-      data: {
-        currentAmount: {
-          increment: value,
-        },
-      },
-    });
+    await goalsService.addToGoal(user.id, id, amountToAdd);
 
     revalidatePath('/Goals');
     revalidatePath('/Dashboard');
@@ -136,12 +72,7 @@ export async function updateGoalAmount(id: string, amountToAdd: number) {
 export async function deleteGoal(id: string) {
   const user = await requireUser();
 
-  await prisma.goal.delete({
-    where: {
-      id,
-      userId: user.id,
-    },
-  });
+  await goalsService.deleteGoal(user.id, id);
 
   revalidatePath('/Goals');
   return { success: true };

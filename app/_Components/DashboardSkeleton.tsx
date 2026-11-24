@@ -31,6 +31,35 @@ export default function DashboardSkeleton() {
         <StatCardSkeleton hasNote />
         <StatCardSkeleton />
         <StatCardSkeleton />
+
+        {/* Pendentes: duas linhas (TypeIcon size-8 + valor text-lg) e o botão "ver pendentes" (sm, h-9) */}
+        <Card className='sm:col-span-2'>
+          <CardHeader>
+            <SkeletonText className='font-display font-bold' chars={9} />
+            <div className='size-4 rounded-md bg-border-custom'></div>
+          </CardHeader>
+          <CardContent>
+            <div className='divide-y divide-border-custom'>
+              {[1, 2].map((i) => (
+                <div
+                  key={i}
+                  className='py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-3'
+                >
+                  <div className='flex items-center gap-3'>
+                    <div className='size-8 rounded-lg bg-border-custom'></div>
+                    <SkeletonText className='text-sm font-bold' chars={9} />
+                  </div>
+                  <SkeletonText className='text-lg font-bold' chars={9} />
+                </div>
+              ))}
+            </div>
+            <div className='mt-4 flex justify-end'>
+              <div className='h-9 w-32 bg-border-custom rounded-xl'></div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <StatCardSkeleton hasNote className='sm:col-span-2 lg:col-span-1' />
       </div>
 
       {/* GRÁFICOS */}

@@ -37,16 +37,11 @@ export default function GoalDialog({
         setTargetAmount(editData.targetAmount.toString());
         setCurrentAmount(editData.currentAmount.toString());
 
-        // Ajuste na lógica de data para preencher o campo de data (aaaa-mm-dd)
-        if (editData.deadline) {
-          // Se a data vier do banco como objeto Date ou string ISO
-          const d = new Date(editData.deadline);
-          if (!isNaN(d.getTime())) {
-            setDeadline(d.toISOString().split('T')[0]);
-          }
-        } else {
-          setDeadline('');
-        }
+        // deadlineDate já vem em "YYYY-MM-DD", o formato do DatePicker. O
+        // deadline é o texto de exibição ("dd/mm/aaaa"), que o new Date lia
+        // como mês/dia: o campo abria vazio ou com a data errada, e salvar a
+        // edição apagava ou trocava o prazo
+        setDeadline(editData.deadlineDate ?? '');
       } else {
         setName('');
         setTargetAmount('');

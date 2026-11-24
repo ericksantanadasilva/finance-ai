@@ -25,7 +25,18 @@ export async function GoalsDataFetch() {
     deadline: goal.deadline
       ? formatDateOnly(goal.deadline)
       : 'Sem prazo',
+    // Para o ritmo da meta: prazo em "YYYY-MM-DD" (gravado ao meio-dia UTC,
+    // então a data UTC é o dia certo) e início em ISO
+    deadlineDate: goal.deadline
+      ? goal.deadline.toISOString().slice(0, 10)
+      : null,
+    createdAt: goal.createdAt.toISOString(),
   }));
 
-  return <GoalsClient initialGoals={serializedGoals} />;
+  // Instante do ritmo das metas, o mesmo no servidor e na hidratação. Server
+  // Component: renderiza uma vez por requisição, e é esse instante que se quer.
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
+
+  return <GoalsClient initialGoals={serializedGoals} now={now} />;
 }

@@ -1,71 +1,26 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { getSessionUser, requireUser } from '@/lib/auth';
-import type { Prisma } from '@/prisma/generated/client';
-import { getBudgetStatus } from './categories';
-import { parseDateOnly } from '@/app/utils/dates';
-
-const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
-  Alimentação: '#ef4444',
-  Transporte: '#3b82f6',
-  Lazer: '#8b5cf6',
-  Casa: '#f59e0b',
-  Saúde: '#10b981',
-  Geral: '#71717a',
-};
+import * as transactionsService from '@/lib/finance/transactions';
+import type {
+  TransactionFilters,
+  TransactionItem,
+} from '@/lib/finance/transactions';
 
 export async function createTransaction(data: any, referenceMounth: string) {
   const user = await requireUser();
 
   try {
-    const category = await prisma.category.upsert({
-      where: { name_userId: { name: data.category, userId: user.id } },
-      update: {},
-      create: {
-        name: data.category,
-        type: data.type,
-        userId: user.id,
-        color: DEFAULT_CATEGORY_COLORS[data.category] || '#71717a',
-      },
-    });
-
-    const safeReferenceMounth =
-      referenceMounth || new Date().toISOString().slice(0, 7);
-
-    const [year, mounth] = safeReferenceMounth.split('-').map(Number);
-    const referenceDate = new Date(year, mounth - 1, 1, 12, 0, 0);
-
-    await prisma.transaction.create({
-      data: {
-        description: data.description,
-        amount: data.amount,
-        date: parseDateOnly(data.date),
-        referenceDate: referenceDate, // Campo de competência
-        type: data.type,
-        userId: user.id,
-        categoryId: category.id,
-      },
-    });
+    const { budgetAlert } = await transactionsService.createTransaction(
+      user.id,
+      data,
+      referenceMounth,
+    );
 
     revalidatePath('/Dashboard');
     revalidatePath('/Transactions');
     revalidatePath('/Categories');
-
-    // Alerta de orçamento (não deve impedir o lançamento se falhar)
-    let budgetAlert: Awaited<ReturnType<typeof getBudgetStatus>> = null;
-    if (data.type === 'expense') {
-      try {
-        const status = await getBudgetStatus(
-          data.category,
-          safeReferenceMounth,
-        );
-        if (status && status.percent >= 80) budgetAlert = status;
-      } catch (e) {
-        console.error('Erro ao calcular orçamento:', e);
-      }
-    }
 
     return { success: true, budgetAlert };
   } catch (error) {
@@ -79,34 +34,7 @@ export async function getTransactions(limit?: number) {
   if (!user) return [];
 
   try {
-    const transactions = await prisma.transaction.findMany({
-      where: { userId: user.id },
-      orderBy: { date: 'desc' },
-      take: limit,
-      // OTIMIZAÇÃO 1: Selecione apenas os campos usados na tela
-      select: {
-        id: true,
-        description: true,
-        amount: true,
-        date: true,
-        referenceDate: true,
-        type: true,
-        category: {
-          select: {
-            name: true,
-            color: true,
-          },
-        },
-      },
-    });
-
-    // OTIMIZAÇÃO 2: Conversão mais limpa
-    return transactions.map((t) => ({
-      ...t,
-      amount: Number(t.amount),
-      date: t.date.toISOString(),
-      referenceDate: t.referenceDate.toISOString(),
-    }));
+    return await transactionsService.getRecentTransactions(user.id, limit);
   } catch (error) {
     console.error('Erro ao buscar transações:', error);
     return [];
@@ -123,69 +51,12 @@ export async function getDashboardTotals() {
   if (!user) return [];
 
   try {
-    const [groups, categories] = await Promise.all([
-      prisma.transaction.groupBy({
-        by: ['referenceDate', 'type', 'categoryId'],
-        where: { userId: user.id },
-        _sum: { amount: true },
-      }),
-      prisma.category.findMany({
-        where: { userId: user.id },
-        select: { id: true, name: true, color: true },
-      }),
-    ]);
-
-    const categoryById = new Map(categories.map((c) => [c.id, c]));
-
-    return groups.map((g) => {
-      const category = g.categoryId ? categoryById.get(g.categoryId) : null;
-      return {
-        referenceDate: g.referenceDate.toISOString(),
-        type: g.type,
-        amount: Number(g._sum.amount ?? 0),
-        category: category ? { name: category.name, color: category.color } : null,
-      };
-    });
+    return await transactionsService.getDashboardTotals(user.id);
   } catch (error) {
     console.error('Erro ao buscar totais do dashboard:', error);
     return [];
   }
 }
-
-export type TransactionFilters = {
-  q?: string;
-  category?: string;
-  month?: string; // YYYY-MM (mês de competência)
-  type?: 'income' | 'expense';
-  status?: 'paid' | 'pending';
-  minAmount?: number;
-  maxAmount?: number;
-  sort?: 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc';
-  page?: number;
-  pageSize?: number;
-};
-
-export type TransactionItem = {
-  id: string;
-  description: string;
-  amount: number;
-  date: string;
-  referenceDate: string;
-  type: string;
-  isPaid: boolean;
-  recurringRuleId: string | null;
-  category: { name: string; color: string } | null;
-};
-
-const SORT_MAP: Record<
-  NonNullable<TransactionFilters['sort']>,
-  Prisma.TransactionOrderByWithRelationInput[]
-> = {
-  date_desc: [{ date: 'desc' }, { id: 'desc' }],
-  date_asc: [{ date: 'asc' }, { id: 'asc' }],
-  amount_desc: [{ amount: 'desc' }, { id: 'desc' }],
-  amount_asc: [{ amount: 'asc' }, { id: 'asc' }],
-};
 
 /**
  * Busca paginada com filtros aplicados no banco.
@@ -199,7 +70,7 @@ export async function getTransactionsPage(filters: TransactionFilters = {}) {
     page: 1,
     pageSize: 20,
     totalPages: 1,
-    totals: { income: 0, expense: 0, carryOver: 0 },
+    totals: { income: 0, expense: 0, carryOver: 0, balance: 0 },
     categories: [] as string[],
     months: [] as string[],
   };
@@ -208,131 +79,7 @@ export async function getTransactionsPage(filters: TransactionFilters = {}) {
   if (!user) return empty;
 
   try {
-    const pageSize = Math.min(Math.max(filters.pageSize ?? 20, 1), 100);
-    const requestedPage = Math.max(Math.floor(filters.page ?? 1), 1);
-
-    const where: Prisma.TransactionWhereInput = { userId: user.id };
-
-    if (filters.q?.trim()) {
-      where.description = { contains: filters.q.trim(), mode: 'insensitive' };
-    }
-
-    if (filters.category) {
-      where.category = { name: filters.category };
-    }
-
-    if (filters.type === 'income' || filters.type === 'expense') {
-      where.type = filters.type;
-    }
-
-    if (filters.status === 'paid') where.isPaid = true;
-    if (filters.status === 'pending') where.isPaid = false;
-
-    let monthStart: Date | null = null;
-    if (filters.month && /^\d{4}-\d{2}$/.test(filters.month)) {
-      const [year, month] = filters.month.split('-').map(Number);
-      monthStart = new Date(year, month - 1, 1);
-      where.referenceDate = {
-        gte: monthStart,
-        lt: new Date(year, month, 1),
-      };
-    }
-
-    const amountFilter: Prisma.DecimalFilter = {};
-    if (typeof filters.minAmount === 'number' && !isNaN(filters.minAmount)) {
-      amountFilter.gte = filters.minAmount;
-    }
-    if (typeof filters.maxAmount === 'number' && !isNaN(filters.maxAmount)) {
-      amountFilter.lte = filters.maxAmount;
-    }
-    if (Object.keys(amountFilter).length) where.amount = amountFilter;
-
-    const orderBy = SORT_MAP[filters.sort ?? 'date_desc'] ?? SORT_MAP.date_desc;
-
-    // Sobra dos meses anteriores: só faz sentido vendo o mês inteiro, sem outros filtros
-    const carryOverStart =
-      Object.keys(where).length === 2 && monthStart ? monthStart : null;
-
-    const [total, totalsByType, categories, months, previous] = await Promise.all([
-      prisma.transaction.count({ where }),
-      prisma.transaction.groupBy({
-        by: ['type'],
-        where,
-        _sum: { amount: true },
-      }),
-      prisma.category.findMany({
-        where: { userId: user.id },
-        select: { name: true },
-        orderBy: { name: 'asc' },
-      }),
-      prisma.transaction.findMany({
-        where: { userId: user.id },
-        select: { referenceDate: true },
-        distinct: ['referenceDate'],
-        orderBy: { referenceDate: 'desc' },
-      }),
-      carryOverStart
-        ? prisma.transaction.groupBy({
-            by: ['type'],
-            where: { userId: user.id, referenceDate: { lt: carryOverStart } },
-            _sum: { amount: true },
-          })
-        : [],
-    ]);
-
-    const totalPages = Math.max(Math.ceil(total / pageSize), 1);
-    const page = Math.min(requestedPage, totalPages);
-
-    const rows = await prisma.transaction.findMany({
-      where,
-      orderBy,
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      select: {
-        id: true,
-        description: true,
-        amount: true,
-        date: true,
-        referenceDate: true,
-        type: true,
-        isPaid: true,
-        recurringRuleId: true,
-        category: { select: { name: true, color: true } },
-      },
-    });
-
-    const sumOf = (type: string) =>
-      Number(totalsByType.find((t) => t.type === type)?._sum.amount ?? 0);
-
-    const carryOver = previous.reduce(
-      (acc, p) =>
-        acc +
-        (p.type === 'income' ? 1 : -1) * Number(p._sum.amount ?? 0),
-      0,
-    );
-
-    return {
-      items: rows.map((t) => ({
-        ...t,
-        amount: Number(t.amount),
-        date: t.date.toISOString(),
-        referenceDate: t.referenceDate.toISOString(),
-      })),
-      total,
-      page,
-      pageSize,
-      totalPages,
-      totals: { income: sumOf('income'), expense: sumOf('expense'), carryOver },
-      categories: categories.map((c) => c.name),
-      months: Array.from(
-        new Set(
-          months.map(
-            (m) =>
-              `${m.referenceDate.getFullYear()}-${String(m.referenceDate.getMonth() + 1).padStart(2, '0')}`,
-          ),
-        ),
-      ),
-    };
+    return await transactionsService.getTransactionsPage(user.id, filters);
   } catch (error) {
     console.error('Erro ao buscar transações paginadas:', error);
     return empty;
@@ -342,14 +89,15 @@ export async function getTransactionsPage(filters: TransactionFilters = {}) {
 export async function setTransactionPaid(id: string, isPaid: boolean) {
   const user = await requireUser();
   try {
-    // updateMany garante que só altera transações do próprio usuário
-    const result = await prisma.transaction.updateMany({
-      where: { id, userId: user.id },
-      data: { isPaid },
-    });
-    if (result.count === 0) return { success: false };
+    const updated = await transactionsService.setTransactionPaid(
+      user.id,
+      id,
+      isPaid,
+    );
+    if (!updated) return { success: false };
     revalidatePath('/Transactions');
     revalidatePath('/Recurring');
+    revalidatePath('/Dashboard'); // o saldo conta só o pago (4i)
     return { success: true };
   } catch (error) {
     console.error('Erro ao atualizar status de pagamento:', error);
@@ -360,7 +108,7 @@ export async function setTransactionPaid(id: string, isPaid: boolean) {
 export async function deleteTransaction(id: string) {
   const user = await requireUser();
   try {
-    await prisma.transaction.delete({ where: { id, userId: user.id } });
+    await transactionsService.deleteTransaction(user.id, id);
     revalidatePath('/Dashboard');
     revalidatePath('/Transactions');
     return { success: true };
@@ -377,31 +125,12 @@ export async function updateTransaction(
   const user = await requireUser();
 
   try {
-    const category = await prisma.category.upsert({
-      where: { name_userId: { name: data.category, userId: user.id } },
-      update: {},
-      create: {
-        name: data.category,
-        type: data.type,
-        userId: user.id,
-        color: '#71717a',
-      },
-    });
-
-    const [year, mounth] = referenceMounth.split('-').map(Number);
-    const referenceDate = new Date(year, mounth - 1, 1, 12, 0, 0);
-
-    await prisma.transaction.update({
-      where: { id, userId: user.id },
-      data: {
-        description: data.description,
-        amount: data.amount,
-        date: parseDateOnly(data.date),
-        referenceDate: referenceDate,
-        type: data.type,
-        categoryId: category.id,
-      },
-    });
+    await transactionsService.updateTransaction(
+      user.id,
+      id,
+      data,
+      referenceMounth,
+    );
 
     revalidatePath('/Transactions');
     revalidatePath('/Dashboard');

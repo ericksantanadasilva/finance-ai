@@ -1,33 +1,19 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
 import { getSessionUser, requireUser } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
+import * as profileService from '@/lib/finance/profile';
 
 /**
  * 1. BUSCAR PERFIL
- * Agora busca na tabela PUBLIC.USER usando o ID da sessão
+ * Busca na tabela User usando o ID da sessão
  */
 export async function getUserProfile() {
   const authUser = await getSessionUser();
 
   if (!authUser) return null;
 
-  // Buscamos no Prisma para pegar o que está na tabela pública
-  const dbUser = await prisma.user.findUnique({
-    where: { id: authUser.id },
-    select: {
-      name: true,
-      email: true,
-      imageUrl: true, // Certifique-se que esse campo existe no seu schema.prisma
-    },
-  });
-
-  return {
-    name: dbUser?.name || 'Usuário',
-    email: dbUser?.email || authUser.email || undefined,
-    image: dbUser?.imageUrl || null,
-  };
+  return profileService.getProfile(authUser.id, authUser.email);
 }
 
 /**
@@ -37,10 +23,7 @@ export async function updateProfile(data: { name: string }) {
   const user = await requireUser();
 
   try {
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { name: data.name },
-    });
+    await profileService.updateProfileName(user.id, data.name);
 
     revalidatePath('/Settings');
     return { success: true };

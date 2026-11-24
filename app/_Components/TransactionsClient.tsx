@@ -22,7 +22,7 @@ import {
 import { TransactionRowActions } from './TransactionRowActions';
 import TransactionDialog from '../_Components/TransactionDialog';
 import TransactionStatus from './TransactionStatus';
-import type { TransactionItem } from '@/app/_actions/transactions';
+import type { TransactionItem } from '@/lib/finance/transactions';
 import { currentMonthISO, formatDateOnly } from '@/app/utils/dates';
 import {
   Select,
@@ -44,7 +44,12 @@ type PageData = {
   page: number;
   pageSize: number;
   totalPages: number;
-  totals: { income: number; expense: number; carryOver: number };
+  totals: {
+    income: number;
+    expense: number;
+    carryOver: number; // só o pago dos meses anteriores
+    balance: number; // só o pago: carryOver + recebido − pago no conjunto
+  };
   categories: string[];
   months: string[];
 };
@@ -379,7 +384,8 @@ export default function TransactionsClient({
         <StatCard
           label='Saldo'
           icon={Wallet}
-          value={formatMoney(incomeTotal - expenseTotal)}
+          value={formatMoney(data.totals.balance)}
+          note='Conta só o que foi pago'
         />
       </div>
 
@@ -423,6 +429,7 @@ export default function TransactionsClient({
                           isPaid={tx.isPaid}
                           isRecurring={!!tx.recurringRuleId}
                           type={tx.type}
+                          referenceDate={tx.referenceDate}
                         />
                       </div>
                     </div>
@@ -446,6 +453,8 @@ export default function TransactionsClient({
                   <td className='px-6 py-4 text-center border-b border-border-custom'>
                     <TransactionRowActions
                       transactionId={tx.id}
+                      isPaid={tx.isPaid}
+                      type={tx.type}
                       onEdit={() => handleEdit(tx)}
                       isLast={index === filteredTransactions.length - 1}
                     />
@@ -476,12 +485,15 @@ export default function TransactionsClient({
                         isPaid={tx.isPaid}
                         isRecurring={!!tx.recurringRuleId}
                         type={tx.type}
+                        referenceDate={tx.referenceDate}
                       />
                     </div>
                   </div>
                 </div>
                 <TransactionRowActions
                   transactionId={tx.id}
+                  isPaid={tx.isPaid}
+                  type={tx.type}
                   onEdit={() => handleEdit(tx)}
                   isLast={index === filteredTransactions.length - 1}
                 />

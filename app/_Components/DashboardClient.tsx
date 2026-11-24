@@ -1,16 +1,20 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Wallet,
   ArrowUpCircle,
   ArrowDownCircle,
+  CheckCircle2,
+  Clock,
   Plus,
   Sparkles,
   PieChart as PieIcon,
 } from 'lucide-react';
 import TransactionDialog from './TransactionDialog';
+import TypeIcon from './TypeIcon';
 import {
   ChartLegend,
   ChartTooltip,
@@ -36,7 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { StatCard } from './StatCard';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
@@ -165,15 +169,47 @@ export default function DashboardClient({
     .filter((t) => t.type === 'expense')
     .reduce((acc, t) => acc + t.amount, 0);
 
-  // Sobra acumulada de todos os meses anteriores ao atual (competência futura não entra)
+  // Saldo pelo pago: receitas e despesas acima contam tudo (competência), o saldo só o pago.
+  // Competência futura não entra.
   const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const previousBalance = transactions
+  const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const signed = (t: { type: string; amount: number }) =>
+    t.type === 'income' ? t.amount : -t.amount;
+  const sumAmounts = (rows: { amount: number }[]) =>
+    rows.reduce((acc, t) => acc + t.amount, 0);
+
+  const paidUntilNow = transactions.filter(
+    (t) => t.isPaid && new Date(t.referenceDate) < startOfNextMonth,
+  );
+  const previousBalance = paidUntilNow
     .filter((t) => new Date(t.referenceDate) < startOfCurrentMonth)
-    .reduce(
-      (acc, t) => acc + (t.type === 'income' ? t.amount : -t.amount),
-      0,
-    );
-  const balance = previousBalance + totalIncome - totalExpense;
+    .reduce((acc, t) => acc + signed(t), 0);
+  const balance = paidUntilNow.reduce((acc, t) => acc + signed(t), 0);
+
+  // Pendentes: não pagas com competência até o mês atual; as de meses anteriores estão atrasadas
+  const pending = transactions.filter(
+    (t) => !t.isPaid && new Date(t.referenceDate) < startOfNextMonth,
+  );
+  const overdue = pending.filter(
+    (t) => new Date(t.referenceDate) < startOfCurrentMonth,
+  );
+  const pendingRows = [
+    {
+      type: 'expense',
+      label: 'A pagar',
+      total: sumAmounts(pending.filter((t) => t.type === 'expense')),
+      overdue: sumAmounts(overdue.filter((t) => t.type === 'expense')),
+    },
+    {
+      type: 'income',
+      label: 'A receber',
+      total: sumAmounts(pending.filter((t) => t.type === 'income')),
+      overdue: sumAmounts(overdue.filter((t) => t.type === 'income')),
+    },
+  ];
+  const hasPending = pending.length > 0;
+  const [toPay, toReceive] = pendingRows.map((r) => r.total);
+  const forecast = balance + toReceive - toPay;
 
   // Define qual mês enviar para o Dialog (se estiver em 'all', envia o mês atual)
   const referenceForDialog =
@@ -222,7 +258,7 @@ export default function DashboardClient({
           label='Saldo Atual'
           icon={Wallet}
           value={formatMoney(balance)}
-          note={`Meses anteriores: ${formatMoney(previousBalance)}`}
+          note={`Conta só o que foi pago. Meses anteriores: ${formatMoney(previousBalance)}`}
         />
         <StatCard
           label='Receitas'
@@ -235,6 +271,70 @@ export default function DashboardClient({
           icon={ArrowDownCircle}
           value={formatMoney(totalExpense)}
           tone='expense'
+        />
+
+        <Card className='sm:col-span-2'>
+          <CardHeader>
+            <h2 className='font-bold'>Pendentes</h2>
+            <Clock className='w-4 h-4' aria-hidden='true' />
+          </CardHeader>
+          <CardContent>
+            {hasPending ? (
+              <>
+                <ul className='divide-y divide-border-custom'>
+                  {pendingRows.map((row) => (
+                    <li key={row.type} className='py-3 first:pt-0 last:pb-0'>
+                      <div className='flex items-center justify-between gap-3'>
+                        <span className='flex items-center gap-3 text-sm font-bold lowercase'>
+                          <TypeIcon type={row.type} />
+                          {row.label}
+                        </span>
+                        <span
+                          className={`text-lg font-bold tabular-nums text-right wrap-break-word ${row.type === 'income' ? 'text-income' : 'text-expense'}`}
+                        >
+                          {formatMoney(row.total)}
+                        </span>
+                      </div>
+                      {row.overdue > 0 && (
+                        <p className='mt-2 ml-11 flex flex-wrap items-center gap-2 text-xs font-medium text-muted-foreground'>
+                          <span className='inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold lowercase bg-surface text-warning border-2 border-warning'>
+                            <Clock className='w-3 h-3' aria-hidden='true' />
+                            Atrasada
+                          </span>
+                          {formatMoney(row.overdue)} de meses anteriores
+                        </p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                <div className='mt-4 flex justify-end'>
+                  <Link
+                    href='/Transactions?status=pending&month=all'
+                    className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                  >
+                    Ver pendentes
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <p className='flex items-center gap-2 rounded-xl border border-border-custom p-4 text-sm font-medium text-muted-foreground'>
+                <CheckCircle2 className='w-4 h-4 shrink-0' aria-hidden='true' />
+                Nada pendente até este mês.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <StatCard
+          label='Saldo previsto'
+          icon={Wallet}
+          value={formatMoney(forecast)}
+          note={
+            hasPending
+              ? 'Saldo atual + a receber − a pagar'
+              : 'Igual ao saldo atual: nada pendente'
+          }
+          className='sm:col-span-2 lg:col-span-1'
         />
       </div>
 
