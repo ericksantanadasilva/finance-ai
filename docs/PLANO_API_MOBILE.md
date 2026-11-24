@@ -119,6 +119,192 @@ Todos às 9h (America/Sao_Paulo), agrupados: um aviso por tipo, nunca um por tra
 
 Schedule Trigger diário às 09:00 e às 09:30 (fuso do workflow `America/Sao_Paulo`). O disparo das 9h30 confere os recibos do envio das 9h, que ficam prontos depois de 15 min, e reenvia o que falhou inteiro. A chave única do log impede repetir um aviso já enviado. Os dois disparos vão para o mesmo HTTP Request `POST` no `dispatch` com credencial **Header Auth** (`x-api-key`), timeout de 60 s e "Retry on Fail" 2× (seguro por causa do log). Se o n8n estiver na mesma rede Docker da API, usar o endereço interno do container. Opcional: Error Workflow avisando falha.
 
+## Publicação
+
+Leva a `api-mobile` para a produção (banco `finance` e container `finance-app` na VPS).
+
+Situação em 24/11/2026:
+- O `finance-app` sobe com `docker-entrypoint.sh` e `npm start`, sem `migrate deploy`: as migrations são aplicadas à mão.
+- Na `_prisma_migrations` de produção estão as 4 migrations antigas, todas aplicadas e nenhuma desfeita. Nenhuma das 3 novas.
+
+Estratégia: aplicar as 3 migrations à mão **antes** do deploy. Todas são aditivas, então o código atual continua funcionando com elas:
+
+| Migration | O que faz |
+|---|---|
+| `add_mobile_session` | Cria a tabela `MobileSession` |
+| `add_goal_created_at` | Cria a coluna `Goal.createdAt`, com default, e preenche a data das metas existentes a partir do id |
+| `add_push_notifications` | Cria as tabelas `PushDevice` e `NotificationLog` |
+
+As variáveis de ambiente estão no [.env.example](../.env.example). As novas são `MOBILE_JWT_SECRET`, `GOOGLE_MOBILE_CLIENT_IDS` e `EXPO_ACCESS_TOKEN`.
+
+Nenhum comando abaixo mostra valor de segredo. Para conferir uma variável, verifique só se ela existe e o tamanho.
+
+Placeholders usados abaixo:
+- `<postgres>`: nome do container do Postgres;
+- `<usuario>`: usuário do banco;
+- `<dominio>`: domínio público do site.
+
+### 1. Backup do banco de produção
+
+- **Ação** (na VPS), primeiro o dump e depois a cópia:
+  ```sh
+  docker exec <postgres> pg_dump -U <usuario> -Fc finance > finance-pre-mobile-AAAAMMDD.dump
+  ```
+  Depois copie o arquivo para fora da VPS com `scp`. O `pg_dump` de dentro do container tem a mesma versão do servidor.
+- **Testar que é restaurável:** restaure numa base descartável e compare a contagem das tabelas com a produção.
+  ```sh
+  docker exec <postgres> createdb -U <usuario> finance_restore_test
+  docker exec -i <postgres> pg_restore -U <usuario> -d finance_restore_test --no-owner < finance-pre-mobile-AAAAMMDD.dump
+  ```
+  Rode esta consulta nas duas bases. Os números devem bater:
+  ```sql
+  SELECT (SELECT count(*) FROM "User") AS users,
+         (SELECT count(*) FROM "Transaction") AS transactions,
+         (SELECT count(*) FROM "Goal") AS goals,
+         (SELECT count(*) FROM _prisma_migrations) AS migrations;
+  ```
+  Depois apague só a base de teste: `docker exec <postgres> dropdb -U <usuario> finance_restore_test`.
+- **Deu certo se:** a restauração terminou sem erro, as contagens bateram e o dump está guardado fora da VPS.
+- **Voltar atrás:** não altera nada. Se a restauração falhar, não siga adiante.
+
+### 2. Medição de pendentes (só leitura)
+
+A 4i mede isto porque o saldo passou a contar só o que está pago. Pendentes de meses anteriores passam a aparecer como "atrasada" e saem do saldo atual.
+
+- **Ação** no banco `finance`:
+  ```sql
+  SELECT type, count(*), sum(amount)
+  FROM "Transaction"
+  WHERE "isPaid" = false
+    AND "referenceDate" < date_trunc('month', now() AT TIME ZONE 'America/Sao_Paulo')
+  GROUP BY type;
+  ```
+- **Deu certo se:** a consulta não voltar nenhuma linha, como na medição de 22/11/2026. Se voltar alguma, pare: decidir o que fazer com essas pendentes antes do deploy, com um script de dados autorizado e depois do backup.
+- **Voltar atrás:** não altera nada.
+
+### 3. Merge por PR
+
+- **Ação:**
+  ```sh
+  gh pr create --base main --head api-mobile
+  ```
+  Depois revise e faça o merge (sem squash, para manter os commits das etapas).
+- **Deu certo se:** a `main` tem as 3 migrations em `prisma/migrations`. Confirme também que o merge não publicou nada sozinho: o deploy é manual.
+- **Voltar atrás:** antes do deploy, `git revert -m 1 <merge>` na `main`. O banco ainda não mudou.
+
+### 4. Migrations à mão (antes do deploy)
+
+- **Ação:** a partir da `main` atualizada, com o túnel aberto (PowerShell):
+  ```powershell
+  $env:DATABASE_URL = '<url do banco finance>'
+  npx prisma migrate status
+  ```
+  Ele deve listar exatamente as 3 migrations novas como pendentes. Então aplique e limpe a variável:
+  ```powershell
+  npx prisma migrate deploy
+  Remove-Item Env:DATABASE_URL
+  ```
+  O `DATABASE_URL` vale só nesse terminal, e o `.env` continua no `finance_dev`. Antes de rodar, confira que o host e o nome do banco são do `finance`. Terminadas as migrations, **feche esse terminal**, para nenhum comando seguinte cair na produção por engano.
+- **Deu certo se:**
+  - o `migrate status` responde "Database schema is up to date";
+  - a `_prisma_migrations` tem as 7 migrations com `finished_at` preenchido e `rolled_back_at` vazio;
+  - o site atual, ainda com o código antigo, continua abrindo Visão Geral, Transações e Metas.
+- **Voltar atrás:**
+  - **Se uma migration falhar no meio:** ela fica com `finished_at` vazio. Corrija a causa e rode `npx prisma migrate resolve --rolled-back <nome>` antes de tentar de novo.
+  - **Para desfazer tudo:** em geral não é preciso, porque o código antigo ignora as tabelas novas. Se for, faça só antes de o app criar sessões, e com confirmação, porque é destrutivo:
+    ```sql
+    BEGIN;
+    DROP TABLE "NotificationLog";
+    DROP TABLE "PushDevice";
+    DROP TABLE "MobileSession";
+    ALTER TABLE "Goal" DROP COLUMN "createdAt";
+    DELETE FROM _prisma_migrations WHERE migration_name IN (
+      '20261120214605_add_mobile_session',
+      '20261122120000_add_goal_created_at',
+      '20261123194040_add_push_notifications');
+    COMMIT;
+    ```
+
+### 5. Variáveis novas na VPS
+
+- **Ação:** no ambiente do `finance-app`, acrescente as três variáveis:
+  - `MOBILE_JWT_SECRET`: **gerado novo para a produção, diferente do de dev**. Gere direto na VPS, gravando no arquivo de ambiente sem mostrar o valor na tela:
+    ```sh
+    printf 'MOBILE_JWT_SECRET=%s\n' "$(openssl rand -hex 32)" >> <arquivo de ambiente do finance-app>
+    ```
+    O `-hex 32` gera 64 caracteres, sem os símbolos do base64 que confundem o arquivo `.env`;
+  - `GOOGLE_MOBILE_CLIENT_IDS`, os IDs Android/iOS separados por vírgula;
+  - `EXPO_ACCESS_TOKEN`, o token do robô Viewer.
+
+  Não mexa no `GOOGLE_CLIENT_ID` nem no `NEXTAUTH_SECRET`. Elas só passam a valer quando o container for recriado, no passo 7.
+- **Deu certo se,** depois do passo 7, este comando mostrar `ok` nas três e um tamanho de 32 ou mais no `MOBILE_JWT_SECRET`:
+  ```sh
+  docker exec finance-app sh -c 'for v in MOBILE_JWT_SECRET GOOGLE_MOBILE_CLIENT_IDS EXPO_ACCESS_TOKEN; do printenv $v >/dev/null && echo "$v ok" || echo "$v FALTA"; done; printenv MOBILE_JWT_SECRET | tr -d "\n" | wc -c'
+  ```
+- **Voltar atrás:** remova as linhas. O código antigo não as lê.
+
+### 6. HTTPS da API
+
+A API é o mesmo app Next, no mesmo domínio do web (`https://<dominio>/api/v1/*`). Não precisa de host nem porta nova no proxy.
+
+- **Ação:** confira que o proxy encaminha `/api/*` para o `finance-app` com certificado válido. O app deve usar `https://<dominio>` como base da API em produção; isso é configurado no repositório do app.
+- **Deu certo se:**
+  - **Antes do deploy:** `curl -sI https://<dominio>/api/auth/providers` responde 200, sem erro de certificado.
+  - **Depois do deploy:** `curl -s -o /dev/null -w '%{http_code}' https://<dominio>/api/v1/me` responde 401. Isso mostra que a rota existe e que o header `Authorization` chega ao app.
+- **Voltar atrás:** sem mudança no proxy, não há o que desfazer. Se precisar mexer no proxy, anote a configuração antes.
+
+### 7. Deploy
+
+- **Ação:**
+  1. Guarde a imagem atual para poder voltar:
+     ```sh
+     docker inspect --format '{{.Image}}' finance-app
+     docker tag <id> finance-app:pre-mobile
+     ```
+  2. Faça o build a partir da `main` e recrie o `finance-app` pelo procedimento de sempre. O `npm run build` já roda o `prisma generate`.
+- **Deu certo se:**
+  - `docker logs --tail 50 finance-app` não mostra erro na subida;
+  - o comando do passo 5 dá `ok` nas três variáveis;
+  - o passo 6 (depois do deploy) responde 401;
+  - este comando responde 200 com `notifications: []`, porque ainda não há aparelhos em produção:
+    ```sh
+    curl -s -X POST -H "x-api-key: $N8N_INTERNAL_SECRET" "https://<dominio>/api/integrations/notifications/dispatch?dryRun=1"
+    ```
+- **Voltar atrás:** recrie o container a partir de `finance-app:pre-mobile`, com o mesmo ambiente e a mesma rede. As migrations podem ficar, porque o código antigo funciona com elas.
+
+### 8. Conferência do web
+
+- **Ação:** no site de produção, confira:
+  - login pelo Google e por senha;
+  - **Visão Geral:** saldo pelo pago, card de pendentes e saldo previsto;
+  - **Transações:** campo "Situação" no diálogo, "voltar para pendente" no menu, selo "atrasada" e o card de saldo;
+  - **Metas e chat:** continuam abrindo e respondendo;
+  - em 360px, sem rolagem lateral.
+- **Deu certo se:** tudo funciona e os números da Visão Geral batem com os de antes do deploy, já que não há pendentes atrasadas (passo 2).
+- **Voltar atrás:** a imagem `finance-app:pre-mobile` (passo 7).
+
+### 9. n8n
+
+Nesta parte, a API se testa só pelo terminal: o 401 do passo 6 e o `dryRun` do passo 7. O teste do app contra a produção fica para a Parte 3, com a build de produção, a partir de 25/11. Até lá não há aparelhos registrados em produção.
+
+- **Ação:** crie o workflow da 5f conforme a seção "n8n", com disparos às 9h e às 9h30.
+  - Rode primeiro à mão com `?dryRun=1`, depois sem.
+  - Só então ative o workflow. Se o n8n estiver na mesma rede Docker, use o endereço interno do `finance-app`.
+- **Deu certo se:**
+  - as duas execuções manuais respondem 200 com `users: 0` e `sent: 0`, já que ainda não há aparelhos;
+  - no dia seguinte, as execuções das 9h e das 9h30 aparecem verdes no histórico.
+
+  A entrega do aviso no aparelho e a chave única pulando o repetido são conferidas na Parte 3.
+- **Voltar atrás:** desative o workflow. Nada mais é enviado e o log não atrapalha.
+
+### Parte 3: app contra a produção (a partir de 25/11)
+
+- **Ação:** com a build de produção do app, faça login pelo Google e permita as notificações.
+- **Deu certo se:**
+  - a `MobileSession` e o `PushDevice` ganham uma linha cada. Confira com `SELECT count(*) FROM "PushDevice" WHERE "disabledAt" IS NULL`;
+  - o próximo disparo do n8n entrega o aviso, e o das 9h30 pula o que já foi enviado.
+- **Voltar atrás:** o logout no app desativa o aparelho.
+
 ## Riscos e cuidados
 
 - Extrair a lógica um domínio por vez, sem mudar o comportamento. Testar as telas web a cada etapa.
@@ -183,3 +369,7 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
     - Depende da publicação: o n8n da VPS chama a API de produção, então a migration, o `EXPO_ACCESS_TOKEN` e a API precisam estar no ar antes
   - Deploy: migration `add_push_notifications` em produção depois da `add_mobile_session` (o `PushDevice` depende da `MobileSession`), `EXPO_ACCESS_TOKEN` na VPS; API no ar antes da build do app com push
 - [ ] **6** (opcional) Push imediato de orçamento; chat e importação no mobile
+- [ ] **7** Publicação (checklist na seção "Publicação")
+  - [x] `.env.example` com todas as variáveis, sem valores
+  - [ ] Passos 1 a 9 da seção "Publicação"
+  - [ ] Parte 3: app contra a produção, a partir de 25/11
