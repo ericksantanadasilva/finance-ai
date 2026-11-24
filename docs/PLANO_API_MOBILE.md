@@ -297,6 +297,13 @@ Nesta parte, a API se testa só pelo terminal: o 401 do passo 6 e o `dryRun` do 
   A entrega do aviso no aparelho e a chave única pulando o repetido são conferidas na Parte 3.
 - **Voltar atrás:** desative o workflow. Nada mais é enviado e o log não atrapalha.
 
+### Notas da publicação
+
+- **Variáveis do `finance-app`:** vêm do compose em `/home/ubuntu/apps/finance`. Quatro ficam no `environment:`, que tem prioridade, e o resto no `.env`, lido pelo `env_file`. No `.env`, os valores vão sem aspas, porque quem lê o arquivo é o Docker Compose.
+- **Deploy:** `git pull` na pasta, `docker compose build` e depois `docker compose up -d`. A imagem anterior fica guardada como `finance-app:pre-mobile`.
+- **Teste do `dryRun`:** pode ser feito de dentro do container com `node -e "fetch(...)"`, usando `process.env.N8N_INTERNAL_SECRET`, sem expor a chave.
+- **n8n:** está em outra rede Docker (`big-bear-n8n_default`), então o workflow chama o domínio público. O fuso `America/Sao_Paulo` foi definido nas Settings do workflow, porque o n8n não tem `GENERIC_TIMEZONE`.
+
 ### Parte 3: app contra a produção (a partir de 25/11)
 
 - **Ação:** com a build de produção do app, faça login pelo Google e permita as notificações.
@@ -326,7 +333,7 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
   - Pendências da Etapa 2:
     - [x] Login real pelo Google: testado de ponta a ponta pelo app mobile (login, refresh com rotação sob 3 chamadas simultâneas, logout revogando a sessão e `/me`)
     - [ ] Detecção de reuso do refresh token (guardar o hash anterior e revogar a sessão se um token já trocado voltar)
-    - [ ] Deploy: aplicar a migration `add_mobile_session` no banco `finance` junto com o deploy e definir `MOBILE_JWT_SECRET` e `GOOGLE_MOBILE_CLIENT_IDS` no ambiente da VPS
+    - [x] Deploy: aplicar a migration `add_mobile_session` no banco `finance` junto com o deploy e definir `MOBILE_JWT_SECRET` e `GOOGLE_MOBILE_CLIENT_IDS` no ambiente da VPS
 - [x] **3** Rotas de leitura (dashboard, transactions, categories, recurring, goals): em uso pelo app mobile
 - [x] **4** Rotas de escrita com validação (Zod já instalado na 2c). Contrato levantado pelo app em `finance-mobile/docs/ESCRITA_BACKEND.md`: 201 com o recurso no formato da leitura, 200 ao alterar, 204 ao excluir, 404 para id inexistente ou de outro usuário
   - [x] **4a** Mês de competência padrão no fuso do app (`currentMonthISO(APP_TIME_ZONE)`) em `createTransaction`
@@ -344,7 +351,7 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
 - [ ] **4i** Saldo pelo pago (contrato em `finance-mobile/docs/ESCRITA_BACKEND.md`, "Depois da escrita: saldo pelo pago"; no app, item 5g do `PLANO_MOBILE.md`)
   - Regra: receitas, despesas, gráfico mensal e limites das categorias continuam por competência, contando tudo. O saldo atual (inclusive "meses anteriores" da Visão Geral e o `carryOver` de Transações) conta só o pago. Pendentes = não pagas com competência até o mês atual; as de meses anteriores levam o selo "atrasada", e meses futuros ficam fora. Previsto = saldo atual + a receber − a pagar
   - [x] `getDashboardTotals` agrupa também por `isPaid` e devolve o campo em cada total (só acréscimo: nenhum número muda)
-  - [ ] Produção: repetir a medição de pendentes (só leitura) antes de publicar; se houver pendentes com competência anterior à virada, script de dados com autorização e backup (medição de 22/11/2026: 0 pendentes)
+  - [x] Produção: repetir a medição de pendentes (só leitura) antes de publicar; se houver pendentes com competência anterior à virada, script de dados com autorização e backup (medição de 22/11/2026: 0 pendentes)
   - Decisão: "saldo" é sempre só o pago, em qualquer tela (Visão Geral, Transações, web e app). Receitas e despesas de Transações continuam por competência, contando tudo
   - [x] `getTransactionsPage`: `carryOver` só com `isPaid: true` e `totals.balance` novo (`carryOver` + recebido − pago do conjunto filtrado); o card "saldo" de Transações do web usa o `balance`
   - [x] Visão Geral do web com saldo pelo pago, card de pendentes (a pagar e a receber, com "atrasada") e saldo previsto
@@ -371,5 +378,6 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
 - [ ] **6** (opcional) Push imediato de orçamento; chat e importação no mobile
 - [ ] **7** Publicação (checklist na seção "Publicação")
   - [x] `.env.example` com todas as variáveis, sem valores
-  - [ ] Passos 1 a 9 da seção "Publicação"
+  - [x] Passos 1 a 9 da seção "Publicação" (24/11/2026)
+    - [ ] Conferir as execuções automáticas do n8n às 9h e às 9h30 de 25/11
   - [ ] Parte 3: app contra a produção, a partir de 25/11
