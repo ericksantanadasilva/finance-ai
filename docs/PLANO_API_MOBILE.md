@@ -346,7 +346,8 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
   - [x] **4h** `POST /goals` e `POST /goals/:id/contributions` (aporte > 0)
   - Depois (o app ainda não usa):
     - [ ] `POST /categories` (nome repetido → 409; cor validada em hex) e `DELETE /categories/:id`
-    - [ ] `PATCH /goals/:id`, `DELETE /goals/:id` e `PATCH /me`
+    - [x] `PATCH /goals/:id` (parcial: `deadline: null` remove o prazo, `currentAmount` >= 0, `createdAt` não muda) e `DELETE /goals/:id` (a confirmação fica no app)
+    - [ ] `PATCH /me`
     - [ ] Mesma cor padrão para a categoria nova em `createTransaction`, `updateTransaction` e `createRecurringRule`
 - [x] **4i** Saldo pelo pago (contrato em `finance-mobile/docs/ESCRITA_BACKEND.md`, "Depois da escrita: saldo pelo pago"; no app, item 5g do `PLANO_MOBILE.md`). A parte do app (5g) foi publicada junto com o build de produção de 25/11/2026
   - Regra: receitas, despesas, gráfico mensal e limites das categorias continuam por competência, contando tudo. O saldo atual (inclusive "meses anteriores" da Visão Geral e o `carryOver` de Transações) conta só o pago. Pendentes = não pagas com competência até o mês atual; as de meses anteriores levam o selo "atrasada", e meses futuros ficam fora. Previsto = saldo atual + a receber − a pagar
