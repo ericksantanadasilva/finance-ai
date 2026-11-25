@@ -348,7 +348,7 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
     - [ ] `POST /categories` (nome repetido → 409; cor validada em hex) e `DELETE /categories/:id`
     - [ ] `PATCH /goals/:id`, `DELETE /goals/:id` e `PATCH /me`
     - [ ] Mesma cor padrão para a categoria nova em `createTransaction`, `updateTransaction` e `createRecurringRule`
-- [ ] **4i** Saldo pelo pago (contrato em `finance-mobile/docs/ESCRITA_BACKEND.md`, "Depois da escrita: saldo pelo pago"; no app, item 5g do `PLANO_MOBILE.md`)
+- [x] **4i** Saldo pelo pago (contrato em `finance-mobile/docs/ESCRITA_BACKEND.md`, "Depois da escrita: saldo pelo pago"; no app, item 5g do `PLANO_MOBILE.md`). A parte do app (5g) foi publicada junto com o build de produção de 25/11/2026
   - Regra: receitas, despesas, gráfico mensal e limites das categorias continuam por competência, contando tudo. O saldo atual (inclusive "meses anteriores" da Visão Geral e o `carryOver` de Transações) conta só o pago. Pendentes = não pagas com competência até o mês atual; as de meses anteriores levam o selo "atrasada", e meses futuros ficam fora. Previsto = saldo atual + a receber − a pagar
   - [x] `getDashboardTotals` agrupa também por `isPaid` e devolve o campo em cada total (só acréscimo: nenhum número muda)
   - [x] Produção: repetir a medição de pendentes (só leitura) antes de publicar; se houver pendentes com competência anterior à virada, script de dados com autorização e backup (medição de 22/11/2026: 0 pendentes)
@@ -376,8 +376,8 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
     - Depende da publicação: o n8n da VPS chama a API de produção, então a migration, o `EXPO_ACCESS_TOKEN` e a API precisam estar no ar antes
   - Deploy: migration `add_push_notifications` em produção depois da `add_mobile_session` (o `PushDevice` depende da `MobileSession`), `EXPO_ACCESS_TOKEN` na VPS; API no ar antes da build do app com push
 - [ ] **6** (opcional) Push imediato de orçamento; chat e importação no mobile
-- [ ] **7** Publicação (checklist na seção "Publicação")
+- [x] **7** Publicação (checklist na seção "Publicação")
   - [x] `.env.example` com todas as variáveis, sem valores
   - [x] Passos 1 a 9 da seção "Publicação" (24/11/2026)
-    - [ ] Conferir as execuções automáticas do n8n às 9h e às 9h30 de 25/11
+    - [x] Conferir as execuções automáticas do n8n (25/11/2026): o workflow foi publicado com um horário provisório de teste, e as duas execuções automáticas saíram verdes (a primeira com `sent: 1`, a segunda com `skipped: 1`). Depois os horários de 9h e 9h30 foram restaurados
   - [x] Parte 3: app contra a produção (25/11/2026): build de produção (perfil production, APK, distribuição interna) em dois aparelhos Android, login pelo Google, `MobileSession` e `PushDevice` com 2 registros, push entregue nos dois e o segundo disparo pulando o repetido (`skipped: 1`)
