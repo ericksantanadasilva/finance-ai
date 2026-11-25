@@ -365,14 +365,14 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
   - Continuam nascendo pagos, sem mudança: chat (server action sem `isPaid`), rota de integração (contrato externo, default do banco), importação da IA (`createMany`) e recorrências (regra própria)
   - Publicar a API antes do app: no backend antigo o POST descarta o `isPaid` (entra como pago) e a edição com `isPaid` dá 400
   - Fora do escopo: a server action `createTransaction(data: any)` repassa o objeto sem validar (já existia)
-- [ ] **5** Notificações push (desenho na seção "Push"; no app, Etapa 6 do `PLANO_MOBILE.md`)
+- [x] **5** Notificações push (desenho na seção "Push"; no app, Etapa 6 do `PLANO_MOBILE.md`)
   - [x] **5a** Migration `add_push_notifications` (`PushDevice` + `NotificationLog`): primeiro no `finance_dev`, com autorização
   - [x] **5b** `POST /devices` e `DELETE /devices/:id`; `requireMobileUser` devolve o `sessionId`; logout desativa os aparelhos da sessão
   - [x] **5c** `lib/push.ts`: envio em lotes, tickets e recibos, `DeviceNotRegistered` desativa o aparelho; `EXPO_ACCESS_TOKEN`
   - [x] **5d** `validateApiKey` com `crypto.timingSafeEqual` (commit `fix` separado, antes do `dispatch`)
   - [x] **5e** Rota `dispatch` (vence hoje, atrasadas, orçamento) com `dryRun`
     - Testado de ponta a ponta pelo app: o dispatch real chegou a dois aparelhos e a chave única pulou o aviso repetido. O Enhanced Security está ligado e o token é do robô com papel Viewer
-  - [ ] **5f** Workflow diário no n8n, com disparos às 9h e às 9h30 (ver "n8n" na seção "Push")
+  - [x] **5f** Workflow diário no n8n, com disparos às 9h e às 9h30 (ver "n8n" na seção "Push"). Criado em 24/11/2026
     - Depende da publicação: o n8n da VPS chama a API de produção, então a migration, o `EXPO_ACCESS_TOKEN` e a API precisam estar no ar antes
   - Deploy: migration `add_push_notifications` em produção depois da `add_mobile_session` (o `PushDevice` depende da `MobileSession`), `EXPO_ACCESS_TOKEN` na VPS; API no ar antes da build do app com push
 - [ ] **6** (opcional) Push imediato de orçamento; chat e importação no mobile
@@ -380,4 +380,4 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
   - [x] `.env.example` com todas as variáveis, sem valores
   - [x] Passos 1 a 9 da seção "Publicação" (24/11/2026)
     - [ ] Conferir as execuções automáticas do n8n às 9h e às 9h30 de 25/11
-  - [ ] Parte 3: app contra a produção, a partir de 25/11
+  - [x] Parte 3: app contra a produção (25/11/2026): build de produção (perfil production, APK, distribuição interna) em dois aparelhos Android, login pelo Google, `MobileSession` e `PushDevice` com 2 registros, push entregue nos dois e o segundo disparo pulando o repetido (`skipped: 1`)
