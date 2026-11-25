@@ -33,7 +33,7 @@ export function toGoalItem(goal: Goal): GoalItem {
   };
 }
 
-function parseDeadline(deadline?: string) {
+function parseDeadline(deadline?: string | null) {
   if (!deadline) return null;
   const d = parseDateOnly(deadline);
   return isNaN(d.getTime()) ? null : d;
@@ -71,6 +71,32 @@ export async function updateGoal(userId: string, id: string, data: GoalInput) {
       deadline: parseDeadline(data.deadline),
     },
   });
+}
+
+/** Alteração parcial (PATCH /goals/:id): campo ausente fica como está; deadline null remove o prazo. */
+export type GoalPatch = {
+  name?: string;
+  targetAmount?: number;
+  currentAmount?: number;
+  deadline?: string | null; // YYYY-MM-DD
+};
+
+/**
+ * Altera só os campos enviados e devolve a meta atualizada. O createdAt não muda.
+ * Lança erro (P2025) se a meta não existir ou for de outro usuário.
+ */
+export async function patchGoal(userId: string, id: string, data: GoalPatch) {
+  const goal = await prisma.goal.update({
+    where: { id, userId },
+    data: {
+      name: data.name,
+      targetAmount: data.targetAmount,
+      currentAmount: data.currentAmount,
+      deadline:
+        data.deadline === undefined ? undefined : parseDeadline(data.deadline),
+    },
+  });
+  return toGoalItem(goal);
 }
 
 /**
