@@ -11,7 +11,7 @@ O web continua funcionando como hoje: server actions + sessão do next-auth por 
 | 2 | Token do Google / tokens do mobile | `jose`: verifica o ID token do Google (JWKS) e assina os tokens do mobile |
 | 3 | Sessão do mobile | Access token curto (~1h, JWT) + refresh token aleatório salvo no banco **com hash**, um por aparelho, com rotação |
 | 4 | Validação das rotas | Zod |
-| 5 | Login no mobile | Só Google, por enquanto |
+| 5 | Login no mobile | Google e e-mail e senha (`POST /auth/login`, mesma checagem do web, com limite de tentativas) |
 
 Restrição: **nenhuma migration até o `.env` apontar para o banco de desenvolvimento** (hoje aponta para produção).
 
@@ -51,10 +51,19 @@ Regras:
 
 Variáveis novas: `MOBILE_JWT_SECRET` e `GOOGLE_MOBILE_CLIENT_IDS` (client IDs de Android e iOS criados no Google Cloud). `GOOGLE_CLIENT_ID` e `NEXTAUTH_SECRET` não mudam.
 
+## Login por e-mail e senha no mobile
+
+1. `POST /api/v1/auth/login { email, password, deviceName?, platform? }`.
+2. Usa a mesma `verifyPasswordLogin()` do login web ([lib/auth.ts](../lib/auth.ts)). O bcrypt roda sempre (contra um hash falso de custo 10 quando o e-mail não existe ou a conta não tem senha), para o tempo de resposta não revelar o caso.
+3. Respostas: 200 igual ao do Google (`{ accessToken, refreshToken, expiresIn, user }`); 401 `Invalid credentials` para e-mail inexistente, senha errada e conta sem senha; 429 `Too many attempts` com `Retry-After`; 400 de validação.
+4. Limite de tentativas ([lib/login-rate-limit.ts](../lib/login-rate-limit.ts)), o mesmo contador do web: 10 falhas por e-mail e 30 por IP em janelas de 15 min. A falha conta mesmo para e-mail inexistente, e um login certo zera o contador do e-mail. Fica em memória (`globalThis`), então um restart zera os contadores.
+5. IP: `CF-Connecting-IP` (a Cloudflare está na frente) e, sem ele, `X-Real-IP`. Sem nenhum dos dois, não há limite por IP.
+6. Nem a senha nem o e-mail vão para os logs.
+
 ## Rotas
 
 ```
-POST   /api/v1/auth/google | /auth/refresh | /auth/logout
+POST   /api/v1/auth/google | /auth/login | /auth/refresh | /auth/logout
 GET    /api/v1/me                       PATCH /api/v1/me
 GET    /api/v1/dashboard                (gera as recorrências antes, como a página)
 GET    /api/v1/transactions?month=&type=&status=&q=&category=&minAmount=&maxAmount=&sort=&page=&pageSize=
@@ -68,7 +77,7 @@ POST   /api/v1/devices                  DELETE /api/v1/devices/:id
 POST   /api/integrations/notifications/dispatch   (n8n, x-api-key)
 ```
 
-Erros: 400 (validação), 401 (token), 404 (não existe ou é de outro usuário), 500.
+Erros: 400 (validação), 401 (token), 404 (não existe ou é de outro usuário), 429 (login: muitas tentativas), 500.
 
 ## Push
 
@@ -382,3 +391,13 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
   - [x] Passos 1 a 9 da seção "Publicação" (24/11/2026)
     - [x] Conferir as execuções automáticas do n8n (25/11/2026): o workflow foi publicado com um horário provisório de teste, e as duas execuções automáticas saíram verdes (a primeira com `sent: 1`, a segunda com `skipped: 1`). Depois os horários de 9h e 9h30 foram restaurados
   - [x] Parte 3: app contra a produção (25/11/2026): build de produção (perfil production, APK, distribuição interna) em dois aparelhos Android, login pelo Google, `MobileSession` e `PushDevice` com 2 registros, push entregue nos dois e o segundo disparo pulando o repetido (`skipped: 1`)
+- [ ] **8** Login por e-mail e senha no mobile (`POST /auth/login`; desenho em "Login por e-mail e senha no mobile")
+  - [x] **8a** Contador de tentativas e leitura do IP em `lib/login-rate-limit.ts`
+  - [x] **8b** `verifyPasswordLogin(email, password, ip)` com o hash falso
+  - [x] **8c** `authorize` do web usando a função; contador antigo removido do `lib/auth.ts`
+  - [x] **8d** Rota `app/api/v1/auth/login/route.ts`: testados no dev 400, 401 de e-mail inexistente e 429 por e-mail e por IP
+  - [ ] Teste manual no dev: login certo (200 + `/me` com o `accessToken`), senha errada numa conta real e conta só com Google (401 com tempo parecido); no web, login certo, senha errada e bloqueio após 10 falhas
+  - [ ] Deploy (sem migration nem variável nova) e tela de login por senha no app
+  - Depois (limite de tentativas):
+    - [ ] Nginx aceitar só IPs da Cloudflare, para o `CF-Connecting-IP` não poder ser falsificado
+    - [ ] Limite por IP agrupando IPv6 por /64: cada cliente costuma ter um /64 inteiro e pode trocar de endereço dentro dele para escapar do limite
