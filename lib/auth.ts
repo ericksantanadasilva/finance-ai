@@ -1,8 +1,73 @@
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { getServerSession, type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider, { type GoogleProfile } from 'next-auth/providers/google';
+import {
+  clearLoginFailures,
+  getLoginBlock,
+  registerLoginFailure,
+} from '@/lib/login-rate-limit';
 import { prisma } from '@/lib/prisma';
+
+// Mesmo custo dos hashes importados do Supabase ($2a$10$): com custo diferente,
+// o tempo da comparação com o hash falso denunciaria o e-mail inexistente.
+const DUMMY_HASH_COST = 10;
+
+const globalForAuth = globalThis as typeof globalThis & {
+  dummyPasswordHash?: Promise<string>;
+};
+
+/** Hash de uma senha aleatória, gerado uma vez por processo. */
+function dummyPasswordHash() {
+  return (globalForAuth.dummyPasswordHash ??= bcrypt.hash(
+    crypto.randomBytes(32).toString('hex'),
+    DUMMY_HASH_COST,
+  ));
+}
+// Gera já ao carregar o módulo, para o primeiro login não pagar o custo extra
+void dummyPasswordHash();
+
+export type PasswordLoginResult =
+  | { status: 'ok'; user: { id: string; email: string; name: string | null } }
+  | { status: 'invalid' }
+  | { status: 'blocked'; retryAfterSeconds: number };
+
+/**
+ * Login por e-mail e senha (web e app mobile). E-mail inexistente, senha errada e
+ * conta sem senha dão o mesmo resultado, `invalid`, e o mesmo trabalho: o
+ * bcrypt roda sempre. Cada falha conta para o e-mail e para o IP.
+ */
+export async function verifyPasswordLogin(
+  email: string,
+  password: string,
+  ip: string | null,
+): Promise<PasswordLoginResult> {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  const block = getLoginBlock(normalizedEmail, ip);
+  if (block) return { status: 'blocked', ...block };
+
+  const user = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    select: { id: true, email: true, name: true, passwordHash: true },
+  });
+
+  const matches = await bcrypt.compare(
+    password,
+    user?.passwordHash ?? (await dummyPasswordHash()),
+  );
+  if (!user?.passwordHash || !matches) {
+    registerLoginFailure(normalizedEmail, ip);
+    return { status: 'invalid' };
+  }
+
+  clearLoginFailures(normalizedEmail);
+  return {
+    status: 'ok',
+    user: { id: user.id, email: user.email, name: user.name },
+  };
+}
 
 // Sem isso a senha ficaria aberta a tentativas ilimitadas (o Supabase limitava antes).
 // Em memória porque o app roda em um único container.
