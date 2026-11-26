@@ -5,6 +5,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider, { type GoogleProfile } from 'next-auth/providers/google';
 import {
   clearLoginFailures,
+  getClientIp,
   getLoginBlock,
   registerLoginFailure,
 } from '@/lib/login-rate-limit';
@@ -69,32 +70,6 @@ export async function verifyPasswordLogin(
   };
 }
 
-// Sem isso a senha ficaria aberta a tentativas ilimitadas (o Supabase limitava antes).
-// Em memória porque o app roda em um único container.
-const MAX_LOGIN_ATTEMPTS = 10;
-const LOGIN_WINDOW_MS = 15 * 60 * 1000;
-const loginAttempts = new Map<string, { count: number; resetAt: number }>();
-
-function isLoginBlocked(email: string) {
-  const attempt = loginAttempts.get(email);
-  if (!attempt) return false;
-  if (attempt.resetAt <= Date.now()) {
-    loginAttempts.delete(email);
-    return false;
-  }
-  return attempt.count >= MAX_LOGIN_ATTEMPTS;
-}
-
-function registerFailedLogin(email: string) {
-  const attempt = loginAttempts.get(email);
-  if (attempt) attempt.count += 1;
-  else
-    loginAttempts.set(email, {
-      count: 1,
-      resetAt: Date.now() + LOGIN_WINDOW_MS,
-    });
-}
-
 /** Campos do perfil Google usados no login (vêm do OAuth web ou do ID token do mobile). */
 export type GoogleIdentity = Pick<
   GoogleProfile,
@@ -154,26 +129,17 @@ export const authOptions: NextAuthOptions = {
         email: { type: 'email' },
         password: { type: 'password' },
       },
-      async authorize(credentials) {
-        const email = credentials?.email?.trim().toLowerCase();
+      async authorize(credentials, req) {
+        const email = credentials?.email?.trim();
         const password = credentials?.password;
-        if (!email || !password || isLoginBlocked(email)) return null;
+        if (!email || !password) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { email },
-          select: { id: true, email: true, name: true, passwordHash: true },
-        });
-
-        const valid =
-          !!user?.passwordHash &&
-          (await bcrypt.compare(password, user.passwordHash));
-        if (!valid) {
-          registerFailedLogin(email);
-          return null;
-        }
-
-        loginAttempts.delete(email);
-        return { id: user.id, email: user.email, name: user.name };
+        const result = await verifyPasswordLogin(
+          email,
+          password,
+          getClientIp(req.headers),
+        );
+        return result.status === 'ok' ? result.user : null;
       },
     }),
   ],
