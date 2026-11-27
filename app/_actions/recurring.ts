@@ -47,6 +47,37 @@ export async function createRecurringRule(input: RecurringRuleInput) {
   }
 }
 
+/** Edição completa: o que já foi lançado fica como está; vale do próximo mês em diante. */
+export async function updateRecurringRule(
+  id: string,
+  input: RecurringRuleInput,
+): Promise<{ success: true } | { success: false; error: string }> {
+  const user = await requireUser();
+
+  try {
+    const result = await recurringService.updateRecurringRule(
+      user.id,
+      id,
+      input,
+    );
+    if (!result.success) {
+      return {
+        success: false,
+        error:
+          'error' in result ? result.error : 'Esta recorrência não existe mais.',
+      };
+    }
+
+    revalidatePath('/Recurring');
+    revalidatePath('/Transactions');
+    revalidatePath('/Dashboard');
+    return { success: true };
+  } catch (error) {
+    console.error('Erro ao editar recorrência:', error);
+    return { success: false, error: 'Erro ao salvar.' };
+  }
+}
+
 export async function toggleRecurringRule(id: string, active: boolean) {
   const user = await requireUser();
 

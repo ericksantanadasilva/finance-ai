@@ -13,7 +13,11 @@ import {
   Tag,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { createRecurringRule } from '@/app/_actions/recurring';
+import {
+  createRecurringRule,
+  updateRecurringRule,
+} from '@/app/_actions/recurring';
+import type { RecurringRuleItem } from '@/lib/finance/recurring';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { DialogCloseButton, DialogOverlay } from '@/components/ui/dialog';
@@ -28,58 +32,110 @@ import {
 } from '@/components/ui/select';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
-const currentMonth = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-};
+const toMonth = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+const currentMonth = () => toMonth(new Date());
+
+function shiftMonth(month: string, delta: number) {
+  const [y, m] = month.split('-').map(Number);
+  return toMonth(new Date(y, m - 1 + delta, 1));
+}
+
+/** "2026-12" → "Dezembro de 2026" */
+function monthLabel(month: string) {
+  const [y, m] = month.split('-').map(Number);
+  const label = new Date(y, m - 1, 1).toLocaleDateString('pt-BR', {
+    month: 'long',
+    year: 'numeric',
+  });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+/**
+ * Mês a partir do qual a edição vale (a mesma regra do updateRecurringRule):
+ * o mês atual e os atrasados são lançados antes com os dados antigos. Uma regra
+ * que ainda não lançou nada vale desde o início escolhido. Pausada: null.
+ */
+function editEffectiveMonth(rule: RecurringRuleItem, newStart: string) {
+  if (!rule.active) return null;
+  const now = currentMonth();
+  const launchesNow = rule.lastGeneratedMonth !== null || rule.startMonth <= now;
+  if (!launchesNow) return newStart;
+  const next = shiftMonth(now, 1);
+  return newStart > next ? newStart : next;
+}
 
 interface RecurringDialogProps {
   isOpen: boolean;
   onClose: () => void;
   categoryNames: string[]; // de getCategoryOptions: já inclui as padrão
+  // Com editData, edita a regra. Quem usa passa key={editData.id}, para os
+  // campos começarem com os valores da regra a cada abertura
+  editData?: RecurringRuleItem | null;
 }
 
-// Modal de nova recorrência (mesmo layout do TransactionDialog). O estado fica
-// aqui; como o componente continua montado quando fechado, o que foi digitado
-// se mantém ao cancelar e só é limpo depois de salvar, como antes.
+// Modal de nova recorrência ou de edição (mesmo layout do TransactionDialog).
+// Na criação, o estado fica aqui; como o componente continua montado quando
+// fechado, o que foi digitado se mantém ao cancelar e só é limpo depois de salvar.
 export default function RecurringDialog({
   isOpen,
   onClose,
   categoryNames,
+  editData,
 }: RecurringDialogProps) {
   const router = useRouter();
+  const isEdit = !!editData;
 
   const [saving, setSaving] = useState(false);
-  const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('');
-  const [type, setType] = useState<'expense' | 'income'>('expense');
-  const [category, setCategory] = useState('');
-  const [dayOfMonth, setDayOfMonth] = useState('5');
-  const [startMonth, setStartMonth] = useState(currentMonth());
+  const [description, setDescription] = useState(editData?.description ?? '');
+  const [amount, setAmount] = useState(
+    editData ? String(editData.amount) : '',
+  );
+  const [type, setType] = useState<'expense' | 'income'>(
+    editData?.type === 'income' ? 'income' : 'expense',
+  );
+  const [category, setCategory] = useState(editData?.category?.name ?? '');
+  const [dayOfMonth, setDayOfMonth] = useState(
+    editData ? String(editData.dayOfMonth) : '5',
+  );
+  const [startMonth, setStartMonth] = useState(
+    editData?.startMonth ?? currentMonth(),
+  );
 
   const titleId = useId();
   const panelRef = useModalBehavior<HTMLDivElement>({ isOpen, onClose });
 
-  // Opções de mês de início (12 meses atrás até 6 à frente)
+  // Opções de mês de início (12 meses atrás até 6 à frente). Na edição de uma
+  // regra que já lançou, só o início atual ou meses depois do último lançado
   const startMonthOptions = useMemo(() => {
-    const options = [];
+    const values: string[] = [];
     const now = new Date();
     for (let i = -12; i <= 6; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-      const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      const label = d.toLocaleDateString('pt-BR', {
-        month: 'long',
-        year: 'numeric',
-      });
-      options.push({
-        value,
-        label: label.charAt(0).toUpperCase() + label.slice(1),
-      });
+      values.push(toMonth(new Date(now.getFullYear(), now.getMonth() + i, 1)));
     }
-    return options;
-  }, []);
+    if (editData && !values.includes(editData.startMonth)) {
+      values.push(editData.startMonth);
+    }
+    const last = editData?.lastGeneratedMonth;
+    return values
+      .filter((v) => !last || v === editData.startMonth || v > last)
+      .sort()
+      .map((value) => ({ value, label: monthLabel(value) }));
+  }, [editData]);
+
+  // Categoria atual que não está nas opções é uma arquivada: continua
+  // selecionável para ser mantida (decisão 13)
+  const archivedCurrent =
+    editData?.category && !categoryNames.includes(editData.category.name)
+      ? editData.category.name
+      : null;
 
   if (!isOpen) return null;
+
+  const effectiveMonth = editData
+    ? editEffectiveMonth(editData, startMonth)
+    : null;
 
   const reset = () => {
     setDescription('');
@@ -90,21 +146,24 @@ export default function RecurringDialog({
     setStartMonth(currentMonth());
   };
 
-  const handleCreate = async () => {
+  const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await createRecurringRule({
+      const input = {
         description,
         amount: Number(amount),
         type,
         category,
         dayOfMonth: Number(dayOfMonth),
         startMonth,
-      });
+      };
+      const res = editData
+        ? await updateRecurringRule(editData.id, input)
+        : await createRecurringRule(input);
       if (res.success) {
-        toast.success('Recorrência criada!');
+        toast.success(isEdit ? 'Recorrência atualizada!' : 'Recorrência criada!');
         onClose();
-        reset();
+        if (!isEdit) reset();
         router.refresh();
       } else {
         toast.error(res.error ?? 'Erro ao salvar.');
@@ -132,12 +191,32 @@ export default function RecurringDialog({
             className='text-base font-bold flex items-center gap-2'
           >
             <Repeat className='w-5 h-5' />
-            Nova Recorrência
+            {isEdit ? 'Editar Recorrência' : 'Nova Recorrência'}
           </h2>
           <DialogCloseButton onClick={onClose} />
         </CardHeader>
 
         <div className='p-6 overflow-y-auto custom-scrollbar space-y-6'>
+          {/* EDIÇÃO: quando a mudança passa a valer (informativo, plano) */}
+          {isEdit && (
+            <p className='flex items-start gap-2 p-3 rounded-xl border-2 border-border-custom bg-surface text-xs font-medium text-muted-foreground'>
+              <Clock className='w-4 h-4 shrink-0' aria-hidden='true' />
+              <span>
+                {effectiveMonth ? (
+                  <>
+                    A mudança vale a partir de{' '}
+                    <strong className='text-foreground'>
+                      {monthLabel(effectiveMonth)}
+                    </strong>
+                    . O que já foi lançado fica como está.
+                  </>
+                ) : (
+                  'Recorrência pausada: a mudança vale a partir do mês em que você retomar. O que já foi lançado fica como está.'
+                )}
+              </span>
+            </p>
+          )}
+
           {/* TIPO: o selecionado vira "adesivo" na cor do tipo; a seta reforça entrada/saída */}
           <div className='grid grid-cols-2 gap-3'>
             <Button
@@ -194,8 +273,9 @@ export default function RecurringDialog({
               </SelectContent>
             </Select>
             <p className='text-xs text-muted-foreground font-medium'>
-              * Meses anteriores ao atual entram como pagos; o mês atual fica
-              pendente até você marcar como pago.
+              {editData?.lastGeneratedMonth
+                ? `* Só dá para mudar para um mês depois do último lançado (${monthLabel(editData.lastGeneratedMonth)}). Os meses do meio não são lançados.`
+                : '* Meses anteriores ao atual entram como pagos; o mês atual fica pendente até você marcar como pago.'}
             </p>
           </div>
 
@@ -230,6 +310,11 @@ export default function RecurringDialog({
                       <SelectValue placeholder='Selecionar...' />
                     </SelectTrigger>
                     <SelectContent>
+                      {archivedCurrent && (
+                        <SelectItem value={archivedCurrent}>
+                          {archivedCurrent} (arquivada)
+                        </SelectItem>
+                      )}
                       {categoryNames.map((cat) => (
                         <SelectItem key={cat} value={cat}>
                           {cat}
@@ -271,7 +356,7 @@ export default function RecurringDialog({
             </Button>
             <Button
               size='lg'
-              onClick={handleCreate}
+              onClick={handleSave}
               disabled={saving}
               className='flex-1 px-4'
             >
