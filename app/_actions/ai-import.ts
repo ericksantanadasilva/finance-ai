@@ -4,6 +4,10 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { getSessionUser } from '@/lib/auth';
+import {
+  getCategories,
+  resolveCategoryForUse,
+} from '@/lib/finance/categories';
 import { APP_TIME_ZONE, parseDateOnly, todayISO } from '@/app/utils/dates';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
@@ -13,10 +17,7 @@ export async function processFileWithAI(base64Data: string, mimeType: string) {
     const user = await getSessionUser();
     if (!user) return null;
 
-    const categories = await prisma.category.findMany({
-      where: { userId: user.id },
-      select: { name: true },
-    });
+    const categories = await getCategories(user.id); // só as ativas
     const categoryList = categories.map((c) => c.name).join(', ');
     const today = todayISO(APP_TIME_ZONE);
 
@@ -111,30 +112,25 @@ export async function saveTransactions(
       return true;
     });
 
-    // Uma única transação do banco: ou salva tudo, ou nada
-    await prisma.$transaction(async (tx) => {
-      const categoryIds = new Map<string, string>();
-      for (const name of new Set(toSave.map((t) => t.category as string))) {
-        const category = await tx.category.upsert({
-          where: { name_userId: { name, userId } },
-          update: {},
-          create: { name, userId, color: '#71717a', type: 'expense' },
-        });
-        categoryIds.set(name, category.id);
-      }
+    // As categorias são resolvidas antes (criadas ou reativadas pelo nome); se o
+    // createMany falhar, elas ficam, sem transações. As transações entram todas ou nenhuma.
+    const categoryIds = new Map<string, string>();
+    for (const name of new Set(toSave.map((t) => t.category as string))) {
+      const category = await resolveCategoryForUse(userId, name, 'expense');
+      categoryIds.set(name, category.id);
+    }
 
-      await tx.transaction.createMany({
-        data: toSave.map((t) => ({
-          description: t.description,
-          amount: t.amount,
-          type: t.type === 'income' ? 'income' : 'expense',
-          date: parseDateOnly(t.date), // Data real da compra (Extrato)
-          referenceDate, // Data de competência (Dashboard)
-          aiGenerated: true,
-          categoryId: categoryIds.get(t.category),
-          userId,
-        })),
-      });
+    await prisma.transaction.createMany({
+      data: toSave.map((t) => ({
+        description: t.description,
+        amount: t.amount,
+        type: t.type === 'income' ? 'income' : 'expense',
+        date: parseDateOnly(t.date), // Data real da compra (Extrato)
+        referenceDate, // Data de competência (Dashboard)
+        aiGenerated: true,
+        categoryId: categoryIds.get(t.category),
+        userId,
+      })),
     });
 
     revalidatePath('/Dashboard');

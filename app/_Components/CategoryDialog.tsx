@@ -10,6 +10,7 @@ import { DialogCloseButton, DialogOverlay } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
+import CategoryColorField from './CategoryColorField';
 
 interface CategoryDialogProps {
   isOpen: boolean;
@@ -36,12 +37,21 @@ export default function CategoryDialog({
     if (!name) return;
     setLoading(true);
     try {
-      await createCategory(
+      const result = await createCategory(
         name,
         color,
         newBudget.trim() === '' ? null : Number(newBudget),
       );
-      toast.success(`Categoria "${name}" criada!`);
+      if (result.status === 'conflict') {
+        // Continua aberto para o usuário trocar o nome
+        toast.error(`Já existe uma categoria "${name.trim()}".`);
+        return;
+      }
+      toast.success(
+        result.status === 'reactivated'
+          ? `Categoria "${name.trim()}" reativada, com a cor nova também nas transações antigas.`
+          : `Categoria "${name.trim()}" criada!`,
+      );
       onClose();
       setName('');
       setNewBudget('');
@@ -84,29 +94,11 @@ export default function CategoryDialog({
             />
           </div>
 
-          <div className='flex flex-col gap-2'>
-            <Label htmlFor='category-color'>Cor de Identificação</Label>
-            {/* O input de cor nativo fica invisível por cima da amostra:
-                a lógica é a mesma, só o visual mudou */}
-            <div className='flex items-center gap-3 rounded-xl border-2 border-ink bg-surface p-2 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background'>
-              <div className='relative size-10 shrink-0'>
-                <input
-                  id='category-color'
-                  type='color'
-                  value={color}
-                  onChange={(e) => setColor(e.target.value)}
-                  className='absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10'
-                />
-                <div
-                  className='size-full rounded-lg border-2 border-ink'
-                  style={{ backgroundColor: color }}
-                />
-              </div>
-              <span className='font-mono text-sm font-bold text-muted-foreground lowercase'>
-                {color}
-              </span>
-            </div>
-          </div>
+          <CategoryColorField
+            id='category-color'
+            value={color}
+            onChange={setColor}
+          />
 
           <div className='flex flex-col gap-2'>
             <Label htmlFor='category-budget'>Limite mensal (opcional)</Label>

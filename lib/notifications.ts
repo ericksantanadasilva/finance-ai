@@ -1,6 +1,6 @@
 // Avisos diários por push (ver "Push" em docs/PLANO_API_MOBILE.md). Chamado pela
 // rota dispatch do n8n; recebe `now` para o teste poder fixar o dia.
-import { prisma } from '@/lib/prisma';
+import { isUniqueViolation, prisma } from '@/lib/prisma';
 import { APP_TIME_ZONE } from '@/app/utils/dates';
 import { getCategoriesWithBudget } from '@/lib/finance/categories';
 import { generateForUser } from '@/lib/finance/recurring';
@@ -371,13 +371,4 @@ export async function dispatchNotifications({
   }
 
   return result;
-}
-
-function isUniqueViolation(error: unknown) {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    error.code === 'P2002'
-  );
 }

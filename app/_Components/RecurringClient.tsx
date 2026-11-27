@@ -6,6 +6,7 @@ import {
   Plus,
   Repeat,
   Pause,
+  Pencil,
   Play,
   Trash2,
   Loader2,
@@ -48,6 +49,7 @@ export default function RecurringClient({
   const router = useRouter();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [ruleToEdit, setRuleToEdit] = useState<RecurringRuleItem | null>(null);
 
   const [ruleToDelete, setRuleToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -105,6 +107,18 @@ export default function RecurringClient({
         onClose={() => setIsOpen(false)}
         categoryNames={categoryNames}
       />
+
+      {/* Instância separada para editar: o rascunho da nova recorrência
+          continua guardado; key faz os campos começarem com os da regra */}
+      {ruleToEdit && (
+        <RecurringDialog
+          key={ruleToEdit.id}
+          isOpen
+          onClose={() => setRuleToEdit(null)}
+          categoryNames={categoryNames}
+          editData={ruleToEdit}
+        />
+      )}
 
       {/* HEADER */}
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 pt-10 lg:pt-0'>
@@ -218,6 +232,15 @@ export default function RecurringClient({
                   )}
                 </div>
                 <div className='flex items-center gap-1 shrink-0'>
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    onClick={() => setRuleToEdit(rule)}
+                    aria-label={`Editar ${rule.description}`}
+                    className='size-8 text-muted-foreground hover:text-foreground'
+                  >
+                    <Pencil className='w-4 h-4' />
+                  </Button>
                   <Button
                     variant='ghost'
                     size='icon'

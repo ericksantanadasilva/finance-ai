@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Trash2, Pencil, AlertTriangle } from 'lucide-react';
-import { deleteCategory } from '../_actions/categories';
+import { Plus, Archive, Pencil, AlertTriangle } from 'lucide-react';
+import { archiveCategory } from '../_actions/categories';
 import ConfirmDialog from '@/app/_Components/ConfirmDialog'; // Importando nosso dialog
 import CategoryDialog from './CategoryDialog';
-import CategoryBudgetDialog from './CategoryBudgetDialog';
+import CategoryEditDialog from './CategoryEditDialog';
 import CategoryBadge from './CategoryBadge';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,16 @@ type CategoryWithBudget = {
   budget: number | null;
   spent: number;
   percent: number | null;
+  activeRecurringRules: number;
 };
+
+function archiveDescription(category: CategoryWithBudget | null) {
+  const base =
+    'Ela sai das listas de escolha. As transações já registradas continuam com ela, e os relatórios não mudam.';
+  const rules = category?.activeRecurringRules ?? 0;
+  if (rules === 0) return base;
+  return `${base} ${rules === 1 ? '1 recorrência ativa usa' : `${rules} recorrências ativas usam`} esta categoria e continua${rules === 1 ? '' : 'm'} lançando com ela.`;
+}
 
 const formatMoney = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
@@ -47,9 +56,10 @@ export default function CategoriesClient({
     null,
   );
 
-  // ESTADOS PARA EXCLUSÃO
-  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  // ESTADOS PARA ARQUIVAMENTO
+  const [categoryToArchive, setCategoryToArchive] =
+    useState<CategoryWithBudget | null>(null);
+  const [isArchiving, setIsArchiving] = useState(false);
 
   const overBudget = initialCategories.filter(
     (c) => c.percent !== null && c.percent >= 100,
@@ -58,37 +68,43 @@ export default function CategoriesClient({
     (c) => c.percent !== null && c.percent >= 80 && c.percent < 100,
   );
 
-  const handleConfirmDelete = async () => {
-    if (!categoryToDelete) return;
+  const handleConfirmArchive = async () => {
+    if (!categoryToArchive) return;
 
-    setIsDeleting(true);
+    setIsArchiving(true);
     try {
-      await deleteCategory(categoryToDelete);
-      toast.success('Categoria removida com sucesso');
-    } catch (error) {
-      toast.error('Erro ao remover categoria');
+      const result = await archiveCategory(categoryToArchive.id);
+      if (result) {
+        toast.success(`Categoria "${categoryToArchive.name}" arquivada.`);
+      } else {
+        // Já arquivada (ex.: em outra aba ou pelo app)
+        toast.error('Esta categoria não está mais disponível.');
+      }
+    } catch {
+      toast.error('Erro ao arquivar categoria.');
     } finally {
-      setIsDeleting(false);
-      setCategoryToDelete(null);
+      setIsArchiving(false);
+      setCategoryToArchive(null);
     }
   };
 
   return (
     <div>
-      {/* DIALOG DE CONFIRMAÇÃO DE EXCLUSÃO */}
+      {/* DIALOG DE CONFIRMAÇÃO DE ARQUIVAMENTO */}
       <ConfirmDialog
-        isOpen={!!categoryToDelete}
-        onClose={() => setCategoryToDelete(null)}
-        onConfirm={handleConfirmDelete}
-        isLoading={isDeleting}
-        title='Excluir Categoria'
-        description='Tem certeza? Transações já registradas com esta categoria podem ficar sem classificação.'
+        isOpen={!!categoryToArchive}
+        onClose={() => setCategoryToArchive(null)}
+        onConfirm={handleConfirmArchive}
+        isLoading={isArchiving}
+        variant='warning'
+        title={`Arquivar "${categoryToArchive?.name ?? ''}"?`}
+        description={archiveDescription(categoryToArchive)}
       />
 
       <CategoryDialog isOpen={isOpen} onClose={() => setIsOpen(false)} />
 
       {/* key: o campo do limite começa com o valor atual a cada abertura */}
-      <CategoryBudgetDialog
+      <CategoryEditDialog
         key={budgetTarget?.id}
         category={budgetTarget}
         onClose={() => setBudgetTarget(null)}
@@ -152,7 +168,7 @@ export default function CategoriesClient({
                   variant='ghost'
                   size='icon'
                   onClick={() => setBudgetTarget(cat)}
-                  aria-label={`Definir limite de ${cat.name}`}
+                  aria-label={`Editar ${cat.name}`}
                   className='size-8 text-muted-foreground hover:text-foreground'
                 >
                   <Pencil className='w-4 h-4' />
@@ -160,11 +176,11 @@ export default function CategoriesClient({
                 <Button
                   variant='ghost'
                   size='icon'
-                  onClick={() => setCategoryToDelete(cat.id)}
-                  aria-label={`Excluir ${cat.name}`}
-                  className='size-8 text-muted-foreground hover:text-expense'
+                  onClick={() => setCategoryToArchive(cat)}
+                  aria-label={`Arquivar ${cat.name}`}
+                  className='size-8 text-muted-foreground hover:text-warning'
                 >
-                  <Trash2 className='w-4 h-4' />
+                  <Archive className='w-4 h-4' />
                 </Button>
               </div>
             </CardHeader>

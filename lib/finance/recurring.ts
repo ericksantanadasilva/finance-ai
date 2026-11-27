@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@/prisma/generated/client';
 import { APP_TIME_ZONE, currentMonthISO } from '@/app/utils/dates';
+import { resolveCategoryForUse } from './categories';
 
 const MONTH_RE = /^\d{4}-\d{2}$/;
 const MAX_CATCH_UP_MONTHS = 36; // trava de segurança contra loops/backfills enormes
@@ -76,9 +77,11 @@ export async function generateForUser(userId: string) {
   let created = 0;
 
   for (const rule of rules) {
-    let month = rule.lastGeneratedMonth
+    // O início pode ter sido adiado numa edição para depois do último lançado
+    const next = rule.lastGeneratedMonth
       ? shiftMonth(rule.lastGeneratedMonth, 1)
       : rule.startMonth;
+    let month = next > rule.startMonth ? next : rule.startMonth;
     if (month > now) continue;
 
     const data = [];
@@ -146,10 +149,12 @@ export async function getRecurringRuleItem(userId: string, id: string) {
  * Valida, cria a regra e já gera as ocorrências devidas (do mês de início até o atual).
  * Entrada inválida volta como { success: false, error }; falhas do banco lançam erro.
  */
-export async function createRecurringRule(
-  userId: string,
+/** Validação comum à criação e à edição. Devolve os campos já limpos. */
+function validateRecurringRuleInput(
   input: RecurringRuleInput,
-): Promise<{ success: true; id: string } | { success: false; error: string }> {
+):
+  | { success: true; data: Omit<RecurringRuleInput, 'category'> }
+  | { success: false; error: string } {
   const description = input.description?.trim();
   const dayOfMonth = Math.floor(Number(input.dayOfMonth));
   if (!description) return { success: false, error: 'Informe a descrição.' };
@@ -161,38 +166,111 @@ export async function createRecurringRule(
   if (input.type !== 'income' && input.type !== 'expense')
     return { success: false, error: 'Tipo inválido.' };
 
-  let categoryId: string | null = null;
-  if (input.category?.trim()) {
-    const category = await prisma.category.upsert({
-      where: {
-        name_userId: { name: input.category.trim(), userId },
-      },
-      update: {},
-      create: {
-        name: input.category.trim(),
-        type: input.type,
-        userId,
-        color: '#71717a',
-      },
-    });
-    categoryId = category.id;
-  }
-
-  const rule = await prisma.recurringRule.create({
+  return {
+    success: true,
     data: {
       description,
       amount: input.amount,
       type: input.type,
       dayOfMonth,
       startMonth: input.startMonth,
-      categoryId,
-      userId,
     },
+  };
+}
+
+export async function createRecurringRule(
+  userId: string,
+  input: RecurringRuleInput,
+): Promise<{ success: true; id: string } | { success: false; error: string }> {
+  const validation = validateRecurringRuleInput(input);
+  if (!validation.success) return validation;
+
+  let categoryId: string | null = null;
+  if (input.category?.trim()) {
+    const category = await resolveCategoryForUse(
+      userId,
+      input.category,
+      input.type,
+    );
+    categoryId = category.id;
+  }
+
+  const rule = await prisma.recurringRule.create({
+    data: { ...validation.data, categoryId, userId },
   });
 
   await generateForUser(userId);
 
   return { success: true, id: rule.id };
+}
+
+export type UpdateRecurringRuleResult =
+  | { success: true }
+  | { success: false; notFound: true } // não existe ou é de outro usuário
+  | { success: false; notFound?: false; error: string }; // entrada inválida
+
+/**
+ * Edição completa da regra. O que já foi lançado fica como está: antes de
+ * gravar, as ocorrências até o mês atual são geradas com os dados antigos, e
+ * os novos valem do próximo mês em diante. Mudar o início só vale para um mês
+ * depois do último lançado (os meses para trás não são lançados).
+ * Uma categoria arquivada pode ser mantida se já for a da regra.
+ * Falhas do banco lançam erro.
+ */
+export async function updateRecurringRule(
+  userId: string,
+  id: string,
+  input: RecurringRuleInput,
+): Promise<UpdateRecurringRuleResult> {
+  const exists = await prisma.recurringRule.findFirst({
+    where: { id, userId },
+    select: { id: true },
+  });
+  if (!exists) return { success: false, notFound: true };
+
+  const validation = validateRecurringRuleInput(input);
+  if (!validation.success) return validation;
+
+  await generateForUser(userId);
+
+  // Relida depois da geração, com o lastGeneratedMonth atualizado
+  const rule = await prisma.recurringRule.findFirst({ where: { id, userId } });
+  if (!rule) return { success: false, notFound: true };
+
+  const { startMonth } = validation.data;
+  if (
+    startMonth !== rule.startMonth &&
+    rule.lastGeneratedMonth &&
+    startMonth <= rule.lastGeneratedMonth
+  ) {
+    return {
+      success: false,
+      error: `O início precisa ser depois do último mês lançado (${rule.lastGeneratedMonth}).`,
+    };
+  }
+
+  let categoryId: string | null = null;
+  if (input.category?.trim()) {
+    const category = await resolveCategoryForUse(
+      userId,
+      input.category,
+      validation.data.type,
+      rule.categoryId,
+    );
+    categoryId = category.id;
+  }
+
+  // O lastGeneratedMonth não muda: as próximas ocorrências saem dos dados novos
+  await prisma.recurringRule.update({
+    where: { id: rule.id },
+    data: { ...validation.data, categoryId },
+  });
+
+  // Como na criação: uma regra que ainda não tinha lançado nada e passou a
+  // começar no passado ou no mês atual já gera as ocorrências devidas
+  await generateForUser(userId);
+
+  return { success: true };
 }
 
 /** Pausa ou retoma a regra. Retorna false se ela não existir ou for de outro usuário. */

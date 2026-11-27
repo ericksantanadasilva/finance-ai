@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateApiKey } from '@/lib/api-auth';
+import { resolveCategoryForUse } from '@/lib/finance/categories';
 import { APP_TIME_ZONE, parseDateOnly, todayISO } from '@/app/utils/dates';
 
 interface CreateTransactionBody {
@@ -78,25 +79,20 @@ export async function POST(request: Request) {
       0,
     );
 
-    const trimmedCategoryName = categoryName.trim();
+    if (!categoryName.trim()) {
+      return NextResponse.json(
+        { error: 'categoryName must not be empty' },
+        { status: 400 },
+      );
+    }
 
-    // 4. Trata a categoria: busca existente ou cria uma nova associada ao usuário
-    const category = await prisma.category.upsert({
-      where: {
-        name_userId: {
-          name: trimmedCategoryName,
-          userId,
-        },
-      },
-      create: {
-        name: trimmedCategoryName,
-        userId,
-        type: normalizedType,
-        // As telas aplicam a cor como CSS (hex), não como classe do Tailwind
-        color: normalizedType === 'income' ? '#10b981' : '#71717a',
-      },
-      update: {},
-    });
+    // 4. Categoria pelo nome: a existente (ignorando caixa e espaços), reativada
+    // se estiver arquivada, ou uma nova com a cor padrão
+    const category = await resolveCategoryForUse(
+      userId,
+      categoryName,
+      normalizedType,
+    );
 
     // 5. Cria a transação financeira
     const transaction = await prisma.transaction.create({

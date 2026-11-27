@@ -11,7 +11,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { createTransaction, updateTransaction } from '../_actions/transactions';
-import { getCategories } from '../_actions/categories';
+import { getCategoryOptions } from '../_actions/categories';
 import type { BudgetStatus } from '@/lib/finance/categories';
 import { toast } from 'sonner';
 import { todayISO } from '@/app/utils/dates';
@@ -58,8 +58,7 @@ export default function TransactionDialog({
   // NOVO: Estado para controlar o Mês de Competência dentro do modal
   const [selectedReference, setSelectedReference] = useState(referenceMonth);
 
-  const [dbCategories, setDbCategories] = useState<{ name: string }[]>([]);
-  const defaultCategories = ['Alimentação', 'Lazer', 'Transporte', 'Saúde'];
+  const [allCategories, setAllCategories] = useState<string[]>([]);
 
   // Gera opções de meses para o seletor de competência (3 meses atrás até 6 meses à frente)
   const referenceOptions = React.useMemo(() => {
@@ -110,16 +109,20 @@ export default function TransactionDialog({
       }
 
       async function load() {
-        const data = await getCategories();
-        setDbCategories(data);
+        setAllCategories(await getCategoryOptions());
       }
       load();
     }
   }, [isOpen, editData, referenceMonth]);
 
-  const allCategories = Array.from(
-    new Set([...defaultCategories, ...dbCategories.map((c) => c.name)]),
-  ).sort();
+  // A categoria atual da transação editada que não está nas opções é uma
+  // arquivada: continua selecionável para ser mantida (decisão 13)
+  const archivedCurrent =
+    editData?.category?.name &&
+    allCategories.length > 0 &&
+    !allCategories.includes(editData.category.name)
+      ? editData.category.name
+      : null;
 
   async function handleSubmit() {
     if (!amount || !description || !category) {
@@ -281,6 +284,11 @@ export default function TransactionDialog({
                       <SelectValue placeholder='Selecionar...' />
                     </SelectTrigger>
                     <SelectContent>
+                      {archivedCurrent && (
+                        <SelectItem value={archivedCurrent}>
+                          {archivedCurrent} (arquivada)
+                        </SelectItem>
+                      )}
                       {allCategories.map((cat) => (
                         <SelectItem key={cat} value={cat}>
                           {cat}

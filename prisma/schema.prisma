@@ -96,6 +96,9 @@ model Category {
   color     String   @default("bg-zinc-500")
   type      TransactionType
   budget    Decimal? @db.Decimal(10, 2) // limite mensal de gastos (null = sem limite)
+  // Nome comparável: minúsculas, sem os espaços das pontas. Nulo só até a migration que o torna obrigatório (9h)
+  nameKey    String?
+  archivedAt DateTime? // arquivada (soft delete): fora das listas de escolha, mantida no histórico
   userId    String
   createdAt DateTime @default(now())
 
@@ -104,6 +107,7 @@ model Category {
   recurringRules RecurringRule[]
 
   @@unique([name, userId])
+  @@unique([userId, nameKey])
 }
 
 model Transaction {
