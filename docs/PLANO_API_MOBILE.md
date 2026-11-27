@@ -422,7 +422,9 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
     ```
   - [x] **9a** Migration aditiva `add_category_archive`: `Category.archivedAt DateTime?` e `Category.nameKey String?` (nome em minúsculas, sem os espaços das pontas), backfill `lower(btrim(name))` e `@@unique([userId, nameKey])`. O unique antigo `(name, userId)` fica até a 9h. Aplicada no `finance_dev` em 26/11/2026 (20 categorias, todas com `nameKey`); falta a produção, antes do deploy da 9b/9c
     - O `btrim` corta só o espaço comum; basta porque nenhum nome atual (dev e produção) tem outro tipo de espaço nas pontas
-  - [ ] **9b** `lib/finance/categories`:
+  - [x] **9b** `lib/finance/categories` (sem consumidores novos ainda: o `deleteCategory` continua apagando até a 9d, e os `upsert` por nome continuam até a 9c; a action `createCategory` lança erro no `conflict`, como antes):
+    - Até a 9h, a busca por nome (`findCategoryByName`) também acha pelo nome exato as categorias com `nameKey` nulo, criadas pelo código antigo. Remover esse `OR` na 9h
+    - `DEFAULT_CATEGORY_COLORS` mudou de `transactions.ts` para `categories.ts`; `isUniqueViolation` mudou de `notifications.ts` para `lib/prisma.ts`
     - `normalizeCategoryName(name)` → `{ name, nameKey }` com `trim()` completo do JavaScript + `toLowerCase()`
     - `getCategories` e `getCategoriesWithBudget` só com as ativas (tela Categorias, `GET /categories`, avisos de orçamento); `getDashboardTotals` continua com todas
     - `createCategory` devolve criada, reativada ou conflito (ativa com o mesmo nome). Reativar: mesma linha, `archivedAt = null`, nome como digitado, cor nova e o limite digitado (decisões 7, 15 e 16). Corrida no unique (P2002) vira conflito
@@ -435,7 +437,7 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
     - Ao editar uma transação ou recorrência numa arquivada, o seletor mostra a atual marcada "arquivada" (decisão 13)
     - `getTransactionsPage`: o `categories` do filtro inclui as arquivadas (decisão 14)
   - [ ] **9d** Categorias no web e na API:
-    - Web: excluir vira arquivar (texto do `ConfirmDialog` e do toast, com o número de recorrências que usam a categoria); o `CategoryDialog` mostra "já existe" ou "reativada"
+    - Web: excluir vira arquivar (texto do `ConfirmDialog` e do toast, com o número de recorrências que usam a categoria); o `CategoryDialog` mostra "já existe" ou "reativada". O `archiveCategory` devolve esse número depois de arquivar; para mostrá-lo já na confirmação, falta uma contagem antes
     - `POST /categories`: 201 com a categoria no formato do `GET` e `reactivated: true` ao reativar; 409 com uma ativa de mesmo nome; cor validada em hex
     - `DELETE /categories/:id`: arquiva; 204 ou 404
   - [ ] **9e** `updateRecurringRule(userId, id, input)` em `lib/finance/recurring`:
@@ -445,6 +447,6 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
     - `generateForUser` passa a começar em `max(lastGeneratedMonth + 1, startMonth)`. Mudar o dia não duplica: a geração é por mês, com o `lastGeneratedMonth` e o unique `(recurringRuleId, referenceDate)`
   - [ ] **9f** `PATCH /recurring/:id`: só `{ active }` continua sendo pausar/retomar; qualquer outro body é edição completa (mesmo padrão da 4j(b)). 200 com a regra no formato do `GET`, 400, 404
   - [ ] **9g** Web: botão de editar no card do `RecurringClient` e modo de edição no `RecurringDialog` (como o `TransactionDialog`), avisando "vale a partir de <mês>"
-  - [ ] **9h** Migration `category_name_key_required`, depois do deploy da 9b e da 9c: novo backfill dos `nameKey` nulos (criados pelo código antigo entre a 9a e o deploy), `NOT NULL` e remoção do unique `(name, userId)`
+  - [ ] **9h** Migration `category_name_key_required`, depois do deploy da 9b e da 9c: novo backfill dos `nameKey` nulos (criados pelo código antigo entre a 9a e o deploy), `NOT NULL` e remoção do unique `(name, userId)`. Antes, repetir a consulta de duplicatas: um nome com espaço nas pontas gravado pelo código antigo pode ter virado uma segunda categoria. Depois, tirar o `OR` do `findCategoryByName`
   - Deploy: 9a em produção antes do deploy (aditiva, o código antigo continua funcionando); 9h só depois do código novo no ar
   - Fora do escopo: o `RecurringDialog` calcula o mês atual pelo fuso do navegador, não pelo `APP_TIME_ZONE` (já existia)

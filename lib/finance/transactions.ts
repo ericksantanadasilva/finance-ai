@@ -7,16 +7,11 @@ import {
   currentMonthISO,
   parseDateOnly,
 } from '@/app/utils/dates';
-import { getBudgetStatus, type BudgetStatus } from './categories';
-
-const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
-  Alimentação: '#ef4444',
-  Transporte: '#3b82f6',
-  Lazer: '#8b5cf6',
-  Casa: '#f59e0b',
-  Saúde: '#10b981',
-  Geral: '#71717a',
-};
+import {
+  DEFAULT_CATEGORY_COLORS,
+  getBudgetStatus,
+  type BudgetStatus,
+} from './categories';
 
 export type TransactionInput = {
   description: string;

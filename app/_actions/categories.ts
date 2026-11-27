@@ -52,7 +52,14 @@ export async function createCategory(
 ) {
   const user = await requireUser();
 
-  await categoriesService.createCategory(user.id, name, color, budget);
+  const result = await categoriesService.createCategory(
+    user.id,
+    name,
+    color,
+    budget,
+  );
+  // Mantém o comportamento de antes (erro no nome repetido) até a tela tratar o resultado (9d)
+  if (result.status === 'conflict') throw new Error('Categoria já existe');
 
   revalidatePath('/Categories');
   revalidatePath('/import');
