@@ -84,7 +84,7 @@ POST   /api/v1/transactions             → { transaction, budgetAlert }
 PATCH  /api/v1/transactions/:id         (campos e/ou isPaid)
 DELETE /api/v1/transactions/:id
 GET    /api/v1/categories?month=        POST   PATCH /:id (budget, color)   DELETE /:id (arquiva)
-GET    /api/v1/recurring                POST   PATCH /:id (active ou edição)   DELETE /:id
+GET    /api/v1/recurring                POST   PATCH /:id (active, ou edição com active opcional)   DELETE /:id
 GET    /api/v1/goals                    POST   PATCH /:id   POST /:id/contributions   DELETE /:id
 POST   /api/v1/devices                  DELETE /api/v1/devices/:id
 POST   /api/integrations/notifications/dispatch   (n8n, x-api-key)
@@ -453,7 +453,10 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
     - Antes de gravar, roda `generateForUser` com os dados antigos (decisão 17)
     - Com `lastGeneratedMonth` preenchido, o `startMonth` novo precisa ser depois dele (senão 400, decisão 18); sem ele, vale como na criação
     - `generateForUser` passa a começar em `max(lastGeneratedMonth + 1, startMonth)`. Mudar o dia não duplica: a geração é por mês, com o `lastGeneratedMonth` e o unique `(recurringRuleId, referenceDate)`
-  - [ ] **9f** `PATCH /recurring/:id`: só `{ active }` continua sendo pausar/retomar; qualquer outro body é edição completa (mesmo padrão da 4j(b)). 200 com a regra no formato do `GET`, 400, 404
+  - [x] **9f** `PATCH /recurring/:id`: só `{ active }` continua sendo pausar/retomar; qualquer outro body é edição completa (mesmo padrão da 4j(b)). 200 com a regra no formato do `GET`, 400, 404 (feito em 27/11/2026; antes, em commit próprio, o schema do `POST` virou `recurringBodySchema` em `recurring/schema.ts`)
+    - Edição completa: os campos do `POST` (`category` ausente ou vazio = sem categoria; o app manda sempre a atual) e `active` opcional. Com `active`, a regra é editada e depois pausada ou retomada na mesma requisição; ao retomar, o mês atual já sai com os dados novos. As duas escritas não são atômicas: se o pausar/retomar falhar, a edição fica gravada e a resposta é 500
+    - 400 do Zod (com `issues`) ou do service (ex.: "O início precisa ser depois do último mês lançado"); 404 para regra inexistente ou de outro usuário
+    - Compatível com o app de produção, que manda só `{ active }`: mesmo caminho, mesmo schema e mesma resposta. Diferença: antes, `{ active }` com chaves a mais também pausava (o schema ignorava o resto); agora esse body é uma edição completa e dá 400 se faltarem campos
   - [ ] **9g** Web: botão de editar no card do `RecurringClient` e modo de edição no `RecurringDialog` (como o `TransactionDialog`), avisando "vale a partir de <mês>"
   - [ ] **9h** Migration `category_name_key_required`, depois do deploy da 9b e da 9c: novo backfill dos `nameKey` nulos (criados pelo código antigo entre a 9a e o deploy), `NOT NULL` e remoção do unique `(name, userId)`. Antes, repetir a consulta de duplicatas: um nome com espaço nas pontas gravado pelo código antigo pode ter virado uma segunda categoria. Depois, tirar o `OR` do `findCategoryByName`
   - Deploy: 9a em produção antes do deploy (aditiva, o código antigo continua funcionando); 9h só depois do código novo no ar
