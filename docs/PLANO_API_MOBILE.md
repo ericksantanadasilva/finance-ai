@@ -420,7 +420,7 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
     SELECT "userId", lower(btrim(name)) AS k, array_agg(name), count(*)
     FROM "Category" GROUP BY 1, 2 HAVING count(*) > 1;
     ```
-  - [x] **9a** Migration aditiva `add_category_archive`: `Category.archivedAt DateTime?` e `Category.nameKey String?` (nome em minúsculas, sem os espaços das pontas), backfill `lower(btrim(name))` e `@@unique([userId, nameKey])`. O unique antigo `(name, userId)` fica até a 9h. Aplicada no `finance_dev` em 26/11/2026 (20 categorias, todas com `nameKey`); falta a produção, antes do deploy da 9b/9c
+  - [x] **9a** Migration aditiva `add_category_archive`: `Category.archivedAt DateTime?` e `Category.nameKey String?` (nome em minúsculas, sem os espaços das pontas), backfill `lower(btrim(name))` e `@@unique([userId, nameKey])`. O unique antigo `(name, userId)` fica até a 9h. Aplicada no `finance_dev` em 26/11/2026 (20 categorias, todas com `nameKey`) e à mão no `finance` em 27/11/2026, antes do deploy (20 categorias, todas com `nameKey`)
     - O `btrim` corta só o espaço comum; basta porque nenhum nome atual (dev e produção) tem outro tipo de espaço nas pontas
   - [x] **9b** `lib/finance/categories` (sem consumidores novos ainda: o `deleteCategory` continua apagando até a 9d, e os `upsert` por nome continuam até a 9c; a action `createCategory` lança erro no `conflict`, como antes):
     - Até a 9h, a busca por nome (`findCategoryByName`) também acha pelo nome exato as categorias com `nameKey` nulo, criadas pelo código antigo. Remover esse `OR` na 9h
@@ -462,6 +462,13 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
     - O aviso calcula o mês como o `updateRecurringRule`: o próximo mês (ou o início novo, se for depois); desde o início escolhido numa regra que ainda não lançou nada; numa pausada, "a partir do mês em que você retomar"
     - "Começa em" só oferece o início atual e meses depois do último lançado; a categoria arquivada da regra aparece como "(arquivada)"
     - O mês atual do diálogo vem do relógio do navegador, como na criação (pendência antiga, fora do escopo)
-  - [ ] **9h** Migration `category_name_key_required`, depois do deploy da 9b e da 9c: novo backfill dos `nameKey` nulos (criados pelo código antigo entre a 9a e o deploy), `NOT NULL` e remoção do unique `(name, userId)`. Antes, repetir a consulta de duplicatas: um nome com espaço nas pontas gravado pelo código antigo pode ter virado uma segunda categoria. Depois, tirar o `OR` do `findCategoryByName`
-  - Deploy: 9a em produção antes do deploy (aditiva, o código antigo continua funcionando); 9h só depois do código novo no ar
+  - [x] **Publicação das etapas 9a a 9g (27/11/2026)**
+    - Backup do `finance` antes de tudo: `finance-pre-categorias-20261127.dump`
+    - Migration `20261126120000_add_category_archive` aplicada à mão no `finance` antes do deploy; backfill conferido: 20 categorias, todas com `nameKey`
+    - Deploy do PR #5; a imagem anterior ficou guardada como `finance-app:pre-categorias` (para voltar: recriar o container a partir dela, com o mesmo ambiente e a mesma rede; a migration pode ficar, porque é aditiva)
+    - Conferido no web de produção: criar, editar a cor, arquivar e reativar categoria, e abrir a edição de recorrência
+    - Conferido no app de produção (telas antigas): lista de categorias, definir e remover limite, e pausar e retomar recorrência
+  - [ ] Telas do app para categorias (criar, arquivar, editar a cor) e edição de recorrência, usando o `POST`/`PATCH`/`DELETE /categories` e o `PATCH /recurring/:id` já publicados
+  - [ ] **9h** Migration `category_name_key_required`, para depois de alguns dias com o código novo no ar (no ar desde 27/11/2026): novo backfill dos `nameKey` nulos (criados pelo código antigo entre a 9a e o deploy), `NOT NULL` e remoção do unique `(name, userId)`. Antes, repetir a consulta de duplicatas no `finance_dev` e no `finance`: um nome com espaço nas pontas gravado pelo código antigo pode ter virado uma segunda categoria. Depois, tirar o `OR` do `findCategoryByName`
+  - Deploy: 9a em produção antes do deploy (aditiva, o código antigo continua funcionando; feito em 27/11/2026); 9h só depois do código novo no ar
   - Fora do escopo: o `RecurringDialog` calcula o mês atual pelo fuso do navegador, não pelo `APP_TIME_ZONE` (já existia)
