@@ -147,10 +147,12 @@ export async function getRecurringRuleItem(userId: string, id: string) {
  * Valida, cria a regra e já gera as ocorrências devidas (do mês de início até o atual).
  * Entrada inválida volta como { success: false, error }; falhas do banco lançam erro.
  */
-export async function createRecurringRule(
-  userId: string,
+/** Validação comum à criação e à edição. Devolve os campos já limpos. */
+function validateRecurringRuleInput(
   input: RecurringRuleInput,
-): Promise<{ success: true; id: string } | { success: false; error: string }> {
+):
+  | { success: true; data: Omit<RecurringRuleInput, 'category'> }
+  | { success: false; error: string } {
   const description = input.description?.trim();
   const dayOfMonth = Math.floor(Number(input.dayOfMonth));
   if (!description) return { success: false, error: 'Informe a descrição.' };
@@ -161,6 +163,25 @@ export async function createRecurringRule(
     return { success: false, error: 'Mês de início inválido.' };
   if (input.type !== 'income' && input.type !== 'expense')
     return { success: false, error: 'Tipo inválido.' };
+
+  return {
+    success: true,
+    data: {
+      description,
+      amount: input.amount,
+      type: input.type,
+      dayOfMonth,
+      startMonth: input.startMonth,
+    },
+  };
+}
+
+export async function createRecurringRule(
+  userId: string,
+  input: RecurringRuleInput,
+): Promise<{ success: true; id: string } | { success: false; error: string }> {
+  const validation = validateRecurringRuleInput(input);
+  if (!validation.success) return validation;
 
   let categoryId: string | null = null;
   if (input.category?.trim()) {
@@ -173,15 +194,7 @@ export async function createRecurringRule(
   }
 
   const rule = await prisma.recurringRule.create({
-    data: {
-      description,
-      amount: input.amount,
-      type: input.type,
-      dayOfMonth,
-      startMonth: input.startMonth,
-      categoryId,
-      userId,
-    },
+    data: { ...validation.data, categoryId, userId },
   });
 
   await generateForUser(userId);
