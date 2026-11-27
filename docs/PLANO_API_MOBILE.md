@@ -12,6 +12,19 @@ O web continua funcionando como hoje: server actions + sessão do next-auth por 
 | 3 | Sessão do mobile | Access token curto (~1h, JWT) + refresh token aleatório salvo no banco **com hash**, um por aparelho, com rotação |
 | 4 | Validação das rotas | Zod |
 | 5 | Login no mobile | Google e e-mail e senha (`POST /auth/login`, mesma checagem do web, com limite de tentativas) |
+| 6 | Excluir categoria | Arquivar (soft delete). As transações antigas continuam mostrando a categoria (nome e cor), e os relatórios dos meses passados não mudam. A arquivada some das listas de escolha e não pode ser usada em transações novas nem em recorrências novas |
+| 7 | Criar categoria com o nome de uma arquivada | Reativa a mesma linha. O usuário escolhe a cor de novo, e a cor nova vale também para as transações antigas. A reativada começa sem limite de orçamento |
+| 8 | Nomes iguais de categoria | A comparação ignora maiúsculas e minúsculas e os espaços nas pontas |
+| 9 | Editar recorrência | O que já foi lançado fica como está; só as próximas ocorrências usam os dados novos. Mudar o dia ou o início não pode duplicar nem pular a ocorrência do mês atual |
+| 10 | Onde valem as decisões 6 a 9 | No web e na API mobile, com a lógica compartilhada em `lib/finance` |
+| 11 | Nome de uma arquivada usado sem criar a categoria (lançamento, chat, importação, n8n, recorrência) | Reativa mantendo a cor antiga, sem limite |
+| 12 | Recorrência ativa cuja categoria é arquivada | Continua gerando com ela. O aviso de arquivamento diz quantas recorrências usam a categoria |
+| 13 | Editar transação ou recorrência que já está numa categoria arquivada | Pode manter a categoria atual, mas não trocar para outra arquivada. O seletor mostra a atual como "arquivada" |
+| 14 | Filtro de categoria em Transações (web e `categories` do `GET /transactions`) | Inclui as arquivadas, para achar o histórico |
+| 15 | Limite digitado ao reativar pelo `CategoryDialog` | Vale o valor digitado (vazio = sem limite). O limite antigo nunca volta |
+| 16 | Grafia ao reativar | Passa a valer o nome como foi digitado agora, inclusive nas transações antigas |
+| 17 | Mês atual na edição de recorrência | Conta como já lançado: antes de gravar, as ocorrências até o mês atual são geradas com os dados antigos, e a edição vale do próximo mês em diante. A transação do mês se ajusta à mão |
+| 18 | Mudar o início de uma recorrência que já lançou | Só para um mês depois do último lançado; um mês anterior dá 400. Os meses que ficaram para trás não são lançados |
 
 Restrição: **nenhuma migration até o `.env` apontar para o banco de desenvolvimento** (hoje aponta para produção).
 
@@ -71,7 +84,7 @@ POST   /api/v1/transactions             → { transaction, budgetAlert }
 PATCH  /api/v1/transactions/:id         (campos e/ou isPaid)
 DELETE /api/v1/transactions/:id
 GET    /api/v1/categories?month=        POST   PATCH /:id (budget)   DELETE /:id
-GET    /api/v1/recurring                POST   PATCH /:id (active)   DELETE /:id
+GET    /api/v1/recurring                POST   PATCH /:id (active ou edição)   DELETE /:id
 GET    /api/v1/goals                    POST   PATCH /:id   POST /:id/contributions   DELETE /:id
 POST   /api/v1/devices                  DELETE /api/v1/devices/:id
 POST   /api/integrations/notifications/dispatch   (n8n, x-api-key)
@@ -401,3 +414,36 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
   - Depois (limite de tentativas):
     - [ ] Nginx aceitar só IPs da Cloudflare, para o `CF-Connecting-IP` não poder ser falsificado
     - [ ] Limite por IP agrupando IPv6 por /64: cada cliente costuma ter um /64 inteiro e pode trocar de endereço dentro dele para escapar do limite
+- [ ] **9** Categorias arquivadas e edição de recorrência (decisões 6 a 18), no web e na API, com a lógica em `lib/finance`
+  - [ ] Antes da 9a: consulta de duplicatas (só leitura) no `finance_dev` e no `finance`. Se voltar alguma linha, a 9a espera: unificar exige um script de dados com autorização e backup
+    ```sql
+    SELECT "userId", lower(btrim(name)) AS k, array_agg(name), count(*)
+    FROM "Category" GROUP BY 1, 2 HAVING count(*) > 1;
+    ```
+  - [ ] **9a** Migration aditiva `add_category_archive`: `Category.archivedAt DateTime?` e `Category.nameKey String?` (nome em minúsculas, sem os espaços das pontas), backfill `lower(btrim(name))` e `@@unique([userId, nameKey])`. O unique antigo `(name, userId)` fica até a 9h. Primeiro no `finance_dev`, com autorização
+  - [ ] **9b** `lib/finance/categories`:
+    - `normalizeCategoryName(name)` → `{ name, nameKey }`; o mesmo cálculo da migration
+    - `getCategories` e `getCategoriesWithBudget` só com as ativas (tela Categorias, `GET /categories`, avisos de orçamento); `getDashboardTotals` continua com todas
+    - `createCategory` devolve criada, reativada ou conflito (ativa com o mesmo nome). Reativar: mesma linha, `archivedAt = null`, nome como digitado, cor nova e o limite digitado (decisões 7, 15 e 16). Corrida no unique (P2002) vira conflito
+    - `archiveCategory(userId, id)`: filtra `{ id, userId }`; devolve também quantas recorrências ativas usam a categoria, para o aviso (decisão 12)
+    - `resolveCategoryForUse(userId, name, type, currentCategoryId?)`: busca pelo `nameKey`; cria se não existir (com a cor padrão única de `DEFAULT_CATEGORY_COLORS`, resolvendo a pendência da 4); se estiver arquivada, mantém quando for a categoria atual da transação ou da regra (decisão 13) e, fora disso, reativa com a cor antiga e sem limite (decisão 11)
+    - `getBudgetStatus` busca pelo `nameKey`
+  - [ ] **9c** Consumidores:
+    - `createTransaction`, `updateTransaction`, `createRecurringRule`, importação da IA, rota do n8n e chat (via `createTransaction`) passam a usar o `resolveCategoryForUse`
+    - Listas de escolha só com as ativas: `TransactionDialog`, `RecurringDialog`, `AIImportClient`, prompts do chat e da importação, `identity/lookup`. A lista fixa de categorias padrão vai para o servidor, sem as que já existem arquivadas
+    - Ao editar uma transação ou recorrência numa arquivada, o seletor mostra a atual marcada "arquivada" (decisão 13)
+    - `getTransactionsPage`: o `categories` do filtro inclui as arquivadas (decisão 14)
+  - [ ] **9d** Categorias no web e na API:
+    - Web: excluir vira arquivar (texto do `ConfirmDialog` e do toast, com o número de recorrências que usam a categoria); o `CategoryDialog` mostra "já existe" ou "reativada"
+    - `POST /categories`: 201 com a categoria no formato do `GET` e `reactivated: true` ao reativar; 409 com uma ativa de mesmo nome; cor validada em hex
+    - `DELETE /categories/:id`: arquiva; 204 ou 404
+  - [ ] **9e** `updateRecurringRule(userId, id, input)` em `lib/finance/recurring`:
+    - Mesma validação da criação (extraída para uma função comum)
+    - Antes de gravar, roda `generateForUser` com os dados antigos (decisão 17)
+    - Com `lastGeneratedMonth` preenchido, o `startMonth` novo precisa ser depois dele (senão 400, decisão 18); sem ele, vale como na criação
+    - `generateForUser` passa a começar em `max(lastGeneratedMonth + 1, startMonth)`. Mudar o dia não duplica: a geração é por mês, com o `lastGeneratedMonth` e o unique `(recurringRuleId, referenceDate)`
+  - [ ] **9f** `PATCH /recurring/:id`: só `{ active }` continua sendo pausar/retomar; qualquer outro body é edição completa (mesmo padrão da 4j(b)). 200 com a regra no formato do `GET`, 400, 404
+  - [ ] **9g** Web: botão de editar no card do `RecurringClient` e modo de edição no `RecurringDialog` (como o `TransactionDialog`), avisando "vale a partir de <mês>"
+  - [ ] **9h** Migration `category_name_key_required`, depois do deploy da 9b e da 9c: novo backfill dos `nameKey` nulos (criados pelo código antigo entre a 9a e o deploy), `NOT NULL` e remoção do unique `(name, userId)`
+  - Deploy: 9a em produção antes do deploy (aditiva, o código antigo continua funcionando); 9h só depois do código novo no ar
+  - Fora do escopo: o `RecurringDialog` calcula o mês atual pelo fuso do navegador, não pelo `APP_TIME_ZONE` (já existia)
