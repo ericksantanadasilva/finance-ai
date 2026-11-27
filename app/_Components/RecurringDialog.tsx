@@ -36,7 +36,7 @@ const currentMonth = () => {
 interface RecurringDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  categoryNames: string[];
+  categoryNames: string[]; // de getCategoryOptions: já inclui as padrão
 }
 
 // Modal de nova recorrência (mesmo layout do TransactionDialog). O estado fica
@@ -59,21 +59,6 @@ export default function RecurringDialog({
 
   const titleId = useId();
   const panelRef = useModalBehavior<HTMLDivElement>({ isOpen, onClose });
-
-  // Mesmas categorias padrão do TransactionDialog + as do usuário
-  const allCategories = useMemo(
-    () =>
-      Array.from(
-        new Set([
-          'Alimentação',
-          'Lazer',
-          'Transporte',
-          'Saúde',
-          ...categoryNames,
-        ]),
-      ).sort(),
-    [categoryNames],
-  );
 
   // Opções de mês de início (12 meses atrás até 6 à frente)
   const startMonthOptions = useMemo(() => {
@@ -245,7 +230,7 @@ export default function RecurringDialog({
                       <SelectValue placeholder='Selecionar...' />
                     </SelectTrigger>
                     <SelectContent>
-                      {allCategories.map((cat) => (
+                      {categoryNames.map((cat) => (
                         <SelectItem key={cat} value={cat}>
                           {cat}
                         </SelectItem>

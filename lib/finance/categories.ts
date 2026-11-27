@@ -15,6 +15,9 @@ export const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
 };
 const FALLBACK_CATEGORY_COLOR = '#71717a';
 
+/** Sugeridas nas listas de escolha mesmo antes de existirem; criadas no primeiro uso. */
+const DEFAULT_CATEGORY_NAMES = ['Alimentação', 'Lazer', 'Transporte', 'Saúde'];
+
 /**
  * Nome como fica gravado (sem os espaços das pontas) e a chave de comparação
  * (também em minúsculas). Dois nomes são a mesma categoria quando a chave é igual.
@@ -72,6 +75,14 @@ export async function getCategories(userId: string) {
     ...c,
     budget: c.budget === null ? null : Number(c.budget),
   }));
+}
+
+/** Nomes para as listas de escolha (lançamento e recorrência): as padrão e as do usuário. */
+export async function getCategoryOptions(userId: string) {
+  const categories = await getCategories(userId);
+  return Array.from(
+    new Set([...DEFAULT_CATEGORY_NAMES, ...categories.map((c) => c.name)]),
+  ).sort();
 }
 
 /**

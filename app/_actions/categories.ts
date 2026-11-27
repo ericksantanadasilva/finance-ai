@@ -12,6 +12,14 @@ export async function getCategories() {
   return categoriesService.getCategories(user.id);
 }
 
+/** Nomes para as listas de escolha (lançamento e recorrência). */
+export async function getCategoryOptions() {
+  const user = await getSessionUser();
+  if (!user) return [];
+
+  return categoriesService.getCategoryOptions(user.id);
+}
+
 /**
  * Categorias com o limite mensal e quanto já foi gasto no mês de competência
  * (referenceDate, o mesmo critério do restante do app).

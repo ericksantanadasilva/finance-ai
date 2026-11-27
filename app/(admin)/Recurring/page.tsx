@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { generateDueRecurring, getRecurringRules } from '@/app/_actions/recurring';
-import { getCategories } from '@/app/_actions/categories';
+import { getCategoryOptions } from '@/app/_actions/categories';
 import RecurringClient from '@/app/_Components/RecurringClient';
 import RecurringSkeleton from '@/app/_Components/RecurringSkeleton';
 
@@ -9,16 +9,13 @@ export const dynamic = 'force-dynamic';
 async function RecurringData() {
   // Garante que as ocorrências do mês existam antes de exibir
   await generateDueRecurring();
-  const [rules, categories] = await Promise.all([
+  const [rules, categoryNames] = await Promise.all([
     getRecurringRules(),
-    getCategories(),
+    getCategoryOptions(),
   ]);
 
   return (
-    <RecurringClient
-      initialRules={rules}
-      categoryNames={categories.map((c) => c.name)}
-    />
+    <RecurringClient initialRules={rules} categoryNames={categoryNames} />
   );
 }
 
