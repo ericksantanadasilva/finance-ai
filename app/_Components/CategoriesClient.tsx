@@ -5,7 +5,7 @@ import { Plus, Trash2, Pencil, AlertTriangle } from 'lucide-react';
 import { deleteCategory } from '../_actions/categories';
 import ConfirmDialog from '@/app/_Components/ConfirmDialog'; // Importando nosso dialog
 import CategoryDialog from './CategoryDialog';
-import CategoryBudgetDialog from './CategoryBudgetDialog';
+import CategoryEditDialog from './CategoryEditDialog';
 import CategoryBadge from './CategoryBadge';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -88,7 +88,7 @@ export default function CategoriesClient({
       <CategoryDialog isOpen={isOpen} onClose={() => setIsOpen(false)} />
 
       {/* key: o campo do limite começa com o valor atual a cada abertura */}
-      <CategoryBudgetDialog
+      <CategoryEditDialog
         key={budgetTarget?.id}
         category={budgetTarget}
         onClose={() => setBudgetTarget(null)}

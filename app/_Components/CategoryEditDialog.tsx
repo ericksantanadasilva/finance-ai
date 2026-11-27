@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useModalBehavior } from '@/hooks/use-modal-behavior';
 
-interface CategoryBudgetDialogProps {
+interface CategoryEditDialogProps {
   // null = fechado
   category: { id: string; name: string; budget: number | null } | null;
   onClose: () => void;
@@ -19,10 +19,10 @@ interface CategoryBudgetDialogProps {
 
 // Modal de limite mensal. Quem usa passa key={category?.id}: assim o campo
 // começa com o limite atual a cada abertura, sem precisar de efeito.
-export default function CategoryBudgetDialog({
+export default function CategoryEditDialog({
   category,
   onClose,
-}: CategoryBudgetDialogProps) {
+}: CategoryEditDialogProps) {
   const [budgetValue, setBudgetValue] = useState(
     category?.budget ? String(category.budget) : '',
   );
