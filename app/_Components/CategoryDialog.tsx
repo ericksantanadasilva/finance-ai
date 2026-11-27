@@ -37,12 +37,21 @@ export default function CategoryDialog({
     if (!name) return;
     setLoading(true);
     try {
-      await createCategory(
+      const result = await createCategory(
         name,
         color,
         newBudget.trim() === '' ? null : Number(newBudget),
       );
-      toast.success(`Categoria "${name}" criada!`);
+      if (result.status === 'conflict') {
+        // Continua aberto para o usuário trocar o nome
+        toast.error(`Já existe uma categoria "${name.trim()}".`);
+        return;
+      }
+      toast.success(
+        result.status === 'reactivated'
+          ? `Categoria "${name.trim()}" reativada, com a cor nova também nas transações antigas.`
+          : `Categoria "${name.trim()}" criada!`,
+      );
       onClose();
       setName('');
       setNewBudget('');

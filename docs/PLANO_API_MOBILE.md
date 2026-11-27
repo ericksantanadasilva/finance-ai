@@ -83,7 +83,7 @@ GET    /api/v1/transactions?month=&type=&status=&q=&category=&minAmount=&maxAmou
 POST   /api/v1/transactions             → { transaction, budgetAlert }
 PATCH  /api/v1/transactions/:id         (campos e/ou isPaid)
 DELETE /api/v1/transactions/:id
-GET    /api/v1/categories?month=        POST   PATCH /:id (budget)   DELETE /:id
+GET    /api/v1/categories?month=        POST   PATCH /:id (budget, color)   DELETE /:id (arquiva)
 GET    /api/v1/recurring                POST   PATCH /:id (active ou edição)   DELETE /:id
 GET    /api/v1/goals                    POST   PATCH /:id   POST /:id/contributions   DELETE /:id
 POST   /api/v1/devices                  DELETE /api/v1/devices/:id
@@ -367,10 +367,10 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
   - [x] **4g** `POST /recurring`, `PATCH /recurring/:id` (`active`) e `DELETE /recurring/:id`
   - [x] **4h** `POST /goals` e `POST /goals/:id/contributions` (aporte > 0)
   - Depois (o app ainda não usa):
-    - [ ] `POST /categories` (nome repetido → 409; cor validada em hex) e `DELETE /categories/:id`
+    - [x] `POST /categories` (nome repetido → 409; cor validada em hex) e `DELETE /categories/:id` (feitos na 9d)
     - [x] `PATCH /goals/:id` (parcial: `deadline: null` remove o prazo, `currentAmount` >= 0, `createdAt` não muda) e `DELETE /goals/:id` (a confirmação fica no app)
     - [ ] `PATCH /me`
-    - [ ] Mesma cor padrão para a categoria nova em `createTransaction`, `updateTransaction` e `createRecurringRule`
+    - [x] Mesma cor padrão para a categoria nova em `createTransaction`, `updateTransaction` e `createRecurringRule` (feito na 9c, com o `resolveCategoryForUse`)
 - [x] **4i** Saldo pelo pago (contrato em `finance-mobile/docs/ESCRITA_BACKEND.md`, "Depois da escrita: saldo pelo pago"; no app, item 5g do `PLANO_MOBILE.md`). A parte do app (5g) foi publicada junto com o build de produção de 25/11/2026
   - Regra: receitas, despesas, gráfico mensal e limites das categorias continuam por competência, contando tudo. O saldo atual (inclusive "meses anteriores" da Visão Geral e o `carryOver` de Transações) conta só o pago. Pendentes = não pagas com competência até o mês atual; as de meses anteriores levam o selo "atrasada", e meses futuros ficam fora. Previsto = saldo atual + a receber − a pagar
   - [x] `getDashboardTotals` agrupa também por `isPaid` e devolve o campo em cada total (só acréscimo: nenhum número muda)
@@ -432,7 +432,7 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
     - `resolveCategoryForUse(userId, name, type, currentCategoryId?)`: busca pelo `nameKey`; cria se não existir (com a cor padrão única de `DEFAULT_CATEGORY_COLORS`, resolvendo a pendência da 4); se estiver arquivada, mantém quando for a categoria atual da transação ou da regra (decisão 13) e, fora disso, reativa com a cor antiga e sem limite (decisão 11)
     - `getBudgetStatus` busca pelo `nameKey`
   - [x] **9c** Consumidores (feito em 26/11/2026; antes, em commit próprio, a lista fixa de categorias padrão saiu dos diálogos para o `getCategoryOptions`):
-    - Criam ou usam a categoria pelo nome, com `resolveCategoryForUse`: `createTransaction` e `updateTransaction` (esta passa a categoria atual da transação), `createRecurringRule`, `saveTransactions` da importação (as categorias são resolvidas antes do `createMany`, fora da transação do banco) e a rota `integrations/finances/transaction` do n8n (agora com 400 para `categoryName` vazio; a cor da categoria nova de receita deixa de ser `#10b981`). O chat e o `POST /api/v1/transactions` passam pelo `createTransaction`
+    - Criam ou usam a categoria pelo nome, com `resolveCategoryForUse`: `createTransaction` e `updateTransaction` (esta passa a categoria atual da transação), `createRecurringRule`, `saveTransactions` da importação (as categorias são resolvidas antes do `createMany`, fora da transação do banco) e a rota `integrations/finances/transaction` do n8n (agora com 400 para `categoryName` vazio; a cor da categoria nova de receita deixa de ser `#10b981` e fica a padrão, sem verde, confirmado em 26/11/2026). O chat e o `POST /api/v1/transactions` passam pelo `createTransaction`
     - Só as ativas: `getCategories` (chat, `AIImportClient`, prompt da importação, `identity/lookup` do n8n) e `getCategoryOptions` (`TransactionDialog` e `RecurringDialog`, com as padrão que o usuário ainda não tem, nem arquivadas)
     - Com as arquivadas, de propósito: a busca de categorias do `getTransactionsPage` (filtro do web e `categories` do `GET /transactions`), o `getDashboardTotals` e o filtro por nome da rota `integrations/finances/summary`
     - Pendente: o cartão do chat marca como "nova" uma sugestão da IA que é uma arquivada; ao confirmar, ela é reativada
@@ -440,10 +440,14 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
     - Listas de escolha só com as ativas: `TransactionDialog`, `RecurringDialog`, `AIImportClient`, prompts do chat e da importação, `identity/lookup`. A lista fixa de categorias padrão vai para o servidor, sem as que já existem arquivadas
     - Ao editar uma transação ou recorrência numa arquivada, o seletor mostra a atual marcada "arquivada" (decisão 13)
     - `getTransactionsPage`: o `categories` do filtro inclui as arquivadas (decisão 14)
-  - [ ] **9d** Categorias no web e na API:
-    - Web: excluir vira arquivar (texto do `ConfirmDialog` e do toast, com o número de recorrências que usam a categoria); o `CategoryDialog` mostra "já existe" ou "reativada". O `archiveCategory` devolve esse número depois de arquivar; para mostrá-lo já na confirmação, falta uma contagem antes
-    - `POST /categories`: 201 com a categoria no formato do `GET` e `reactivated: true` ao reativar; 409 com uma ativa de mesmo nome; cor validada em hex
-    - `DELETE /categories/:id`: arquiva; 204 ou 404
+  - [x] **9d** Categorias no web e na API, com a edição de cor (feito em 27/11/2026; antes, em commit próprio, o seletor de cor virou o `CategoryColorField` e o `CategoryBudgetDialog` virou `CategoryEditDialog`):
+    - Web: excluir vira arquivar (ícone de arquivo, `ConfirmDialog` em `warning` com o número de recorrências ativas que usam a categoria); o `CategoryDialog` mostra "já existe" (continua aberto) ou "reativada"; o lápis abre o `CategoryEditDialog`, com limite e cor (a cor só é enviada se mudou)
+    - `getCategoriesWithBudget` devolve também `activeRecurringRules` (campo novo no `GET /categories`, só acréscimo), usado no aviso de arquivamento
+    - `updateCategory(userId, id, { budget?, color? })` no lugar do `setCategoryBudget`; `deleteCategory` (que apagava a linha) removida. A cor é validada (`CATEGORY_COLOR_RE`, hex de 6 dígitos) no `createCategory` e no `updateCategory` e gravada em minúsculas
+    - `POST /categories { name, color, budget? }`: 201 com a categoria no formato do `GET` e `reactivated`; 409 `Category already exists` com uma ativa de mesmo nome; 400 com cor fora do hex
+    - `PATCH /categories/:id { budget?, color? }`: pelo menos um dos dois; campo ausente fica como está e `budget: null` remove o limite; 404 para categoria arquivada
+    - `DELETE /categories/:id`: arquiva; 204 ou 404 (inclusive se já estiver arquivada)
+    - Renomear fica fora por enquanto
   - [ ] **9e** `updateRecurringRule(userId, id, input)` em `lib/finance/recurring`:
     - Mesma validação da criação (extraída para uma função comum)
     - Antes de gravar, roda `generateForUser` com os dados antigos (decisão 17)

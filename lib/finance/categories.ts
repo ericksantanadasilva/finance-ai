@@ -106,7 +106,7 @@ export async function getCategoriesWithBudget(
   month?: string,
   categoryId?: string,
 ) {
-  const [categories, spentByCategory] = await Promise.all([
+  const [categories, spentByCategory, rulesByCategory] = await Promise.all([
     prisma.category.findMany({
       where: { userId, id: categoryId, archivedAt: null },
       orderBy: { name: 'asc' },
@@ -120,6 +120,12 @@ export async function getCategoriesWithBudget(
         referenceDate: monthRange(month),
       },
       _sum: { amount: true },
+    }),
+    // Para o aviso de arquivamento: recorrências ativas continuam gerando com a categoria
+    prisma.recurringRule.groupBy({
+      by: ['categoryId'],
+      where: { userId, categoryId, active: true },
+      _count: { _all: true },
     }),
   ]);
 
@@ -135,9 +141,14 @@ export async function getCategoriesWithBudget(
       budget,
       spent,
       percent: budget && budget > 0 ? budgetPercent(spent, budget) : null,
+      activeRecurringRules:
+        rulesByCategory.find((r) => r.categoryId === c.id)?._count._all ?? 0,
     };
   });
 }
+
+/** Cor da categoria: hex de 6 dígitos (o formato do input de cor do web). */
+export const CATEGORY_COLOR_RE = /^#[0-9a-f]{6}$/i;
 
 function assertValidBudget(budget: number | null | undefined) {
   if (budget != null && (isNaN(budget) || budget < 0)) {
@@ -145,18 +156,37 @@ function assertValidBudget(budget: number | null | undefined) {
   }
 }
 
-/** Retorna false se a categoria não existir, estiver arquivada ou for de outro usuário. */
-export async function setCategoryBudget(
+function assertValidColor(color: string | undefined) {
+  if (color !== undefined && !CATEGORY_COLOR_RE.test(color)) {
+    throw new Error('Cor inválida');
+  }
+}
+
+/**
+ * Altera o limite e/ou a cor; o campo ausente fica como está e `budget: null`
+ * (ou 0) remove o limite. A cor nova vale também para as transações antigas.
+ * Retorna false se a categoria não existir, estiver arquivada ou for de outro usuário.
+ */
+export async function updateCategory(
   userId: string,
   id: string,
-  budget: number | null,
+  changes: { budget?: number | null; color?: string },
 ) {
-  assertValidBudget(budget);
+  assertValidBudget(changes.budget);
+  assertValidColor(changes.color);
 
   // updateMany garante que só altera categorias do próprio usuário
   const result = await prisma.category.updateMany({
     where: { id, userId, archivedAt: null },
-    data: { budget: budget && budget > 0 ? budget : null },
+    data: {
+      budget:
+        changes.budget === undefined
+          ? undefined
+          : changes.budget && changes.budget > 0
+            ? changes.budget
+            : null,
+      color: changes.color?.toLowerCase(),
+    },
   });
   return result.count > 0;
 }
@@ -210,12 +240,13 @@ export async function createCategory(
   budget?: number | null,
 ): Promise<CreateCategoryResult> {
   assertValidBudget(budget);
+  assertValidColor(color);
   const normalized = normalizeCategoryName(name);
   if (!normalized.name) throw new Error('Nome inválido');
 
   const data = {
     ...normalized,
-    color,
+    color: color.toLowerCase(),
     budget: budget && budget > 0 ? budget : null,
   };
 
@@ -317,11 +348,4 @@ export async function archiveCategory(userId: string, id: string) {
     where: { userId, categoryId: id, active: true },
   });
   return { activeRecurringRules };
-}
-
-export async function deleteCategory(userId: string, id: string) {
-  // O filtro por userId garante que o usuário só apaga o que pertence a ele
-  await prisma.category.delete({
-    where: { id, userId },
-  });
 }

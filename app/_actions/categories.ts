@@ -31,13 +31,24 @@ export async function getCategoriesWithBudget(month?: string) {
   return categoriesService.getCategoriesWithBudget(user.id, month);
 }
 
-export async function setCategoryBudget(id: string, budget: number | null) {
-  const user = await requireUser();
-
-  await categoriesService.setCategoryBudget(user.id, id, budget);
-
+// A cor aparece em todas as telas que mostram a categoria
+function revalidateCategoryViews() {
   revalidatePath('/Categories');
   revalidatePath('/Dashboard');
+  revalidatePath('/Transactions');
+  revalidatePath('/Recurring');
+}
+
+/** Altera o limite e/ou a cor. Retorna false se a categoria não existir ou estiver arquivada. */
+export async function updateCategory(
+  id: string,
+  changes: { budget?: number | null; color?: string },
+) {
+  const user = await requireUser();
+
+  const updated = await categoriesService.updateCategory(user.id, id, changes);
+  if (updated) revalidateCategoryViews();
+  return updated;
 }
 
 /**
@@ -66,19 +77,22 @@ export async function createCategory(
     color,
     budget,
   );
-  // Mantém o comportamento de antes (erro no nome repetido) até a tela tratar o resultado (9d)
-  if (result.status === 'conflict') throw new Error('Categoria já existe');
+  if (result.status === 'conflict') return result;
 
-  revalidatePath('/Categories');
+  // Reativar muda a cor das transações antigas
+  revalidateCategoryViews();
   revalidatePath('/import');
-  revalidatePath('/Dashboard'); // Importante para atualizar o gráfico de fatias
+  return result;
 }
 
-export async function deleteCategory(id: string) {
+/**
+ * Arquiva a categoria. Devolve quantas recorrências ativas continuam usando
+ * ela, ou null se ela não existir ou já estiver arquivada.
+ */
+export async function archiveCategory(id: string) {
   const user = await requireUser();
 
-  await categoriesService.deleteCategory(user.id, id);
-
-  revalidatePath('/Categories');
-  revalidatePath('/Dashboard');
+  const result = await categoriesService.archiveCategory(user.id, id);
+  if (result) revalidateCategoryViews();
+  return result;
 }
