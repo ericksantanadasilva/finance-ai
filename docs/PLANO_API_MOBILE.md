@@ -415,14 +415,15 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
     - [ ] Nginx aceitar só IPs da Cloudflare, para o `CF-Connecting-IP` não poder ser falsificado
     - [ ] Limite por IP agrupando IPv6 por /64: cada cliente costuma ter um /64 inteiro e pode trocar de endereço dentro dele para escapar do limite
 - [ ] **9** Categorias arquivadas e edição de recorrência (decisões 6 a 18), no web e na API, com a lógica em `lib/finance`
-  - [ ] Antes da 9a: consulta de duplicatas (só leitura) no `finance_dev` e no `finance`. Se voltar alguma linha, a 9a espera: unificar exige um script de dados com autorização e backup
+  - [x] Antes da 9a: consulta de duplicatas (26/11/2026: 0 linhas no `finance_dev` e no `finance`) (só leitura) no `finance_dev` e no `finance`. Se voltar alguma linha, a 9a espera: unificar exige um script de dados com autorização e backup
     ```sql
     SELECT "userId", lower(btrim(name)) AS k, array_agg(name), count(*)
     FROM "Category" GROUP BY 1, 2 HAVING count(*) > 1;
     ```
-  - [ ] **9a** Migration aditiva `add_category_archive`: `Category.archivedAt DateTime?` e `Category.nameKey String?` (nome em minúsculas, sem os espaços das pontas), backfill `lower(btrim(name))` e `@@unique([userId, nameKey])`. O unique antigo `(name, userId)` fica até a 9h. Primeiro no `finance_dev`, com autorização
+  - [x] **9a** Migration aditiva `add_category_archive`: `Category.archivedAt DateTime?` e `Category.nameKey String?` (nome em minúsculas, sem os espaços das pontas), backfill `lower(btrim(name))` e `@@unique([userId, nameKey])`. O unique antigo `(name, userId)` fica até a 9h. Aplicada no `finance_dev` em 26/11/2026 (20 categorias, todas com `nameKey`); falta a produção, antes do deploy da 9b/9c
+    - O `btrim` corta só o espaço comum; basta porque nenhum nome atual (dev e produção) tem outro tipo de espaço nas pontas
   - [ ] **9b** `lib/finance/categories`:
-    - `normalizeCategoryName(name)` → `{ name, nameKey }`; o mesmo cálculo da migration
+    - `normalizeCategoryName(name)` → `{ name, nameKey }` com `trim()` completo do JavaScript + `toLowerCase()`
     - `getCategories` e `getCategoriesWithBudget` só com as ativas (tela Categorias, `GET /categories`, avisos de orçamento); `getDashboardTotals` continua com todas
     - `createCategory` devolve criada, reativada ou conflito (ativa com o mesmo nome). Reativar: mesma linha, `archivedAt = null`, nome como digitado, cor nova e o limite digitado (decisões 7, 15 e 16). Corrida no unique (P2002) vira conflito
     - `archiveCategory(userId, id)`: filtra `{ id, userId }`; devolve também quantas recorrências ativas usam a categoria, para o aviso (decisão 12)
