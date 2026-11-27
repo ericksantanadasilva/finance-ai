@@ -5,7 +5,7 @@ import type { TransactionType } from '@/prisma/generated/client';
 import { APP_TIME_ZONE, currentMonthISO } from '@/app/utils/dates';
 
 /** Cor da categoria criada sem escolha de cor (lançamento, recorrência, importação, n8n). */
-export const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
+const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
   Alimentação: '#ef4444',
   Transporte: '#3b82f6',
   Lazer: '#8b5cf6',
@@ -77,12 +77,24 @@ export async function getCategories(userId: string) {
   }));
 }
 
-/** Nomes para as listas de escolha (lançamento e recorrência): as padrão e as do usuário. */
+/**
+ * Nomes para as listas de escolha (lançamento e recorrência): as ativas do
+ * usuário e as padrão que ele ainda não tem. Uma padrão que o usuário já tem
+ * (com outra grafia ou arquivada) não aparece de novo.
+ */
 export async function getCategoryOptions(userId: string) {
-  const categories = await getCategories(userId);
-  return Array.from(
-    new Set([...DEFAULT_CATEGORY_NAMES, ...categories.map((c) => c.name)]),
-  ).sort();
+  const categories = await prisma.category.findMany({
+    where: { userId },
+    select: { name: true, archivedAt: true },
+  });
+  const existingKeys = new Set(
+    categories.map((c) => normalizeCategoryName(c.name).nameKey),
+  );
+  const defaults = DEFAULT_CATEGORY_NAMES.filter(
+    (name) => !existingKeys.has(normalizeCategoryName(name).nameKey),
+  );
+  const active = categories.filter((c) => !c.archivedAt).map((c) => c.name);
+  return [...defaults, ...active].sort();
 }
 
 /**

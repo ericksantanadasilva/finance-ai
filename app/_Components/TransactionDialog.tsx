@@ -115,6 +115,15 @@ export default function TransactionDialog({
     }
   }, [isOpen, editData, referenceMonth]);
 
+  // A categoria atual da transação editada que não está nas opções é uma
+  // arquivada: continua selecionável para ser mantida (decisão 13)
+  const archivedCurrent =
+    editData?.category?.name &&
+    allCategories.length > 0 &&
+    !allCategories.includes(editData.category.name)
+      ? editData.category.name
+      : null;
+
   async function handleSubmit() {
     if (!amount || !description || !category) {
       toast.warning('Preencha todos os campos!');
@@ -275,6 +284,11 @@ export default function TransactionDialog({
                       <SelectValue placeholder='Selecionar...' />
                     </SelectTrigger>
                     <SelectContent>
+                      {archivedCurrent && (
+                        <SelectItem value={archivedCurrent}>
+                          {archivedCurrent} (arquivada)
+                        </SelectItem>
+                      )}
                       {allCategories.map((cat) => (
                         <SelectItem key={cat} value={cat}>
                           {cat}

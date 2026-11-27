@@ -8,8 +8,8 @@ import {
   parseDateOnly,
 } from '@/app/utils/dates';
 import {
-  DEFAULT_CATEGORY_COLORS,
   getBudgetStatus,
+  resolveCategoryForUse,
   type BudgetStatus,
 } from './categories';
 
@@ -96,16 +96,7 @@ export async function createTransaction(
   data: TransactionInput,
   referenceMonth?: string,
 ) {
-  const category = await prisma.category.upsert({
-    where: { name_userId: { name: data.category, userId } },
-    update: {},
-    create: {
-      name: data.category,
-      type: data.type,
-      userId,
-      color: DEFAULT_CATEGORY_COLORS[data.category] || '#71717a',
-    },
-  });
+  const category = await resolveCategoryForUse(userId, data.category, data.type);
 
   const safeReferenceMonth = referenceMonth || currentMonthISO(APP_TIME_ZONE);
 
@@ -129,7 +120,7 @@ export async function createTransaction(
     try {
       const status = await getBudgetStatus(
         userId,
-        data.category,
+        category.name,
         safeReferenceMonth,
       );
       if (status && status.percent >= 80) budgetAlert = status;
@@ -268,6 +259,8 @@ export async function getTransactionsPage(
       where,
       _sum: { amount: true },
     }),
+    // Inclui as arquivadas de propósito: o filtro serve para achar o histórico
+    // (decisão 14). Não trocar por getCategories, que só traz as ativas.
     prisma.category.findMany({
       where: { userId },
       select: { name: true },
@@ -374,16 +367,17 @@ export async function updateTransaction(
   data: TransactionInput,
   referenceMonth: string,
 ) {
-  const category = await prisma.category.upsert({
-    where: { name_userId: { name: data.category, userId } },
-    update: {},
-    create: {
-      name: data.category,
-      type: data.type,
-      userId,
-      color: '#71717a',
-    },
+  // A categoria atual pode ser mantida mesmo arquivada (decisão 13)
+  const current = await prisma.transaction.findFirst({
+    where: { id, userId },
+    select: { categoryId: true },
   });
+  const category = await resolveCategoryForUse(
+    userId,
+    data.category,
+    data.type,
+    current?.categoryId,
+  );
 
   const transaction = await prisma.transaction.update({
     where: { id, userId },

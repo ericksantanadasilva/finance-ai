@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateApiKey } from '@/lib/api-auth';
+import { getCategories } from '@/lib/finance/categories';
 
 const ALLOWED_PROVIDERS = ['telegram', 'discord', 'whatsapp', 'web'] as const;
 type Provider = (typeof ALLOWED_PROVIDERS)[number];
@@ -55,14 +56,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // 4. Busca as categorias cadastradas para este usuário
-    const categories = await prisma.category.findMany({
-      where: { userId: identity.userId },
-      select: {
-        name: true,
-      },
-      orderBy: { name: 'asc' },
-    });
+    // 4. Categorias ativas do usuário (as arquivadas não são sugeridas)
+    const categories = await getCategories(identity.userId);
 
     return NextResponse.json(
       {

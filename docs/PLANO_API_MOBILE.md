@@ -431,7 +431,11 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
     - `archiveCategory(userId, id)`: filtra `{ id, userId }`; devolve também quantas recorrências ativas usam a categoria, para o aviso (decisão 12)
     - `resolveCategoryForUse(userId, name, type, currentCategoryId?)`: busca pelo `nameKey`; cria se não existir (com a cor padrão única de `DEFAULT_CATEGORY_COLORS`, resolvendo a pendência da 4); se estiver arquivada, mantém quando for a categoria atual da transação ou da regra (decisão 13) e, fora disso, reativa com a cor antiga e sem limite (decisão 11)
     - `getBudgetStatus` busca pelo `nameKey`
-  - [ ] **9c** Consumidores:
+  - [x] **9c** Consumidores (feito em 26/11/2026; antes, em commit próprio, a lista fixa de categorias padrão saiu dos diálogos para o `getCategoryOptions`):
+    - Criam ou usam a categoria pelo nome, com `resolveCategoryForUse`: `createTransaction` e `updateTransaction` (esta passa a categoria atual da transação), `createRecurringRule`, `saveTransactions` da importação (as categorias são resolvidas antes do `createMany`, fora da transação do banco) e a rota `integrations/finances/transaction` do n8n (agora com 400 para `categoryName` vazio; a cor da categoria nova de receita deixa de ser `#10b981`). O chat e o `POST /api/v1/transactions` passam pelo `createTransaction`
+    - Só as ativas: `getCategories` (chat, `AIImportClient`, prompt da importação, `identity/lookup` do n8n) e `getCategoryOptions` (`TransactionDialog` e `RecurringDialog`, com as padrão que o usuário ainda não tem, nem arquivadas)
+    - Com as arquivadas, de propósito: a busca de categorias do `getTransactionsPage` (filtro do web e `categories` do `GET /transactions`), o `getDashboardTotals` e o filtro por nome da rota `integrations/finances/summary`
+    - Pendente: o cartão do chat marca como "nova" uma sugestão da IA que é uma arquivada; ao confirmar, ela é reativada
     - `createTransaction`, `updateTransaction`, `createRecurringRule`, importação da IA, rota do n8n e chat (via `createTransaction`) passam a usar o `resolveCategoryForUse`
     - Listas de escolha só com as ativas: `TransactionDialog`, `RecurringDialog`, `AIImportClient`, prompts do chat e da importação, `identity/lookup`. A lista fixa de categorias padrão vai para o servidor, sem as que já existem arquivadas
     - Ao editar uma transação ou recorrência numa arquivada, o seletor mostra a atual marcada "arquivada" (decisão 13)

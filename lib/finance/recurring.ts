@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@/prisma/generated/client';
 import { APP_TIME_ZONE, currentMonthISO } from '@/app/utils/dates';
+import { resolveCategoryForUse } from './categories';
 
 const MONTH_RE = /^\d{4}-\d{2}$/;
 const MAX_CATCH_UP_MONTHS = 36; // trava de segurança contra loops/backfills enormes
@@ -163,18 +164,11 @@ export async function createRecurringRule(
 
   let categoryId: string | null = null;
   if (input.category?.trim()) {
-    const category = await prisma.category.upsert({
-      where: {
-        name_userId: { name: input.category.trim(), userId },
-      },
-      update: {},
-      create: {
-        name: input.category.trim(),
-        type: input.type,
-        userId,
-        color: '#71717a',
-      },
-    });
+    const category = await resolveCategoryForUse(
+      userId,
+      input.category,
+      input.type,
+    );
     categoryId = category.id;
   }
 
