@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
 import { requireMobileUser } from '@/lib/api-auth';
-import { moneySchema, monthSchema, parseJsonBody } from '@/lib/api-validation';
+import { parseJsonBody } from '@/lib/api-validation';
 import {
   createRecurringRule,
   generateForUser,
   getRecurringRuleItem,
   getRecurringRules,
 } from '@/lib/finance/recurring';
+import { recurringBodySchema } from './schema';
 
 /** Regras recorrentes. Como a página web, gera antes as ocorrências devidas. */
 export async function GET(request: Request) {
@@ -27,15 +27,6 @@ export async function GET(request: Request) {
   }
 }
 
-const createSchema = z.object({
-  description: z.string().trim().min(1).max(200),
-  amount: moneySchema,
-  type: z.enum(['income', 'expense']),
-  category: z.string().trim().max(50).optional(), // vazio ou ausente = sem categoria
-  dayOfMonth: z.number().int().min(1).max(31), // meses curtos usam o último dia
-  startMonth: monthSchema,
-});
-
 /** Cria a regra e já gera as ocorrências do mês de início até o atual. */
 export async function POST(request: Request) {
   const { user, errorResponse } = await requireMobileUser(request);
@@ -43,7 +34,7 @@ export async function POST(request: Request) {
 
   const { data: body, errorResponse: bodyError } = await parseJsonBody(
     request,
-    createSchema,
+    recurringBodySchema,
   );
   if (bodyError) return bodyError;
 
