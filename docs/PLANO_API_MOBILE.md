@@ -448,7 +448,7 @@ Cada etapa termina com lint, build, a lista de arquivos e uma sugestão de commi
     - `PATCH /categories/:id { budget?, color? }`: pelo menos um dos dois; campo ausente fica como está e `budget: null` remove o limite; 404 para categoria arquivada
     - `DELETE /categories/:id`: arquiva; 204 ou 404 (inclusive se já estiver arquivada)
     - Renomear fica fora por enquanto
-  - [ ] **9e** `updateRecurringRule(userId, id, input)` em `lib/finance/recurring`:
+  - [x] **9e** `updateRecurringRule(userId, id, input)` em `lib/finance/recurring` (feito em 27/11/2026; antes, em commit próprio, a validação virou `validateRecurringRuleInput`). Devolve `{ success: true }`, `{ success: false, notFound: true }` (para o 404 da 9f) ou `{ success: false, error }` (400). Depois de gravar, roda o `generateForUser` de novo, como a criação: uma regra que ainda não lançou nada e passa a começar no passado gera o devido. O início só é conferido quando muda. Testado no `finance_dev` com um script temporário (usuário de teste criado e apagado pelo id; relógio simulado para os meses seguintes): atrasados e mês atual com os dados antigos, próximo mês com os novos, dia 25 → 5 sem duplicar nem pular, início anterior ou igual ao último lançado recusado, início adiado pulando os meses do meio, regra sem lançamentos movida para o passado, categoria arquivada mantida, validação, regra pausada e id inexistente
     - Mesma validação da criação (extraída para uma função comum)
     - Antes de gravar, roda `generateForUser` com os dados antigos (decisão 17)
     - Com `lastGeneratedMonth` preenchido, o `startMonth` novo precisa ser depois dele (senão 400, decisão 18); sem ele, vale como na criação
